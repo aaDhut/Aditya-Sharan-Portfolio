@@ -266,6 +266,21 @@ body {
   max-width: 680px;
 }
 
+.timeline-desc-list {
+  color: var(--color-text-muted);
+  margin: 0;
+  padding-left: 18px;
+  max-width: 680px;
+}
+
+.timeline-desc-list li {
+  margin-bottom: 4px;
+}
+
+.timeline-desc-list li:last-child {
+  margin-bottom: 0;
+}
+
 /* Cards */
 .card-grid {
   display: grid;
