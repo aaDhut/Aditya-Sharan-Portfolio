@@ -225,6 +225,46 @@ body {
   max-width: 680px;
 }
 
+.about-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 48px;
+}
+
+.about-photo {
+  flex-shrink: 0;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.25);
+}
+
+.about-photo img {
+  display: block;
+  width: 182%;
+  max-width: none;
+  transform: translate(-26%, -7%);
+}
+
+@media (max-width: 720px) {
+  .about-grid {
+    flex-direction: column-reverse;
+    text-align: center;
+  }
+
+  .about-text {
+    max-width: none;
+  }
+
+  .about-photo {
+    width: 180px;
+    height: 180px;
+    margin: 0 auto;
+  }
+}
+
 /* Timeline */
 .timeline {
   list-style: none;
