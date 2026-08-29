@@ -8,10 +8,89 @@
   --color-accent-contrast: #ffffff;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --max-width: 1040px;
+  /* The ch unit measures the "0" glyph, which is wider than Inter's average
+     character — 56ch lands at ~70 real characters, inside the 45–75 range. */
+  --measure: 56ch;
+  /* Borders on interactive elements need more definition than the hairline
+     used for static surfaces, especially on the off-white alt sections. */
+  --color-border-strong: #d5d1c8;
+
+  /* ---- Liquid Glass materials ----
+     Weight encodes hierarchy: chrome is the heaviest material, interactive
+     chips the lightest. A light translucent surface is never stacked on
+     another — legibility collapses when it is. */
+  /* Tint is set by the contrast floor, not by taste. Measured with the lens and
+     specular in place, against the darkest part of the portrait showing through
+     the bar: 0.42 -> 3.45:1 and 0.46 -> 3.98:1 both fail AA, and 0.50 -> 4.58:1
+     only just scrapes over. 0.52 is as transparent as the nav can go and still
+     keep its labels legible with a little margin. */
+  --glass-chrome: rgba(255, 255, 255, 0.52);
+  --glass-surface: rgba(255, 255, 255, 0.62);
+  --glass-chip: rgba(255, 255, 255, 0.55);
+
+  /* The bright edge where light catches the top of a pane, and the faint
+     shade where it leaves the bottom. */
+  --glass-rim: inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.045);
+  --glass-hairline: rgba(255, 255, 255, 0.55);
+
+  /* Larger surfaces read as thicker, so they cast further. */
+  --shadow-chrome: 0 8px 28px -10px rgba(31, 38, 34, 0.24),
+    0 2px 8px -4px rgba(31, 38, 34, 0.12);
+  --shadow-surface: 0 4px 20px -10px rgba(31, 38, 34, 0.18);
+  --shadow-lifted: 0 14px 34px -12px rgba(31, 38, 34, 0.26);
+
+  /* Concentric radii, Apple-style: generous and consistent. */
+  --radius-lg: 22px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+
+  --nav-inset: 10px;
+  --nav-h: 60px;
+  --nav-block: calc(var(--nav-h) + var(--nav-inset) * 2);
 }
 
-* {
+/* Pseudo-elements are NOT matched by `*`, so without ::before/::after here they
+   fall back to content-box — which silently pushed the timeline dots 2px off
+   the spine (border added outside the declared width). */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  color: var(--color-text);
+}
+
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -100px;
+  z-index: 200;
+  padding: 10px 18px;
+  border-radius: 8px;
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 0.18s ease-out;
+}
+
+.skip-link:focus-visible {
+  top: 16px;
+}
+
+#main:focus {
+  outline: none;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -33,6 +112,27 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Glass is only legible as a material when there's colour behind it to bend.
+   A fixed, very low-saturation wash gives every translucent surface something
+   to refract without becoming decoration in its own right. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(58% 44% at 14% 8%, rgba(45, 106, 79, 0.09), transparent 70%),
+    radial-gradient(52% 40% at 88% 22%, rgba(120, 148, 190, 0.08), transparent 72%),
+    radial-gradient(60% 46% at 62% 96%, rgba(45, 106, 79, 0.06), transparent 74%);
+}
+
+/* Anchor targets must clear the floating nav, or every in-page link lands
+   with its heading tucked underneath the chrome. */
+section[id] {
+  scroll-margin-top: calc(var(--nav-block) + 12px);
+}
+
 .container {
   max-width: var(--max-width);
   margin: 0 auto;
@@ -44,24 +144,19 @@ body {
   position: relative;
 }
 
+/* The header itself is now just a positioning frame — the glass is the pill
+   inside it, floating over the content the way iOS 26 chrome does. */
 .site-header {
   position: sticky;
   top: 0;
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
   z-index: 100;
+  padding: var(--nav-inset) 0;
+  background: none;
+  pointer-events: none;
 }
 
-.site-header::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -12px;
-  height: 12px;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.06), transparent);
-  pointer-events: none;
+.site-header .container {
+  pointer-events: auto;
 }
 
 .header-inner {
@@ -70,7 +165,28 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 72px;
+  height: var(--nav-h);
+  padding: 0 10px 0 20px;
+  border-radius: var(--radius-lg);
+  /* Kept fairly transparent on purpose: refraction is only visible if there's
+     a backdrop to bend. Too opaque and the glass reads as a plain grey bar. */
+  /* Specular: a bright grazing highlight along the top face and a soft return
+     off the bottom, the way light catches the curved surface of a droplet.
+     The lens itself is applied from glass.js. */
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.22),
+      rgba(255, 255, 255, 0) 42%,
+      rgba(255, 255, 255, 0) 78%,
+      rgba(255, 255, 255, 0.1)
+    ),
+    var(--glass-chrome);
+  /* Blur stays low so the refraction stays legible as refraction — heavy blur
+     dissolves the very distortion the lens is creating. */
+  backdrop-filter: blur(5px) saturate(170%);
+  -webkit-backdrop-filter: blur(5px) saturate(170%);
+  box-shadow: var(--glass-rim), var(--shadow-chrome);
 }
 
 .logo {
@@ -93,43 +209,90 @@ body {
   color: var(--color-text);
   text-decoration: none;
   font-size: 0.95rem;
-  font-weight: 500;
+  /* Vibrancy: labels sitting on a translucent surface carry extra weight so
+     they hold up as the backdrop changes underneath them. */
+  font-weight: 600;
+  transition: color 0.15s ease;
 }
 
 .nav-links a:hover {
   color: var(--color-accent);
 }
 
+/* Scroll-spy: tells the reader which section they're currently in. */
+.nav-links a.is-active:not(.nav-cta) {
+  color: var(--color-accent);
+}
+
+.nav-links a:not(.nav-cta)::after {
+  content: '';
+  display: block;
+  height: 2px;
+  margin-top: 3px;
+  border-radius: 2px;
+  background: var(--color-accent);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.18s ease-out;
+}
+
+.nav-links a.is-active:not(.nav-cta)::after {
+  transform: scaleX(1);
+}
+
 .nav-cta {
   border: 1px solid var(--color-text);
   padding: 8px 16px;
   border-radius: 6px;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.nav-cta:hover {
+/* Specificity matched to .nav-links a:hover so no !important is needed. */
+.nav-links a.nav-cta:hover {
   background: var(--color-text);
-  color: var(--color-bg) !important;
+  color: var(--color-bg);
 }
 
 .nav-toggle {
   display: none;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 5px;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  /* 44px minimum touch target (Apple HIG / WCAG 2.5.5). */
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  margin-right: -10px;
 }
 
 .nav-toggle span {
   width: 22px;
   height: 2px;
   background: var(--color-text);
+  border-radius: 2px;
+  transition: transform 0.22s ease, opacity 0.16s ease;
+}
+
+/* Burger morphs into an X so the control reads as "close" while open. */
+.nav-toggle[aria-expanded='true'] span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.nav-toggle[aria-expanded='true'] span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle[aria-expanded='true'] span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
 }
 
 /* Hero */
 .hero {
-  padding: 120px 0 80px;
+  padding: clamp(64px, 11vw, 120px) 0 clamp(48px, 8vw, 80px);
   text-align: center;
 }
 
@@ -144,10 +307,14 @@ body {
 
 .hero h1 {
   font-size: clamp(2.2rem, 5vw, 3.2rem);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  /* Leading tightens and tracking goes further negative as type grows —
+     letters read too far apart at display sizes. */
+  line-height: 1.05;
+  letter-spacing: -0.032em;
+  font-optical-sizing: auto;
   margin: 0 0 16px;
   font-weight: 700;
+  text-wrap: balance;
 }
 
 .hero-tagline {
@@ -155,6 +322,7 @@ body {
   color: var(--color-text-muted);
   max-width: 560px;
   margin: 0 auto 32px;
+  text-wrap: balance;
 }
 
 .hero-actions {
@@ -171,7 +339,8 @@ body {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 420px;
+  /* Fixed 420px overflowed the viewport on phones (<420px wide). */
+  width: min(420px, 88vw);
   height: 180px;
   transform: translate(-50%, -50%);
   background: radial-gradient(circle, var(--color-accent) 0%, transparent 70%);
@@ -190,30 +359,33 @@ body {
   text-decoration: none;
   font-weight: 600;
   font-size: 0.95rem;
-  transition: color 0.3s ease, background-color 0.3s ease, transform 0.15s ease;
+  /* Transparent by default so the hover ring doesn't shift layout. */
+  border: 1px solid transparent;
+  transition: color 0.2s ease, background-color 0.2s ease,
+    border-color 0.2s ease, transform 0.15s ease;
 }
 
-.btn-primary {
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
-}
-
-.btn-primary:hover {
-  background: var(--color-bg);
-  color: var(--color-accent);
-}
-
+/* Every button is the same glass capsule — the lightest material in the
+   system, since it sits closest to the user. */
+.btn-primary,
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--glass-chip);
   color: var(--color-text);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border-color: var(--glass-hairline);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  box-shadow: var(--glass-rim), var(--shadow-surface);
 }
 
+.btn-primary:hover,
 .btn-secondary:hover {
   color: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  box-shadow: var(--glass-rim), var(--shadow-lifted);
 }
+
+/* The hero buttons deliberately carry no special treatment — they share the
+   single outlined style above so every button on the page reads identically. */
 
 .btn:active {
   transform: scale(0.97);
@@ -229,15 +401,20 @@ body {
 }
 
 .section-title {
-  font-size: 1.8rem;
+  font-size: clamp(1.6rem, 2.6vw, 2rem);
   font-weight: 700;
+  /* Body leading (1.6) was inherited, leaving 46px of air on a 29px heading. */
+  line-height: 1.15;
+  letter-spacing: -0.02em;
   margin: 0 0 32px;
+  text-wrap: balance;
 }
 
 .about-text {
   font-size: 1.05rem;
   color: var(--color-text-muted);
-  max-width: 680px;
+  max-width: var(--measure);
+  text-wrap: pretty;
 }
 
 .about-grid {
@@ -259,6 +436,9 @@ body {
 .about-photo img {
   display: block;
   width: 130%;
+  /* height:auto is required alongside the width/height attributes, otherwise
+     the height attribute wins and the portrait stretches. */
+  height: auto;
   max-width: none;
   transform: translate(-15%, -4%);
 }
@@ -282,6 +462,7 @@ body {
 
 /* Timeline */
 .timeline {
+  position: relative;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -290,9 +471,41 @@ body {
   gap: 32px;
 }
 
+/* One continuous spine instead of five disconnected bars, fading out at the
+   end so the history reads as a single thread. */
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  /* Starts at the first dot's centre (8px offset + 6px radius), and fades to
+     fully transparent so the tail past the last dot isn't a visible stub. */
+  top: 14px;
+  bottom: 0;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to bottom,
+    var(--color-accent) 0%,
+    color-mix(in srgb, var(--color-accent) 30%, transparent) 88%,
+    transparent 100%
+  );
+}
+
 .timeline-item {
-  border-left: 2px solid var(--color-accent);
-  padding-left: 20px;
+  position: relative;
+  padding-left: 26px;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 8px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-bg-alt);
+  border: 2px solid var(--color-accent);
 }
 
 .timeline-meta {
@@ -301,11 +514,15 @@ body {
   gap: 8px;
   align-items: baseline;
   margin-bottom: 6px;
+  /* Without a cap, margin-left:auto flung the dates ~500px from the role they
+     label, breaking the visual pairing. */
+  max-width: 78ch;
 }
 
 .timeline-role {
   font-weight: 700;
   font-size: 1.05rem;
+  line-height: 1.35;
 }
 
 .timeline-company {
@@ -331,14 +548,16 @@ body {
 .timeline-desc {
   color: var(--color-text-muted);
   margin: 0;
-  max-width: 680px;
+  max-width: var(--measure);
+  text-wrap: pretty;
 }
 
 .timeline-desc-list {
   color: var(--color-text-muted);
   margin: 0;
   padding-left: 18px;
-  max-width: 680px;
+  max-width: var(--measure);
+  text-wrap: pretty;
 }
 
 .timeline-desc-list li {
@@ -352,15 +571,33 @@ body {
 /* Cards */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  /* 240px (was 280px) keeps three columns down to ~815px, shrinking the window
+     where three cards fall into a 2+1 orphan. */
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 24px;
 }
 
+/* In the remaining 2-column window, let a lone trailing card span the row so
+   it reads as deliberate rather than broken. */
+@media (min-width: 553px) and (max-width: 815px) {
+  .card-grid > .card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
 .card {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-hairline);
+  border-radius: var(--radius-md);
   padding: 28px;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: var(--glass-rim), var(--shadow-surface);
+}
+
+.card:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  box-shadow: var(--glass-rim), var(--shadow-lifted);
 }
 
 .card-tag {
@@ -374,7 +611,10 @@ body {
 
 .card-title {
   font-size: 1.2rem;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
   margin: 0 0 16px;
+  text-wrap: balance;
 }
 
 .card-label {
@@ -383,10 +623,14 @@ body {
   margin: 14px 0 4px;
 }
 
+/* Sits on a translucent card, so it carries slightly more weight and contrast
+   than plain muted grey would — vibrancy keeps it legible as the backdrop
+   shifts underneath. */
 .card-text {
-  color: var(--color-text-muted);
+  color: #4f4f4f;
   margin: 0;
   font-size: 0.95rem;
+  text-wrap: pretty;
 }
 
 /* Skills */
@@ -398,6 +642,7 @@ body {
 
 .skills-group h3 {
   font-size: 1rem;
+  line-height: 1.3;
   margin: 0 0 14px;
 }
 
@@ -411,11 +656,25 @@ body {
 }
 
 .tag-list li {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  background: var(--glass-chip);
+  border: 1px solid var(--glass-hairline);
   padding: 6px 14px;
   border-radius: 999px;
   font-size: 0.85rem;
+  /* Small text on a translucent surface needs a touch more weight and
+     tracking to stay crisp — vibrancy, not flat grey. */
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  backdrop-filter: blur(12px) saturate(170%);
+  -webkit-backdrop-filter: blur(12px) saturate(170%);
+  box-shadow: var(--glass-rim);
+  transition: border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tag-list li:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  color: var(--color-accent);
+  box-shadow: var(--glass-rim), var(--shadow-surface);
 }
 
 /* Testimonials */
@@ -427,10 +686,13 @@ body {
 
 .testimonial {
   margin: 0;
-  padding: 24px;
+  padding: 24px 24px 24px 27px;
   border-left: 3px solid var(--color-accent);
-  background: var(--color-bg-alt);
-  border-radius: 0 8px 8px 0;
+  background: var(--glass-surface);
+  border-radius: var(--radius-sm) var(--radius-md) var(--radius-md) var(--radius-sm);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: var(--glass-rim), var(--shadow-surface);
 }
 
 .testimonial p {
@@ -478,22 +740,57 @@ body {
 
   .nav-links {
     position: fixed;
-    top: 72px;
-    left: 0;
-    right: 0;
-    height: calc(100vh - 72px);
-    background: var(--color-bg);
-    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.12);
+    top: var(--nav-block);
+    left: 12px;
+    right: 12px;
+    height: auto;
+    max-height: calc(100dvh - var(--nav-block) - 16px);
+    border-radius: var(--radius-lg);
+    /* The heaviest material in the system. This one covers content rather than
+       floating over a sliver of it, so at 0.72 the hero headline read straight
+       through and collided with the nav labels. Near-opaque is the correct
+       weight for a surface that takes over the screen. */
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(30px) saturate(190%);
+    -webkit-backdrop-filter: blur(30px) saturate(190%);
+    box-shadow: var(--glass-rim), var(--shadow-chrome);
     flex-direction: column;
-    align-items: flex-start;
-    padding: 24px;
-    gap: 18px;
+    align-items: stretch;
+    padding: 10px 14px 14px;
+    gap: 2px;
     overflow-y: auto;
     display: none;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.22s ease-out, transform 0.22s ease-out;
+  }
+
+  /* Rows were 19px tall — well under the 44px minimum touch target. The whole
+     row is now tappable, not just the few characters of the label. */
+  .nav-links a {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    font-size: 1.05rem;
+  }
+
+  .nav-links a:not(.nav-cta)::after {
+    display: none;
+  }
+
+  .nav-links .nav-cta {
+    justify-content: center;
+    margin-top: 12px;
+    padding: 12px 16px;
   }
 
   .nav-links.open {
     display: flex;
+  }
+
+  .nav-links.open.is-visible {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   .timeline-dates {
@@ -501,18 +798,108 @@ body {
   }
 }
 
-/* Reduced transparency: trade blur for solid, high-contrast surfaces */
-@media (prefers-reduced-transparency: reduce) {
-  .site-header {
-    background: var(--color-bg);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+/* Scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* `transition` is a shorthand, so a later declaration replaces the whole list.
+   Cards need both the reveal and the hover properties in one place, declared
+   after .reveal — otherwise one silently cancels the other. */
+.card {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease,
+    opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-links {
+    transition: none;
   }
 
+  .reveal,
+  .card {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .nav-toggle span,
+  .nav-links a:not(.nav-cta)::after {
+    transition: none;
+  }
+}
+
+/* Print: scroll-reveal content must never be invisible on a static page */
+@media print {
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .site-header {
+    position: static;
+  }
+}
+
+/* Reduced transparency: trade blur for solid, high-contrast surfaces.
+   The material system collapses to opaque fills with real borders — depth is
+   then carried by the border and shadow alone. */
+@media (prefers-reduced-transparency: reduce) {
+  body::before {
+    display: none;
+  }
+
+  .header-inner,
+  .nav-links,
+  .card,
+  .testimonial,
+  .tag-list li,
+  .btn-primary,
   .btn-secondary {
     background: var(--color-bg);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    border-color: var(--color-border);
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-surface);
+  }
+
+  .header-inner,
+  .nav-links {
+    box-shadow: var(--shadow-chrome);
+  }
+}
+
+/* High contrast: near-solid surfaces with a defined, contrasting border. */
+@media (prefers-contrast: more) {
+  body::before {
+    display: none;
+  }
+
+  .header-inner,
+  .nav-links,
+  .card,
+  .testimonial,
+  .tag-list li,
+  .btn-primary,
+  .btn-secondary {
+    background: var(--color-bg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid var(--color-text);
+  }
+
+  .card-text,
+  .about-text,
+  .timeline-desc-list,
+  .timeline-dates {
+    color: var(--color-text);
   }
 }
