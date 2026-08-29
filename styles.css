@@ -176,12 +176,17 @@ body {
   text-decoration: none;
   font-weight: 600;
   font-size: 0.95rem;
-  transition: opacity 0.15s ease, transform 0.15s ease, color 0.4s ease;
+  transition: color 0.3s ease, background-color 0.3s ease, transform 0.15s ease;
 }
 
 .btn-primary {
   background: var(--color-accent);
   color: var(--color-accent-contrast);
+}
+
+.btn-primary:hover {
+  background: var(--color-bg);
+  color: var(--color-accent);
 }
 
 .btn-secondary {
@@ -192,11 +197,7 @@ body {
   -webkit-backdrop-filter: blur(12px) saturate(180%);
 }
 
-.btn:hover {
-  opacity: 0.85;
-}
-
-#glass-btn-primary:hover {
+.btn-secondary:hover {
   color: var(--color-accent);
 }
 
