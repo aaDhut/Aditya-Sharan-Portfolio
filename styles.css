@@ -196,6 +196,10 @@ body {
   opacity: 0.85;
 }
 
+.btn-primary:hover {
+  color: var(--color-accent);
+}
+
 .btn:active {
   transform: scale(0.97);
 }
