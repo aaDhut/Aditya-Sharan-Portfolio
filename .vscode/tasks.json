@@ -1,0 +1,38 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Frontend",
+      "type": "shell",
+      "command": "python3 -m http.server 5500",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^$",
+          "endsPattern": "Serving HTTP"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "frontend"
+      },
+      "detail": "Serves the portfolio site at http://localhost:5500"
+    },
+    {
+      "label": "Stop Frontend",
+      "type": "shell",
+      "command": "lsof -ti:5500 | xargs kill -9 2>/dev/null || echo 'Nothing running on port 5500'",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "frontend"
+      },
+      "detail": "Stops whatever is running on port 5500"
+    }
+  ]
+}
