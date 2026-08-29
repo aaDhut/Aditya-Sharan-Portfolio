@@ -243,9 +243,9 @@ body {
 
 .about-photo img {
   display: block;
-  width: 182%;
+  width: 130%;
   max-width: none;
-  transform: translate(-26%, -7%);
+  transform: translate(-15%, -4%);
 }
 
 @media (max-width: 720px) {
