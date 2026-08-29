@@ -196,7 +196,7 @@ body {
   opacity: 0.85;
 }
 
-.btn-primary:hover {
+#glass-btn-primary:hover {
   color: var(--color-accent);
 }
 
