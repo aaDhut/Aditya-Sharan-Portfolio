@@ -37,9 +37,16 @@
   --dark-border-strong: #424245;
 
   /* #2d6a4f is a dark green — on a dark ground it collapses to about 1.6:1
-     and effectively disappears. Lifting it to this tint restores ~10:1 while
-     staying recognisably the same hue. */
-  --dark-accent: #74c69d;
+     and effectively disappears, so it has to lift.
+
+     How far it lifts is set by the orb field, not by the flat background. The
+     eyebrow and the hero buttons sit directly on the orbs, and the orbs drift,
+     revolve and cycle colour, so any part of the hero can become the brightest
+     spot given a few seconds. Measured against the brightest pixel the field
+     produces, #74c69d came to 3.92:1 — under the 4.5 floor. This clears it at
+     4.84:1 there, and still reads as the same mint on flat surfaces, where it
+     measures about 11:1. */
+  --dark-accent: #93d8b3;
   /* Flips: this is the text sitting *on* the accent, not the accent itself. */
   --dark-accent-contrast: #0d0d0f;
 
@@ -191,16 +198,17 @@
      existing relationship to each other, which restating 24 colour values one
      at a time would not. */
   :root:not([data-theme="light"]) .hero-orbs {
-    opacity: 0.42;
-    /* The orbs are saturated mint, teal, lime, amber and violet — tuned to
-       read as a pale wash on white. On a neutral dark ground they are the
-       single loudest source of colour on the page. Draining almost all of the
-       saturation leaves them as soft achromatic glows that still give the
-       glass something to refract, with just enough hue left that the six do
-       not flatten into one grey cloud. Applied to the composited field rather
-       than to 24 individual colour values, so the orbs keep their existing
-       relationship to one another. */
-    filter: saturate(0.12);
+    /* The orbs keep their colour — they are the one place on the page that is
+       meant to be chromatic, and draining them left the hero flat. What had to
+       go was the green cast on the *surfaces*, which came from the palette and
+       the ambient wash, not from here.
+
+       Only the opacity moves. The orbs blend with plus-lighter, which is
+       additive, so the same tints that read as a pale wash on white come up
+       roughly twice as hot against a near-black ground. Dimming the composited
+       field keeps all six in their existing relationship to one another rather
+       than re-tuning 24 colour values by hand. */
+    opacity: 0.62;
   }
 
   /* The résumé render is a white page. It stays white — a document should look
@@ -223,8 +231,7 @@
 }
 
 :root[data-theme="dark"] .hero-orbs {
-  opacity: 0.42;
-  filter: saturate(0.12);
+  opacity: 0.62;
 }
 
 :root[data-theme="dark"] .link-pop--resume .link-pop-shot img {
