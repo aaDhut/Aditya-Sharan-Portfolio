@@ -23,29 +23,31 @@
    Declared unconditionally and unused until a trigger below maps it, so the
    values live in exactly one place while two selectors can apply them. */
 :root {
-  /* Not a mathematical inversion of the light palette. The light theme is
-     warm (#f7f7f5, #e7e5e0), so a neutral grey-black would read as a
-     different site with the lights off; these carry the same warmth and a
-     faint green cast picked up from the accent. */
-  --dark-bg: #101312;
-  --dark-bg-alt: #171b19;
-  --dark-text: #eceae6;
-  --dark-text-muted: #a2a29b;
-  --dark-border: #2a2f2c;
-  --dark-border-strong: #3c4340;
+  /* Neutral greys, calibrated against Apple's own dark surfaces rather than
+     tinted toward the accent. R, G and B sit within two points of each other
+     and lean very slightly cool — #1d1d1f, #f5f5f7, #a1a1a6 and #424245 are
+     Apple's values verbatim. An earlier revision carried a green cast picked
+     up from the accent, which read as a tint over the whole site rather than
+     as warmth. */
+  --dark-bg: #131315;
+  --dark-bg-alt: #1d1d1f;
+  --dark-text: #f5f5f7;
+  --dark-text-muted: #a1a1a6;
+  --dark-border: #2e2e30;
+  --dark-border-strong: #424245;
 
   /* #2d6a4f is a dark green — on a dark ground it collapses to about 1.6:1
      and effectively disappears. Lifting it to this tint restores ~10:1 while
      staying recognisably the same hue. */
   --dark-accent: #74c69d;
   /* Flips: this is the text sitting *on* the accent, not the accent itself. */
-  --dark-accent-contrast: #0c0f0e;
+  --dark-accent-contrast: #0d0d0f;
 
   /* Both of these invert their relationship to muted grey. In light mode they
      are darker than muted because they sit on busier backdrops and need more
      contrast; on dark, "more contrast" means lighter. */
-  --dark-text-hero: #cfcfc9;
-  --dark-text-card: #b8b8b1;
+  --dark-text-hero: #d2d2d7;
+  --dark-text-card: #b8b8bd;
 
   /* ---- Glass ----
      The single biggest difference between the themes. Light glass is a white
@@ -70,8 +72,8 @@
 
   /* The two near-opaque materials stop being white panes and become dark ones;
      a 0.88 white badge on a dark page is a hole punched through it. */
-  --dark-glass-badge: rgba(22, 26, 24, 0.85);
-  --dark-glass-sheet: rgba(16, 19, 18, 0.96);
+  --dark-glass-badge: rgba(24, 24, 26, 0.85);
+  --dark-glass-sheet: rgba(18, 18, 20, 0.96);
 
   /* ---- Shadow ----
      A warm grey shadow is invisible against a dark ground, so the ink goes to
@@ -178,9 +180,9 @@
      ground do nothing at all, so these lift and warm slightly. */
   :root:not([data-theme="light"]) body::before {
     background:
-      radial-gradient(58% 44% at 14% 8%, rgba(64, 145, 108, 0.17), transparent 70%),
-      radial-gradient(52% 40% at 88% 22%, rgba(110, 140, 190, 0.15), transparent 72%),
-      radial-gradient(60% 46% at 62% 96%, rgba(64, 145, 108, 0.12), transparent 74%);
+      radial-gradient(58% 44% at 14% 8%, rgba(255, 255, 255, 0.055), transparent 70%),
+      radial-gradient(52% 40% at 88% 22%, rgba(255, 255, 255, 0.045), transparent 72%),
+      radial-gradient(60% 46% at 62% 96%, rgba(255, 255, 255, 0.035), transparent 74%);
   }
 
   /* The orbs blend with plus-lighter, which is purely additive — against a
@@ -189,7 +191,16 @@
      existing relationship to each other, which restating 24 colour values one
      at a time would not. */
   :root:not([data-theme="light"]) .hero-orbs {
-    opacity: 0.5;
+    opacity: 0.42;
+    /* The orbs are saturated mint, teal, lime, amber and violet — tuned to
+       read as a pale wash on white. On a neutral dark ground they are the
+       single loudest source of colour on the page. Draining almost all of the
+       saturation leaves them as soft achromatic glows that still give the
+       glass something to refract, with just enough hue left that the six do
+       not flatten into one grey cloud. Applied to the composited field rather
+       than to 24 individual colour values, so the orbs keep their existing
+       relationship to one another. */
+    filter: saturate(0.12);
   }
 
   /* The résumé render is a white page. It stays white — a document should look
@@ -206,13 +217,14 @@
 
 :root[data-theme="dark"] body::before {
   background:
-    radial-gradient(58% 44% at 14% 8%, rgba(64, 145, 108, 0.17), transparent 70%),
-    radial-gradient(52% 40% at 88% 22%, rgba(110, 140, 190, 0.15), transparent 72%),
-    radial-gradient(60% 46% at 62% 96%, rgba(64, 145, 108, 0.12), transparent 74%);
+    radial-gradient(58% 44% at 14% 8%, rgba(255, 255, 255, 0.055), transparent 70%),
+    radial-gradient(52% 40% at 88% 22%, rgba(255, 255, 255, 0.045), transparent 72%),
+    radial-gradient(60% 46% at 62% 96%, rgba(255, 255, 255, 0.035), transparent 74%);
 }
 
 :root[data-theme="dark"] .hero-orbs {
-  opacity: 0.5;
+  opacity: 0.42;
+  filter: saturate(0.12);
 }
 
 :root[data-theme="dark"] .link-pop--resume .link-pop-shot img {
