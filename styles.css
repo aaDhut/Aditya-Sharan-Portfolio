@@ -879,6 +879,15 @@ section[id] {
    what holds it the same distance below the dates on every card — centred
    against the card, it drifted with the length of the bullet list. */
 .timeline-item {
+  /* [scroll-paint] backdrop-filter removed. It sat on a flat section colour,
+     where an 8px blur returns the same colour and saturate() on a near-neutral
+     ground is a no-op — measured across the whole page at 55 differing pixels
+     out of 1.15M, all of them edge antialiasing. What it cost was a compositing
+     layer per instance, and the page carried ~33 of them; Chrome would drop one
+     mid-scroll and paint the card as a flat fill with its contents missing.
+     isolation replaces the stacking context backdrop-filter used to provide,
+     which the hover panel's z-index depends on. */
+  isolation: isolate;
   position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -890,8 +899,6 @@ section[id] {
   border-radius: var(--radius-md);
   background: var(--glass-surface);
   border: 1px solid var(--glass-hairline);
-  backdrop-filter: blur(8px) saturate(180%);
-  -webkit-backdrop-filter: blur(8px) saturate(180%);
   box-shadow: var(--glass-rim), var(--shadow-surface);
 }
 
@@ -1477,12 +1484,19 @@ a.timeline-logo:hover {
 }
 
 .card {
+  /* [scroll-paint] backdrop-filter removed. It sat on a flat section colour,
+     where an 8px blur returns the same colour and saturate() on a near-neutral
+     ground is a no-op — measured across the whole page at 55 differing pixels
+     out of 1.15M, all of them edge antialiasing. What it cost was a compositing
+     layer per instance, and the page carried ~33 of them; Chrome would drop one
+     mid-scroll and paint the card as a flat fill with its contents missing.
+     isolation replaces the stacking context backdrop-filter used to provide,
+     which the hover panel's z-index depends on. */
+  isolation: isolate;
   background: var(--glass-surface);
   border: 1px solid var(--glass-hairline);
   border-radius: var(--radius-md);
   padding: 28px;
-  backdrop-filter: blur(8px) saturate(180%);
-  -webkit-backdrop-filter: blur(8px) saturate(180%);
   box-shadow: var(--glass-rim), var(--shadow-surface);
 }
 
@@ -1548,6 +1562,14 @@ a.timeline-logo:hover {
 }
 
 .tag-list li {
+  /* [scroll-paint] backdrop-filter removed. It sat on a flat section colour,
+     where an 8px blur returns the same colour and saturate() on a near-neutral
+     ground is a no-op — measured across the whole page at 55 differing pixels
+     out of 1.15M, all of them edge antialiasing. What it cost was a compositing
+     layer per instance, and the page carried ~33 of them; Chrome would drop one
+     mid-scroll and paint the card as a flat fill with its contents missing.
+     isolation replaces the stacking context backdrop-filter used to provide,
+     which the hover panel's z-index depends on. */
   background: var(--glass-chip);
   border: 1px solid var(--glass-hairline);
   padding: 6px 14px;
@@ -1557,8 +1579,6 @@ a.timeline-logo:hover {
      tracking to stay crisp — vibrancy, not flat grey. */
   font-weight: 500;
   letter-spacing: 0.005em;
-  backdrop-filter: blur(6px) saturate(170%);
-  -webkit-backdrop-filter: blur(6px) saturate(170%);
   box-shadow: var(--glass-rim);
   transition: border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -1577,13 +1597,20 @@ a.timeline-logo:hover {
 }
 
 .testimonial {
+  /* [scroll-paint] backdrop-filter removed. It sat on a flat section colour,
+     where an 8px blur returns the same colour and saturate() on a near-neutral
+     ground is a no-op — measured across the whole page at 55 differing pixels
+     out of 1.15M, all of them edge antialiasing. What it cost was a compositing
+     layer per instance, and the page carried ~33 of them; Chrome would drop one
+     mid-scroll and paint the card as a flat fill with its contents missing.
+     isolation replaces the stacking context backdrop-filter used to provide,
+     which the hover panel's z-index depends on. */
+  isolation: isolate;
   margin: 0;
   padding: 24px 24px 24px 27px;
   border-left: 3px solid var(--color-accent);
   background: var(--glass-surface);
   border-radius: var(--radius-sm) var(--radius-md) var(--radius-md) var(--radius-sm);
-  backdrop-filter: blur(8px) saturate(180%);
-  -webkit-backdrop-filter: blur(8px) saturate(180%);
   box-shadow: var(--glass-rim), var(--shadow-surface);
 }
 

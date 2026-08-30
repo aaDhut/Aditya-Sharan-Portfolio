@@ -1,0 +1,496 @@
+/* ==========================================================================
+   Meeting picker — Apple-clock wheels + booking flow in the contact section
+   ==========================================================================
+
+   Self-contained and removable: see REMOVE-MEETING-PICKER.md.
+
+   Division of labour with meeting-picker.js:
+     - JS owns the wheel option lists (days per month and the year range are
+       computed, not authored), which item is selected, and the per-item depth
+       values it writes as --r/--s/--o custom properties
+     - this file owns everything you see: the panel material, the selection
+       band, the edge fade, and how a value away from centre is drawn
+
+   That split is what keeps the wheels cheap. JS writes three numbers per
+   visible item and nothing else; the compositing is CSS's problem.
+
+   The mechanics are native scroll — scroll-snap-type on the column,
+   scroll-snap-align on each row. Momentum, rubber-banding, trackpad and touch
+   all come free and behave correctly per platform, which a hand-rolled
+   pointer-drag engine never quite does.
+   ========================================================================== */
+
+:root {
+  /* Wheel geometry. Five rows visible with the third one centred, matching
+     iOS. The item height is the unit everything else is derived from — JS
+     reads it back off the element, so changing it here is enough. */
+  --mp-item-h: 40px;
+  --mp-rows: 5;
+
+  /* The band behind the centre row. Deliberately fainter than a .btn: it is
+     a marker for where the value lands, not a control in its own right. */
+  /* On the off-white .section-alt a white-on-white band all but disappears,
+     so light mode defines the edge with a dark hairline and lets the fill do
+     the lifting. Dark mode does the reverse. */
+  --mp-band: rgba(255, 255, 255, 0.58);
+  --mp-band-edge: rgba(0, 0, 0, 0.07);
+  /* The panel is a glass surface, one step heavier than the chips inside it
+     so the stack still reads front-to-back. */
+  --mp-panel: var(--glass-surface);
+  --mp-field: rgba(255, 255, 255, 0.34);
+
+  --dark-mp-band: rgba(255, 255, 255, 0.09);
+  --dark-mp-band-edge: rgba(255, 255, 255, 0.14);
+  --dark-mp-field: rgba(255, 255, 255, 0.06);
+}
+
+/* Both triggers mirror dark-mode.css: the system setting, and the explicit
+   data-theme hook for a toggle that does not exist yet. --mp-panel is not
+   re-pointed — it tracks --glass-surface, which dark-mode.css already
+   swaps. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --mp-band: var(--dark-mp-band);
+    --mp-band-edge: var(--dark-mp-band-edge);
+    --mp-field: var(--dark-mp-field);
+  }
+}
+
+:root[data-theme='dark'] {
+  --mp-band: var(--dark-mp-band);
+  --mp-band-edge: var(--dark-mp-band-edge);
+  --mp-field: var(--dark-mp-field);
+}
+
+/* --------------------------------------------------------------------------
+   Disclosure
+   -------------------------------------------------------------------------- */
+
+/* Inherits the centring from .contact-inner — only the form fields opt back
+   out, since a left-aligned label above its input is the readable form. */
+.mp {
+  margin-top: 28px;
+}
+
+.mp-toggle {
+  /* .btn from styles.css supplies the capsule; this only adds the caret. */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mp-toggle::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.25s ease;
+}
+
+.mp-toggle[aria-expanded='true']::after {
+  transform: translateY(1px) rotate(-135deg);
+}
+
+/* 0fr -> 1fr animates to the content's own height without anyone having to
+   measure it in JS. The inner wrapper is what actually clips. */
+.mp-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.42s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.mp[data-open='true'] .mp-collapse {
+  grid-template-rows: 1fr;
+}
+
+.mp-collapse > div {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Panel
+   -------------------------------------------------------------------------- */
+
+.mp-panel {
+  max-width: 460px;
+  margin: 20px auto 0;
+  padding: 22px;
+  border-radius: var(--radius-lg);
+  background: var(--mp-panel);
+  border: 1px solid var(--glass-hairline);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  box-shadow: var(--glass-rim), var(--shadow-surface);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.3s ease 0.06s, transform 0.3s ease 0.06s;
+}
+
+.mp[data-open='true'] .mp-panel {
+  opacity: 1;
+  transform: none;
+}
+
+.mp-step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mp-step[hidden] {
+  display: none;
+}
+
+.mp-legend {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Wheels
+   -------------------------------------------------------------------------- */
+
+.mp-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  /* The columns butt together the way iOS's do — the band is what groups
+     them, so a gap here would break the row into three controls. */
+  gap: 0;
+}
+
+/* One band across the whole row, not one per wheel. It sits under the
+   columns; the columns have no background of their own, so the values read as
+   sitting *on* the band. */
+.mp-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: var(--mp-item-h);
+  transform: translateY(-50%);
+  border-radius: var(--radius-sm);
+  background: var(--mp-band);
+  box-shadow: inset 0 0 0 1px var(--mp-band-edge);
+  pointer-events: none;
+}
+
+.mp-wheel {
+  position: relative;
+  height: calc(var(--mp-item-h) * var(--mp-rows));
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  /* Without this, flinging a wheel past its last value hands the remaining
+     momentum to the page and the whole section jumps. */
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  /* The digits are a control, not copy. Left selectable, a press-and-drag on
+     the dial starts a text selection — the I-beam and a blue highlight
+     instead of a scroll. */
+  -webkit-user-select: none;
+  user-select: none;
+  /* The fade that makes the column read as a curved surface running off at
+     both ends rather than a list that has been cut. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 24%, #000 76%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 24%, #000 76%, transparent 100%);
+  outline: none;
+}
+
+.mp-wheel::-webkit-scrollbar {
+  display: none;
+}
+
+.mp-wheel:focus-visible {
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.mp-list {
+  list-style: none;
+  margin: 0;
+  /* Half the scrollport minus half a row, so the first and last values can
+     reach the centre band. */
+  padding: calc(var(--mp-item-h) * ((var(--mp-rows) - 1) / 2)) 0;
+}
+
+.mp-item {
+  height: var(--mp-item-h);
+  scroll-snap-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Perspective lives here, on the parent of the transformed element, so each
+     value gets its own vanishing point and the column curves evenly. Putting
+     it on .mp-wheel would only reach the <ul>. */
+  perspective: 460px;
+}
+
+/* The <li> is never transformed. Scroll snap measures the snap area from this
+   box, and a rotated one moves the value the browser snaps to — so the span
+   inside does the rotating and the li stays put. */
+.mp-item > span {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  transform: rotateX(calc(var(--r, 0) * 1deg)) scale(var(--s, 1));
+  opacity: var(--o, 1);
+  backface-visibility: hidden;
+  transition: color 0.2s ease;
+}
+
+/* A value outside working hours still scrolls past — you cannot stop snap
+   landing on it — so it is drawn as unavailable and the wheel steps off it on
+   settle. */
+.mp-item.is-invalid > span {
+  opacity: calc(var(--o, 1) * 0.28);
+}
+
+/* Every value is a target, not scenery: clicking one brings it to the centre.
+   The pointer is what says so — without it the column reads as scroll-only and
+   the click never gets tried. It stays a pointer over an unavailable value
+   too, because a click there still moves the wheel, exactly as scrolling onto
+   it does; the dimming is what says it cannot be booked. */
+.mp-item {
+  cursor: pointer;
+}
+
+/* Hover lifts the value out of the depth fade so the thing under the pointer
+   is legible before you commit to it. It is deliberately not transitioned —
+   the same opacity is rewritten every frame by paint(), and easing it would
+   smear the whole wheel while it scrolls. */
+@media (hover: hover) {
+  .mp-item:not(.is-invalid):not([aria-selected='true']):hover > span {
+    opacity: min(1, calc(var(--o, 1) + 0.3));
+  }
+}
+
+.mp-row + .mp-row {
+  margin-top: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Summary and errors
+   -------------------------------------------------------------------------- */
+
+.mp-summary {
+  text-align: center;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--color-text);
+  margin: 0;
+  min-height: 2.8em;
+}
+
+.mp-summary b {
+  font-weight: 600;
+}
+
+.mp-summary small {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.mp-note {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.mp-note[data-tone='warn'] {
+  color: #b3261e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .mp-note[data-tone='warn'] {
+    color: #f2b8b5;
+  }
+}
+
+:root[data-theme='dark'] .mp-note[data-tone='warn'] {
+  color: #f2b8b5;
+}
+
+/* --------------------------------------------------------------------------
+   Form
+   -------------------------------------------------------------------------- */
+
+.mp-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.mp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mp-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.mp-field input {
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--color-text);
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--mp-field);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mp-field input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+.mp-field input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+/* Honeypot. Off-screen rather than display:none — a bot that respects
+   visibility skips the latter, which defeats the point. */
+.mp-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.mp-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mp-actions .btn {
+  border: 1px solid var(--glass-hairline);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.mp-actions .btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.mp-back {
+  background: none;
+  border: none;
+  padding: 8px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.mp-back:hover {
+  color: var(--color-text);
+}
+
+/* --------------------------------------------------------------------------
+   Confirmation
+   -------------------------------------------------------------------------- */
+
+.mp-done {
+  text-align: center;
+  padding: 8px 0;
+}
+
+.mp-done h3 {
+  font-size: 1.1rem;
+  margin: 0 0 8px;
+}
+
+.mp-done p {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0 auto;
+  max-width: 34ch;
+}
+
+.mp-tick {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  color: var(--color-accent);
+  font-size: 1.3rem;
+}
+
+.mp-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Narrow screens
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+  :root {
+    --mp-item-h: 38px;
+  }
+
+  .mp-panel {
+    padding: 18px 12px;
+  }
+
+  .mp-item > span {
+    font-size: 1.2rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion
+   -------------------------------------------------------------------------- */
+
+/* The curve and the fade are static, so they stay — they are what the control
+   looks like, not motion. What goes is the animated open and the smooth
+   programmatic scrolls; JS reads the same query and jumps instead of glides. */
+@media (prefers-reduced-motion: reduce) {
+  .mp-collapse,
+  .mp-panel,
+  .mp-toggle::after {
+    transition: none;
+  }
+}
