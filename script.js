@@ -329,6 +329,47 @@ if ('IntersectionObserver' in window) {
   revealTargets.forEach((el) => el.classList.add('is-visible'));
 }
 
+// [logo] Company marks on the experience cards. Same reasoning as the gallery
+// slots below: a logo whose file isn't in assets/ yet gets a broken-image glyph
+// painted over the monogram underneath, so the element has to go, not just its
+// src. Dropping the real file in later needs no code change.
+document.querySelectorAll('.timeline-logo img').forEach((img) => {
+  const fit = () => {
+    // A load that finished with no intrinsic size is a file that isn't in
+    // assets/. Chrome paints a broken-image glyph over whatever is behind it,
+    // so the element has to go, not just its src — the monogram underneath
+    // then stands in until the real logo is dropped in.
+    if (!img.naturalWidth || !img.naturalHeight) {
+      img.hidden = true;
+      img.parentElement.classList.remove('has-logo');
+      return;
+    }
+
+    // A real logo is on the tile, so the monogram fallback stands down. It
+    // can't just stay behind the image: a logo with transparency lets the
+    // accent-coloured glyph through its gaps. See .has-logo in styles.css.
+    img.parentElement.classList.add('has-logo');
+
+    // A wordmark is far wider than it is tall, so cropping it square (the
+    // default full-bleed treatment) would leave two unreadable letters.
+    // Measured rather than hand-flagged per company: swap a logo for a
+    // differently-shaped file and the tile re-decides on its own.
+    const ratio = img.naturalWidth / img.naturalHeight;
+    img.parentElement.classList.toggle('is-wordmark', ratio > 1.25 || ratio < 0.8);
+  };
+
+  img.addEventListener('error', () => {
+    img.hidden = true;
+    img.parentElement.classList.remove('has-logo');
+  });
+  img.addEventListener('load', fit);
+
+  // This script runs after the markup, so a fast load — or a fast 404, which
+  // is what a missing local file is — has already settled and will fire
+  // neither event. Those have to be caught by inspection.
+  if (img.complete) fit();
+});
+
 // Droplet hover panels — the project tiles and the résumé button both. Reveal
 // and dismissal are CSS (:hover / :focus-within on the group); only the two
 // things CSS can't express live here.

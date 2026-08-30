@@ -871,19 +871,21 @@ section[id] {
 
 /* Each role is its own pane of glass, threaded onto the spine by its dot.
 
-   Two columns: the copy on the left, the project tile parked in the right-hand
-   one, with the meta row spanning both so the dates keep the full width to
-   right-align against. Laying the tile out rather than floating it absolutely
-   is what holds it the same distance below the dates on every card — centred
+   Three columns: the company logo, the copy, and the project tile parked in
+   the right-hand one, with the meta row spanning the latter two so the dates
+   keep the full width to right-align against. The logo column runs the full
+   height of the card so the bullets indent to sit under the role rather than
+   under the mark. Laying the tile out rather than floating it absolutely is
+   what holds it the same distance below the dates on every card — centred
    against the card, it drifted with the length of the bullet list. */
 .timeline-item {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   grid-template-areas:
-    'meta meta'
-    'desc tile';
-  column-gap: 24px;
+    'logo meta meta'
+    'logo desc tile';
+  column-gap: 20px;
   padding: 22px 24px;
   border-radius: var(--radius-md);
   background: var(--glass-surface);
@@ -912,13 +914,141 @@ section[id] {
   border: 2px solid var(--color-accent);
 }
 
+/* ---- [logo] Company mark -------------------------------------------------
+   Shaped the way macOS shapes an app icon — the same squircle the project
+   tiles use, at icon scale. Full-bleed: the artwork fills the tile edge to
+   edge, so a mark that ships with its own coloured ground keeps it.
+
+   `align-self: start` pins it to the top of the two-row column instead of
+   letting it centre against the whole card, which would drift down as the
+   bullet list grew. */
+.timeline-logo {
+  grid-area: logo;
+  position: relative;
+  align-self: start;
+  display: block;
+  width: 52px;
+  height: 52px;
+  /* Apple's icon grid puts the corner radius at just over 22% of the short
+     side; 12px is that ratio at this size. */
+  border-radius: 12px;
+  overflow: hidden;
+  /* A hairline so a logo with a white ground still reads as a tile against
+     the near-white card rather than bleeding into it. */
+  /* [dark-mode] */
+  border: 1px solid var(--glass-hairline);
+  background: var(--glass-chip);
+}
+
+@supports (corner-shape: squircle) {
+  .timeline-logo {
+    corner-shape: squircle;
+  }
+}
+
+/* The tile is a link to the company's LinkedIn — the same destination as the
+   name beside it. It's mouse-only by design (see the markup), so it needs a
+   pointer affordance but no focus ring: it can't be focused. */
+a.timeline-logo {
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+
+a.timeline-logo:hover {
+  transform: scale(1.06);
+  border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+.timeline-logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Above the monogram, which is a ::before on the tile. */
+  position: relative;
+  z-index: 1;
+}
+
+/* Same trap as the gallery slots below: `display: block` above outranks the UA
+   stylesheet's [hidden] rule, so script.js hiding a missing logo would do
+   nothing and the broken glyph would sit on top of the monogram. */
+.timeline-logo img[hidden] {
+  display: none;
+}
+
+/* A wordmark — wide and usually on a transparent ground, like Hitwicket's.
+   Cropping one to a square tile leaves two illegible letters, so it's fitted
+   whole instead, on a light plate. The plate is fixed white rather than a
+   theme token on purpose: a dark wordmark on a transparent ground would
+   otherwise vanish into the card in dark mode. script.js measures the file and
+   applies this — no per-logo decision, and it re-decides itself if you swap a
+   logo for a differently-shaped one. */
+.timeline-logo.is-wordmark {
+  background: #fff;
+}
+
+.timeline-logo.is-wordmark img {
+  object-fit: contain;
+  /* No inset. A wordmark this wide is width-limited, so every pixel of
+     padding comes straight off the letter height — 6px a side cost Hitwicket
+     a fifth of its cap height. It sits in the middle band of the tile, well
+     clear of the rounded corners, so it has nothing to collide with. */
+  padding: 0;
+  /* Keeps any padding inside the 52px box rather than adding to it. */
+  box-sizing: border-box;
+}
+
+/* Once a real logo is on the tile the monogram has done its job. It has to go,
+   not just sit behind: a logo with transparency (Hitwicket's wordmark) let the
+   accent-green glyph show through its gaps and read as colour artefacts in the
+   mark. script.js adds this class when an image reports real intrinsic size. */
+.timeline-logo.has-logo::before {
+  content: none;
+}
+
+/* The monogram, painted behind the image. A logo file covers it completely;
+   where one isn't in assets/ yet, script.js drops the broken img and this is
+   what shows through. Adding the file later needs no code change. */
+.timeline-logo::before {
+  content: attr(data-monogram);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  /* Behind the img, which is in flow and therefore paints above it. */
+  z-index: 0;
+}
+
+/* Role over company on the left, dates over location on the right — the two
+   stacks pushed to opposite edges of the card. */
 .timeline-meta {
   grid-area: meta;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: baseline;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
   margin-bottom: 10px;
+}
+
+.timeline-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.timeline-when {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: right;
+  /* The dates must never wrap mid-range and buckle the column. */
+  flex-shrink: 0;
 }
 
 .timeline-role {
@@ -930,16 +1060,20 @@ section[id] {
 .timeline-company {
   color: var(--color-accent);
   font-weight: 500;
+  /* Own line under the role, and only as wide as the name so the hover
+     capsule doesn't stretch across the card. */
+  align-self: flex-start;
 }
 
 /* Same capsule as the nav items: bare until pointed at, then the glass chip
-   materialises. The negative margin claws back most of the pill's padding so
-   it doesn't shove the dates around, but leaves ~6px so the capsule has
-   clearance from the role text instead of butting against it. */
+   materialises. The negative margin claws the pill's padding back so the box
+   takes no more room than the text — the horizontal half matters now that the
+   company sits on its own line under the role, where even a few px of inset
+   reads as a misalignment against the role's left edge. */
 .timeline-company a {
   display: inline-block;
   padding: 3px 9px;
-  margin: -3px -2px;
+  margin: -3px -9px;
   border-radius: 999px;
   color: inherit;
   text-decoration: none;
@@ -957,10 +1091,16 @@ section[id] {
   box-shadow: var(--glass-rim);
 }
 
+/* `.timeline-when` right-aligns the column now, so the old `margin-left: auto`
+   push is gone. */
 .timeline-dates {
   color: var(--color-text-muted);
   font-size: 0.9rem;
-  margin-left: auto;
+}
+
+.timeline-place {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
 }
 
 .timeline-desc {
@@ -1555,10 +1695,6 @@ section[id] {
     transform: translateY(0);
   }
 
-  .timeline-dates {
-    margin-left: 0;
-  }
-
   /* A narrow screen can't spare 36px of gutter for the spine, and the cards
      need their padding back for the text. */
   .timeline {
@@ -1568,14 +1704,40 @@ section[id] {
   }
 
   /* No spare right-hand column at this width — the text now fills it, so the
-     card collapses to a single column and the tile drops below the bullets. */
+     bullets and the tile break out to the full card width and stack. The logo
+     keeps its place beside the role rather than eating a row of its own. */
   .timeline-item {
     padding: 18px 18px;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
     grid-template-areas:
-      'meta'
-      'desc'
-      'tile';
+      'logo meta'
+      'desc desc'
+      'tile tile';
+    column-gap: 14px;
+  }
+
+  .timeline-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+  }
+
+  .timeline-logo::before {
+    font-size: 1.15rem;
+  }
+
+  /* Two columns of text don't fit next to a 44px logo — the dates drop under
+     the company and left-align with it. */
+  .timeline-meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .timeline-when {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    text-align: left;
   }
 
   .work-link {
@@ -1633,6 +1795,14 @@ section[id] {
   .nav-toggle span,
   .nav-links a {
     transition: none;
+  }
+
+  a.timeline-logo {
+    transition: none;
+  }
+
+  a.timeline-logo:hover {
+    transform: none;
   }
 
   /* The orb field stays as a still colour wash — no drift, revolve, colour
@@ -1762,7 +1932,8 @@ section[id] {
   .card-text,
   .about-text,
   .timeline-desc-list,
-  .timeline-dates {
+  .timeline-dates,
+  .timeline-place {
     color: var(--color-text);
   }
 
