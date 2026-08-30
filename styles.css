@@ -989,10 +989,10 @@ a.timeline-logo:hover {
 
 .timeline-logo.is-wordmark img {
   object-fit: contain;
-  /* No inset. A wordmark this wide is width-limited, so every pixel of
-     padding comes straight off the letter height — 6px a side cost Hitwicket
-     a fifth of its cap height. It sits in the middle band of the tile, well
-     clear of the rounded corners, so it has nothing to collide with. */
+  /* No inset. A wordmark is width-limited in a square tile, so every pixel of
+     padding comes straight off the letter height — 6px a side cost about a
+     fifth of it. A wordmark sits in the middle band of the tile, well clear
+     of the rounded corners, so it has nothing to collide with anyway. */
   padding: 0;
   /* Keeps any padding inside the 52px box rather than adding to it. */
   box-sizing: border-box;
