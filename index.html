@@ -24,6 +24,11 @@
        remove it entirely; see REMOVE-DARK-MODE.md. Must load after styles.css,
        since it overrides tokens declared there. -->
   <link rel="stylesheet" href="dark-mode.css">
+  <!-- [droplet] Removable feature. Delete this line, droplet-buttons.css and
+       droplet-buttons.js to remove it entirely; see REMOVE-DROPLET-BUTTONS.md.
+       Loads last so it can override the shared .btn glass in styles.css and
+       read the palette tokens dark-mode.css re-points. -->
+  <link rel="stylesheet" href="droplet-buttons.css">
 </head>
 <body>
 
@@ -563,6 +568,9 @@
   </div>
 
   <script src="glass.js"></script>
+  <!-- [droplet] Removable feature. Must load after glass.js, which owns the
+       lens it applies to the hero buttons. -->
+  <script src="droplet-buttons.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

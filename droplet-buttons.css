@@ -1,0 +1,201 @@
+/* ==========================================================================
+   Droplet buttons — liquid-glass treatment for the two hero buttons
+   ==========================================================================
+
+   Self-contained and removable: see REMOVE-DROPLET-BUTTONS.md.
+
+   Scoped to `.hero-actions .btn` on purpose. The contact-section buttons and
+   the nav pills keep the flatter house style — this heavier material is spent
+   on the two elements that sit over the orb field, which is the only place on
+   the page with a backdrop worth refracting.
+
+   Division of labour with droplet-buttons.js:
+     - the bend of the backdrop is a real SVG lens, driven from JS (glass.js)
+     - everything you see *on* the surface is here: the specular, the
+       chromatic rim, the squash
+
+   That split matters for the fallback. Safari and Firefox cannot run an SVG
+   filter inside backdrop-filter, so they lose the bend — but the surface
+   layers below are ordinary CSS and still read as glass.
+   ========================================================================== */
+
+/* Registered so they can be transitioned. An unregistered custom property is
+   an untyped token and animates as a step change, which makes the glint jump
+   home when the pointer leaves instead of easing. */
+@property --gx {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0.5;
+}
+
+@property --gy {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0.12;
+}
+
+:root {
+  /* Body tint. Deliberately thin — a droplet is mostly the thing behind it,
+     and a filled capsule has nothing to refract. Not zero: the label still
+     has to hold contrast against whichever orb drifts underneath. */
+  --droplet-tint: rgba(255, 255, 255, 0.14);
+  --droplet-edge: rgba(255, 255, 255, 0.55);
+  /* Primary light, raking across the top rim. */
+  --droplet-glint: rgba(255, 255, 255, 0.72);
+  /* Light returning off the page into the underside of the droplet. */
+  --droplet-bounce: rgba(255, 255, 255, 0.3);
+  --droplet-glow: rgba(255, 255, 255, 0.6);
+
+  /* Dark mode wants a much quieter surface: the same specular over a dark
+     backdrop reads as chalk rather than light. */
+  --dark-droplet-tint: rgba(255, 255, 255, 0.07);
+  --dark-droplet-edge: rgba(255, 255, 255, 0.24);
+  --dark-droplet-glint: rgba(255, 255, 255, 0.5);
+  --dark-droplet-bounce: rgba(255, 255, 255, 0.14);
+  --dark-droplet-glow: rgba(255, 255, 255, 0.42);
+}
+
+/* Both triggers mirror dark-mode.css: the system setting, and the explicit
+   data-theme hook for a toggle that does not exist yet. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --droplet-tint: var(--dark-droplet-tint);
+    --droplet-edge: var(--dark-droplet-edge);
+    --droplet-glint: var(--dark-droplet-glint);
+    --droplet-bounce: var(--dark-droplet-bounce);
+    --droplet-glow: var(--dark-droplet-glow);
+  }
+}
+
+:root[data-theme='dark'] {
+  --droplet-tint: var(--dark-droplet-tint);
+  --droplet-edge: var(--dark-droplet-edge);
+  --droplet-glint: var(--dark-droplet-glint);
+  --droplet-bounce: var(--dark-droplet-bounce);
+  --droplet-glow: var(--dark-droplet-glow);
+}
+
+/* ---- The capsule ------------------------------------------------------- */
+
+.hero-actions .btn {
+  /* Own stacking context, so the z-index:-1 surface layers below sit above
+     this element's own background but stay behind its label — and cannot
+     escape behind the hero. */
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--droplet-tint);
+  border-color: var(--droplet-edge);
+  box-shadow: var(--glass-rim), var(--shadow-surface),
+    /* A droplet resting on a surface throws a tight contact shadow, not the
+       diffuse one a flat card gets. */ 0 1px 2px rgba(0, 0, 0, 0.08);
+  /* The overshoot is the release curve — see :active below. */
+  transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.28, 1.25),
+    color 0.2s ease, border-color 0.25s ease, box-shadow 0.3s ease,
+    --gx 0.45s ease-out, --gy 0.45s ease-out;
+}
+
+/* ---- Specular ---------------------------------------------------------- */
+
+.hero-actions .btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    /* Pointer glint. --gx/--gy are written by droplet-buttons.js; the
+       defaults put it top-centre so the button is lit before it is touched
+       and on devices that never send a pointer. */
+    radial-gradient(
+      38% 105% at calc(var(--gx) * 100%) calc(var(--gy) * 100%),
+      var(--droplet-glow),
+      transparent 55%
+    ),
+    /* Top rim crescent — the primary light source, fixed overhead. */
+      radial-gradient(
+        130% 90% at 50% -32%,
+        var(--droplet-glint),
+        transparent 62%
+      ),
+    /* Underside bounce, dimmer and tighter. */
+      radial-gradient(
+        130% 75% at 50% 132%,
+        var(--droplet-bounce),
+        transparent 60%
+      );
+}
+
+/* ---- Chromatic rim ----------------------------------------------------- */
+
+/* A hairline of split light around the edge. The SVG lens already disperses
+   the backdrop in Chromium; this is the dispersion you see *on* the glass
+   itself, and it is the whole refraction story in Safari and Firefox.
+
+   Drawn as a full-bleed conic gradient masked down to a 1px ring: the two
+   masks are XORed, so only the band between the border box and the content
+   box survives. */
+.hero-actions .btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  opacity: 0.75;
+  background: conic-gradient(
+    from 205deg,
+    rgba(125, 225, 255, 0) 0deg,
+    rgba(125, 225, 255, 0.9) 48deg,
+    rgba(255, 255, 255, 0.95) 118deg,
+    rgba(255, 150, 225, 0.85) 196deg,
+    rgba(255, 195, 130, 0.6) 262deg,
+    rgba(125, 225, 255, 0) 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  transition: opacity 0.3s ease;
+}
+
+/* ---- Deformation ------------------------------------------------------- */
+
+.hero-actions .btn:hover,
+.hero-actions .btn:focus-visible {
+  /* The lens bends harder at the same time — droplet-buttons.js ramps the
+     displacement scale. This transform is only the swell of the body. */
+  transform: scale(1.025);
+  /* styles.css turns the border accent-coloured on hover, which fights the
+     chromatic rim. Let the rim be the thing that brightens instead. */
+  border-color: var(--droplet-edge);
+  box-shadow: var(--glass-rim), var(--shadow-lifted),
+    0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.hero-actions .btn:hover::after,
+.hero-actions .btn:focus-visible::after {
+  opacity: 1;
+}
+
+/* Surface tension: the droplet flattens against the page under the press —
+   wider and shorter, not uniformly smaller — then the release curve above
+   lets it overshoot back to round. */
+.hero-actions .btn:active {
+  transform: scale(1.06, 0.9);
+  transition: transform 0.09s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-actions .btn,
+  .hero-actions .btn:hover,
+  .hero-actions .btn:focus-visible,
+  .hero-actions .btn:active {
+    /* The refraction and the specular are static, so they stay. Only the
+       motion goes. */
+    transform: none;
+    transition: color 0.2s ease, border-color 0.25s ease;
+  }
+}
