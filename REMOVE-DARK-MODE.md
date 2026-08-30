@@ -6,11 +6,12 @@ about a minute and leaves the site exactly as it was before.
 ## The fast way
 
 ```sh
-git revert 5914d66
+git revert "$(git log --format=%H --grep='^Add dark mode, following the system setting' -1)"
 ```
 
 The whole feature is one commit. This is the guaranteed path — it cannot miss
-anything.
+anything. (Looked up by message rather than pinned to a hash, so it survives a
+rebase or an amend.)
 
 ## The manual way
 
