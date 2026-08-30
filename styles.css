@@ -42,10 +42,10 @@
   --glass-hairline: rgba(255, 255, 255, 0.55);
 
   /* Larger surfaces read as thicker, so they cast further. */
-  --shadow-chrome: 0 8px 28px -10px rgba(31, 38, 34, 0.24),
-    0 2px 8px -4px rgba(31, 38, 34, 0.12);
-  --shadow-surface: 0 4px 20px -10px rgba(31, 38, 34, 0.18);
-  --shadow-lifted: 0 14px 34px -12px rgba(31, 38, 34, 0.26);
+  --shadow-chrome: 0 8px 28px -10px rgba(var(--shadow-rgb), 0.24),
+    0 2px 8px -4px rgba(var(--shadow-rgb), 0.12);
+  --shadow-surface: 0 4px 20px -10px rgba(var(--shadow-rgb), 0.18);
+  --shadow-lifted: 0 14px 34px -12px rgba(var(--shadow-rgb), 0.26);
 
   /* Concentric radii, Apple-style: generous and consistent. */
   --radius-lg: 22px;
@@ -55,6 +55,35 @@
   --nav-inset: 10px;
   --nav-h: 60px;
   --nav-block: calc(var(--nav-h) + var(--nav-inset) * 2);
+
+  /* ---- [dark-mode] theme hooks ------------------------------------------
+     These tokens exist so the dark theme in dark-mode.css has something to
+     override. Their values here are the exact colours that were previously
+     hardcoded at each use site, so light mode renders identically to before.
+     Removing dark mode means inlining these back and deleting this block. */
+
+  /* Shadow ink. Every shadow in the sheet mixes this triplet at its own
+     opacity, so the theme only has to restate the colour, not 17 stacks. */
+  --shadow-rgb: 31, 38, 34;
+  /* The portrait carries a plain black shadow rather than the warm one. */
+  --shadow-portrait: 0 12px 32px -12px rgba(0, 0, 0, 0.25);
+
+  /* The grazing highlight along the top and bottom faces of the chrome. */
+  --glass-specular-top: rgba(255, 255, 255, 0.22);
+  --glass-specular-bottom: rgba(255, 255, 255, 0.1);
+  /* A neutral hairline for edges that a white rim would dissolve into. */
+  --glass-edge: rgba(31, 38, 34, 0.13);
+  /* The two near-opaque materials: the tile badge and the mobile nav sheet. */
+  --glass-badge: rgba(255, 255, 255, 0.88);
+  --glass-sheet: rgba(255, 255, 255, 0.95);
+  /* Lifts nav glyphs where the backdrop behind the bar goes dark. */
+  --nav-label-halo: 0 0 4px rgba(255, 255, 255, 0.65),
+    0 0 1px rgba(255, 255, 255, 0.6);
+
+  /* Two text tones that sit on busier backdrops than plain muted grey suits:
+     the hero tagline over the orb field, and card copy over translucency. */
+  --color-text-hero: #3a3a3a;
+  --color-text-card: #4f4f4f;
 }
 
 /* Pseudo-elements are NOT matched by `*`, so without ::before/::after here they
@@ -183,10 +212,11 @@ section[id] {
   background:
     linear-gradient(
       to bottom,
-      rgba(255, 255, 255, 0.22),
+      /* [dark-mode] */
+      var(--glass-specular-top),
       rgba(255, 255, 255, 0) 42%,
       rgba(255, 255, 255, 0) 78%,
-      rgba(255, 255, 255, 0.1)
+      var(--glass-specular-bottom)
     ),
     var(--glass-chrome);
   /* Blur stays low so the refraction stays legible as refraction — heavy blur
@@ -266,7 +296,8 @@ section[id] {
      glyphs against the pale backdrop the bar sits on most of the time, which
      is the majority case. Contrast still clears the 4.5 floor at the worst
      spot; the halo just stops announcing itself the rest of the time. */
-  text-shadow: 0 0 4px rgba(255, 255, 255, 0.65), 0 0 1px rgba(255, 255, 255, 0.6);
+  /* [dark-mode] */
+  text-shadow: var(--nav-label-halo);
   transition: color 0.18s ease, background-color 0.18s ease,
     border-color 0.18s ease, box-shadow 0.18s ease;
 }
@@ -284,7 +315,8 @@ section[id] {
   background-color: var(--glass-chip);
   /* A white hairline vanishes against a white-ish bar, so the edge is defined
      by a soft neutral instead. */
-  border-color: rgba(31, 38, 34, 0.13);
+  /* [dark-mode] */
+  border-color: var(--glass-edge);
   box-shadow: var(--glass-rim);
 }
 
@@ -671,7 +703,8 @@ section[id] {
   /* Darker than the muted grey used elsewhere: that tone reads fine on a plain
      surface but measured 3.25:1 against the orb field behind it. Scoped to the
      hero so body copy on flat sections keeps its lighter voice. */
-  color: #3a3a3a;
+  /* [dark-mode] */
+  color: var(--color-text-hero);
   max-width: 560px;
   margin: 0 auto 32px;
   text-wrap: balance;
@@ -767,7 +800,8 @@ section[id] {
   height: 260px;
   border-radius: 50%;
   overflow: hidden;
-  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.25);
+  /* [dark-mode] */
+  box-shadow: var(--shadow-portrait);
 }
 
 .about-photo img {
@@ -918,7 +952,8 @@ section[id] {
 
 .timeline-company a:hover {
   background-color: var(--glass-chip);
-  border-color: rgba(31, 38, 34, 0.13);
+  /* [dark-mode] */
+  border-color: var(--glass-edge);
   box-shadow: var(--glass-rim);
 }
 
@@ -993,9 +1028,10 @@ section[id] {
   text-decoration: none;
   /* Ambient spread plus a tighter key shadow, so the tile sits above the card
      without the single soft blur that reads as a drop shadow from 2012. */
-  box-shadow: 0 1px 1px rgba(31, 38, 34, 0.1),
-    0 8px 20px -8px rgba(31, 38, 34, 0.3),
-    0 18px 40px -22px rgba(31, 38, 34, 0.4);
+  /* [dark-mode] */
+  box-shadow: 0 1px 1px rgba(var(--shadow-rgb), 0.1),
+    0 8px 20px -8px rgba(var(--shadow-rgb), 0.3),
+    0 18px 40px -22px rgba(var(--shadow-rgb), 0.4);
   transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.15),
     box-shadow 0.32s ease;
 }
@@ -1021,7 +1057,8 @@ section[id] {
   background: var(--color-bg-alt);
   /* A dark hairline, not a white one: the tile sits on a near-white card, so a
      light edge would dissolve into it rather than contain the photos. */
-  box-shadow: inset 0 0 0 1px rgba(31, 38, 34, 0.12);
+  /* [dark-mode] */
+  box-shadow: inset 0 0 0 1px rgba(var(--shadow-rgb), 0.12);
 }
 
 .work-tile-grid img {
@@ -1053,11 +1090,13 @@ section[id] {
   height: 27px;
   border-radius: 50%;
   color: var(--color-accent);
-  background: rgba(255, 255, 255, 0.88);
+  /* [dark-mode] */
+  background: var(--glass-badge);
   backdrop-filter: blur(6px) saturate(180%);
   -webkit-backdrop-filter: blur(6px) saturate(180%);
-  box-shadow: var(--glass-rim), 0 3px 8px -3px rgba(31, 38, 34, 0.34),
-    0 0 0 1px rgba(31, 38, 34, 0.06);
+  /* [dark-mode] */
+  box-shadow: var(--glass-rim), 0 3px 8px -3px rgba(var(--shadow-rgb), 0.34),
+    0 0 0 1px rgba(var(--shadow-rgb), 0.06);
 }
 
 .work-tile-badge svg {
@@ -1068,9 +1107,10 @@ section[id] {
 .work-link:hover .work-tile,
 .work-link:focus-within .work-tile {
   transform: scale(1.04);
-  box-shadow: 0 1px 1px rgba(31, 38, 34, 0.1),
-    0 14px 30px -10px rgba(31, 38, 34, 0.34),
-    0 28px 56px -26px rgba(31, 38, 34, 0.45);
+  /* [dark-mode] */
+  box-shadow: 0 1px 1px rgba(var(--shadow-rgb), 0.1),
+    0 14px 30px -10px rgba(var(--shadow-rgb), 0.34),
+    0 28px 56px -26px rgba(var(--shadow-rgb), 0.45);
 }
 
 /* Same specificity as the hover rule above, so it has to come after it. */
@@ -1094,8 +1134,9 @@ section[id] {
   border-radius: var(--radius-md);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
-  box-shadow: 0 22px 46px -18px rgba(31, 38, 34, 0.36),
-    0 4px 12px -6px rgba(31, 38, 34, 0.16);
+  /* [dark-mode] */
+  box-shadow: 0 22px 46px -18px rgba(var(--shadow-rgb), 0.36),
+    0 4px 12px -6px rgba(var(--shadow-rgb), 0.16);
   /* Anchored under the tile's centre, so it grows out of the collage. */
   transform-origin: 78% 100%;
   opacity: 0;
@@ -1337,7 +1378,8 @@ section[id] {
    than plain muted grey would — vibrancy keeps it legible as the backdrop
    shifts underneath. */
 .card-text {
-  color: #4f4f4f;
+  /* [dark-mode] */
+  color: var(--color-text-card);
   margin: 0;
   font-size: 0.95rem;
   text-wrap: pretty;
@@ -1473,7 +1515,8 @@ section[id] {
        floating over a sliver of it, so at 0.72 the hero headline read straight
        through and collided with the nav labels. Near-opaque is the correct
        weight for a surface that takes over the screen. */
-    background: rgba(255, 255, 255, 0.95);
+    /* [dark-mode] */
+    background: var(--glass-sheet);
     backdrop-filter: blur(15px) saturate(190%);
     -webkit-backdrop-filter: blur(15px) saturate(190%);
     box-shadow: var(--glass-rim), var(--shadow-chrome);

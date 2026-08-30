@@ -1,0 +1,273 @@
+/* ============================================================================
+   DARK MODE — self-contained, removable feature.
+
+   This file is the entire dark theme. It is additive: styles.css knows nothing
+   about it beyond exposing the tokens this file overrides. Delete this file and
+   its <link> in index.html and the site is exactly as it was.
+   See REMOVE-DARK-MODE.md for the full removal steps.
+
+   Structure:
+     1. The palette, declared once as inert --dark-* values.
+     2. Two triggers that map that palette onto the live tokens.
+     3. The handful of rules that tokens alone cannot reach.
+   ========================================================================= */
+
+/* Tells the browser both themes exist, so form controls, scrollbars and the
+   canvas behind the page follow along instead of staying stubbornly light.
+   Set here rather than as a <meta> tag so removal touches one file fewer. */
+:root {
+  color-scheme: light dark;
+}
+
+/* ---- 1. The palette ------------------------------------------------------
+   Declared unconditionally and unused until a trigger below maps it, so the
+   values live in exactly one place while two selectors can apply them. */
+:root {
+  /* Not a mathematical inversion of the light palette. The light theme is
+     warm (#f7f7f5, #e7e5e0), so a neutral grey-black would read as a
+     different site with the lights off; these carry the same warmth and a
+     faint green cast picked up from the accent. */
+  --dark-bg: #101312;
+  --dark-bg-alt: #171b19;
+  --dark-text: #eceae6;
+  --dark-text-muted: #a2a29b;
+  --dark-border: #2a2f2c;
+  --dark-border-strong: #3c4340;
+
+  /* #2d6a4f is a dark green — on a dark ground it collapses to about 1.6:1
+     and effectively disappears. Lifting it to this tint restores ~10:1 while
+     staying recognisably the same hue. */
+  --dark-accent: #74c69d;
+  /* Flips: this is the text sitting *on* the accent, not the accent itself. */
+  --dark-accent-contrast: #0c0f0e;
+
+  /* Both of these invert their relationship to muted grey. In light mode they
+     are darker than muted because they sit on busier backdrops and need more
+     contrast; on dark, "more contrast" means lighter. */
+  --dark-text-hero: #cfcfc9;
+  --dark-text-card: #b8b8b1;
+
+  /* ---- Glass ----
+     The single biggest difference between the themes. Light glass is a white
+     fill at 0.16-0.25; the same fill on a dark ground is not glass, it is
+     milk. Dark glass is a much thinner white veil, and its depth comes from
+     the rim highlight rather than the fill. */
+  --dark-glass-chrome: rgba(255, 255, 255, 0.05);
+  --dark-glass-surface: rgba(255, 255, 255, 0.07);
+  --dark-glass-chip: rgba(255, 255, 255, 0.1);
+
+  /* The rim does more work here than in light mode, so the top highlight is
+     proportionally stronger and the bottom shade much deeper. */
+  --dark-glass-rim: inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+  --dark-glass-hairline: rgba(255, 255, 255, 0.1);
+  /* Inverts outright: the light theme uses a dark hairline because a white one
+     dissolves into a white bar. On dark the same logic runs the other way. */
+  --dark-glass-edge: rgba(255, 255, 255, 0.18);
+
+  --dark-glass-specular-top: rgba(255, 255, 255, 0.1);
+  --dark-glass-specular-bottom: rgba(255, 255, 255, 0.04);
+
+  /* The two near-opaque materials stop being white panes and become dark ones;
+     a 0.88 white badge on a dark page is a hole punched through it. */
+  --dark-glass-badge: rgba(22, 26, 24, 0.85);
+  --dark-glass-sheet: rgba(16, 19, 18, 0.96);
+
+  /* ---- Shadow ----
+     A warm grey shadow is invisible against a dark ground, so the ink goes to
+     true black and every opacity roughly doubles. Even then shadows read as
+     weight rather than as cast light, which is why the rim above matters. */
+  --dark-shadow-rgb: 0, 0, 0;
+  --dark-shadow-chrome: 0 8px 28px -10px rgba(0, 0, 0, 0.7),
+    0 2px 8px -4px rgba(0, 0, 0, 0.5);
+  --dark-shadow-surface: 0 4px 20px -10px rgba(0, 0, 0, 0.55);
+  --dark-shadow-lifted: 0 14px 34px -12px rgba(0, 0, 0, 0.72);
+  --dark-shadow-portrait: 0 12px 32px -12px rgba(0, 0, 0, 0.8);
+
+  /* The halo inverts. In light mode a white glow lifts dark glyphs off the
+     dark parts of the backdrop; here the glyphs are light, and what they need
+     separating from are the *bright* parts of the orb field. */
+  --dark-nav-label-halo: 0 0 4px rgba(0, 0, 0, 0.6),
+    0 0 1px rgba(0, 0, 0, 0.55);
+}
+
+/* ---- 2. Triggers ---------------------------------------------------------
+   The mapping is stated twice because CSS cannot share a declaration block
+   between a media query and a plain selector. The values are not duplicated,
+   only the wiring, so a colour is still changed in exactly one place. */
+
+/* Trigger A: the operating system or browser is set to dark. This is the one
+   that ships. Pure CSS, so it applies on first paint with no flash. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: var(--dark-bg);
+    --color-bg-alt: var(--dark-bg-alt);
+    --color-text: var(--dark-text);
+    --color-text-muted: var(--dark-text-muted);
+    --color-border: var(--dark-border);
+    --color-border-strong: var(--dark-border-strong);
+    --color-accent: var(--dark-accent);
+    --color-accent-contrast: var(--dark-accent-contrast);
+    --color-text-hero: var(--dark-text-hero);
+    --color-text-card: var(--dark-text-card);
+
+    --glass-chrome: var(--dark-glass-chrome);
+    --glass-surface: var(--dark-glass-surface);
+    --glass-chip: var(--dark-glass-chip);
+    --glass-rim: var(--dark-glass-rim);
+    --glass-hairline: var(--dark-glass-hairline);
+    --glass-edge: var(--dark-glass-edge);
+    --glass-specular-top: var(--dark-glass-specular-top);
+    --glass-specular-bottom: var(--dark-glass-specular-bottom);
+    --glass-badge: var(--dark-glass-badge);
+    --glass-sheet: var(--dark-glass-sheet);
+
+    --shadow-rgb: var(--dark-shadow-rgb);
+    --shadow-chrome: var(--dark-shadow-chrome);
+    --shadow-surface: var(--dark-shadow-surface);
+    --shadow-lifted: var(--dark-shadow-lifted);
+    --shadow-portrait: var(--dark-shadow-portrait);
+
+    --nav-label-halo: var(--dark-nav-label-halo);
+  }
+}
+
+/* Trigger B: an explicit choice, for a toggle that does not exist yet. No UI
+   ships for this — it is here so adding a toggle later is a button and a
+   localStorage read, with no restructuring of the CSS. The :not() above means
+   data-theme="light" also already works as an override back to light. */
+:root[data-theme="dark"] {
+  --color-bg: var(--dark-bg);
+  --color-bg-alt: var(--dark-bg-alt);
+  --color-text: var(--dark-text);
+  --color-text-muted: var(--dark-text-muted);
+  --color-border: var(--dark-border);
+  --color-border-strong: var(--dark-border-strong);
+  --color-accent: var(--dark-accent);
+  --color-accent-contrast: var(--dark-accent-contrast);
+  --color-text-hero: var(--dark-text-hero);
+  --color-text-card: var(--dark-text-card);
+
+  --glass-chrome: var(--dark-glass-chrome);
+  --glass-surface: var(--dark-glass-surface);
+  --glass-chip: var(--dark-glass-chip);
+  --glass-rim: var(--dark-glass-rim);
+  --glass-hairline: var(--dark-glass-hairline);
+  --glass-edge: var(--dark-glass-edge);
+  --glass-specular-top: var(--dark-glass-specular-top);
+  --glass-specular-bottom: var(--dark-glass-specular-bottom);
+  --glass-badge: var(--dark-glass-badge);
+  --glass-sheet: var(--dark-glass-sheet);
+
+  --shadow-rgb: var(--dark-shadow-rgb);
+  --shadow-chrome: var(--dark-shadow-chrome);
+  --shadow-surface: var(--dark-shadow-surface);
+  --shadow-lifted: var(--dark-shadow-lifted);
+  --shadow-portrait: var(--dark-shadow-portrait);
+
+  --nav-label-halo: var(--dark-nav-label-halo);
+}
+
+/* ---- 3. What tokens cannot reach -----------------------------------------
+   Four things are written as whole declarations rather than token values, so
+   they need real rules. Each is scoped to both triggers. */
+
+@media (prefers-color-scheme: dark) {
+  /* The fixed wash that gives the glass something to refract. The light
+     version is a dark green at 0.09 over white; subtractive tints over a dark
+     ground do nothing at all, so these lift and warm slightly. */
+  :root:not([data-theme="light"]) body::before {
+    background:
+      radial-gradient(58% 44% at 14% 8%, rgba(64, 145, 108, 0.17), transparent 70%),
+      radial-gradient(52% 40% at 88% 22%, rgba(110, 140, 190, 0.15), transparent 72%),
+      radial-gradient(60% 46% at 62% 96%, rgba(64, 145, 108, 0.12), transparent 74%);
+  }
+
+  /* The orbs blend with plus-lighter, which is purely additive — against a
+     near-black ground the same tints that read as a pale wash on white come up
+     roughly twice as hot. Dimming the field as a whole keeps all six in their
+     existing relationship to each other, which restating 24 colour values one
+     at a time would not. */
+  :root:not([data-theme="light"]) .hero-orbs {
+    opacity: 0.5;
+  }
+
+  /* The résumé render is a white page. It stays white — a document should look
+     like paper — but on a dark panel it floats without an edge, so it gets
+     one, and a little of the glare comes off. */
+  :root:not([data-theme="light"]) .link-pop--resume .link-pop-shot img {
+    filter: brightness(0.92);
+  }
+
+  :root:not([data-theme="light"]) .link-pop--resume .link-pop-shot {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  }
+}
+
+:root[data-theme="dark"] body::before {
+  background:
+    radial-gradient(58% 44% at 14% 8%, rgba(64, 145, 108, 0.17), transparent 70%),
+    radial-gradient(52% 40% at 88% 22%, rgba(110, 140, 190, 0.15), transparent 72%),
+    radial-gradient(60% 46% at 62% 96%, rgba(64, 145, 108, 0.12), transparent 74%);
+}
+
+:root[data-theme="dark"] .hero-orbs {
+  opacity: 0.5;
+}
+
+:root[data-theme="dark"] .link-pop--resume .link-pop-shot img {
+  filter: brightness(0.92);
+}
+
+:root[data-theme="dark"] .link-pop--resume .link-pop-shot {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+/* ---- Print ---------------------------------------------------------------
+   Paper is white whatever the screen is doing. Without this, printing from a
+   dark-mode browser puts #eceae6 text on white paper — a blank page. Last in
+   the file so it wins, and it restores the light values rather than merely
+   forcing black, so the accent and borders stay coherent. */
+@media print {
+  /* !important, and not merely a more specific selector, because both triggers
+     above outrank a plain :root — :root:not([data-theme="light"]) scores (0,2,0)
+     against :root's (0,1,0). Chrome does force prefers-color-scheme to light
+     while printing, but Safari and Firefox have not always, and a silent
+     regression here is an entirely blank page. */
+  :root,
+  :root[data-theme="dark"] {
+    color-scheme: light !important;
+    --color-bg: #ffffff !important;
+    --color-bg-alt: #f7f7f5 !important;
+    --color-text: #1a1a1a !important;
+    --color-text-muted: #5c5c5c !important;
+    --color-border: #e7e5e0 !important;
+    --color-border-strong: #d5d1c8 !important;
+    --color-accent: #2d6a4f !important;
+    --color-accent-contrast: #ffffff !important;
+    --color-text-hero: #3a3a3a !important;
+    --color-text-card: #4f4f4f !important;
+    --shadow-rgb: 31, 38, 34 !important;
+
+    /* The materials too, or a 0.18 white hairline and a 0.05 white fill land
+       on white paper as nothing at all. */
+    --glass-chrome: rgba(255, 255, 255, 0.16) !important;
+    --glass-surface: rgba(255, 255, 255, 0.25) !important;
+    --glass-chip: rgba(255, 255, 255, 0.22) !important;
+    --glass-rim: inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.045) !important;
+    --glass-hairline: rgba(255, 255, 255, 0.55) !important;
+    --glass-edge: rgba(31, 38, 34, 0.13) !important;
+    --glass-badge: rgba(255, 255, 255, 0.88) !important;
+    --glass-sheet: rgba(255, 255, 255, 0.95) !important;
+    --nav-label-halo: none !important;
+  }
+
+  body::before {
+    display: none;
+  }
+
+  .hero-orbs {
+    opacity: 1;
+  }
+}
