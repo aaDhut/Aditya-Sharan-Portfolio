@@ -123,10 +123,10 @@
         // Fraction by which red and blue displacement differ from green. Keep
         // it small — this is a rim fringe, not a prism.
         dispersion: 0.08,
-        blur: 6,
+        blur: 3,
         saturate: 1.7,
         radius: null,
-        fallbackBlur: 12,
+        fallbackBlur: 6,
       },
       opts
     );

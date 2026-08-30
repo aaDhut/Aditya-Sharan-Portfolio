@@ -13,10 +13,12 @@
   <meta name="twitter:title" content="Aditya Sharan — Product Manager">
   <meta name="twitter:description" content="From concept to ship: 5 years in game production, now applying that discipline to AI product management.">
   <meta name="twitter:image" content="assets/profile.jpg">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Borel&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -48,12 +50,22 @@
 
     <!-- HERO / ABOUT -->
     <section id="top" class="hero">
+      <!-- Drifting colour field behind the hero. Purely decorative, so it is
+           hidden from assistive tech; the orbs are moved by CSS and, where
+           motion is welcome, nudged by the pointer from script.js. -->
+      <div class="hero-orbs" aria-hidden="true">
+        <div class="orb orb-1" data-depth="26"><span></span><span></span><span></span><span></span></div>
+        <div class="orb orb-2" data-depth="-38"><span></span><span></span><span></span><span></span></div>
+        <div class="orb orb-3" data-depth="18"><span></span><span></span><span></span><span></span></div>
+        <div class="orb orb-4" data-depth="-22"><span></span><span></span><span></span><span></span></div>
+        <div class="orb orb-5" data-depth="32"><span></span><span></span><span></span><span></span></div>
+        <div class="orb orb-6" data-depth="-14"><span></span><span></span><span></span><span></span></div>
+      </div>
       <div class="container hero-inner">
         <p class="eyebrow">Product Manager</p>
         <h1>Hi, I'm Aditya Sharan.</h1>
         <p class="hero-tagline">From concept to ship: 5 years in game production, now applying that discipline to AI product management.</p>
         <div class="hero-actions">
-          <div class="hero-glow" aria-hidden="true"></div>
           <a href="#contact" class="btn btn-primary">Get in touch</a>
           <a href="assets/resume.pdf" class="btn btn-secondary" download="Aditya Sharan - Resume.pdf">Download résumé</a>
         </div>
@@ -94,6 +106,72 @@
               <li>Set production standards, balancing user experience, feasibility, and timelines.</li>
               <li>Drive workflow improvements to scale team output and consistency.</li>
             </ul>
+            <!-- Collage tile linking out to the ArtStation project. The panel is a
+                 local gallery, not an embed: ArtStation serves
+                 `x-frame-options: SAMEORIGIN`, so an iframe of the real page
+                 renders blank in every browser. -->
+            <div class="work-link">
+              <a class="work-tile" href="https://www.artstation.com/artwork/bgENbE"
+                 target="_blank" rel="noopener" aria-describedby="artstation-battlebucks">
+                <span class="work-tile-grid" aria-hidden="true">
+                  <img src="assets/artstation-battlebucks-tile-1.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                  <img src="assets/artstation-battlebucks-tile-2.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                  <img src="assets/artstation-battlebucks-tile-3.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                  <img src="assets/artstation-battlebucks-tile-4.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                </span>
+                <span class="work-tile-badge" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path fill="currentColor" d="M0 17.723l2.027 3.505h.001a2.424 2.424 0 0 0 2.164 1.333h13.457l-2.792-4.838H0zm24 .025c0-.484-.143-.935-.388-1.314L15.728 2.728a2.424 2.424 0 0 0-2.142-1.289H9.419L21.598 22.54l1.92-3.325c.378-.637.482-.919.482-1.467zm-11.129-3.462L7.428 4.858l-5.444 9.428h10.887z"/>
+                  </svg>
+                </span>
+                <span class="sr-only">View the Battlebucks project on ArtStation (opens in a new tab)</span>
+              </a>
+
+              <div class="link-pop" id="artstation-battlebucks" role="tooltip">
+                <div class="link-pop-strip">
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/bgENbE" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-battlebucks-01.jpg" alt="" loading="lazy" decoding="async" width="800" height="800">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/bgENbE" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-battlebucks-02.jpg" alt="" loading="lazy" decoding="async" width="800" height="474">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/bgENbE" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-battlebucks-03.jpg" alt="" loading="lazy" decoding="async" width="800" height="438">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/bgENbE" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-battlebucks-04.jpg" alt="" loading="lazy" decoding="async" width="800" height="422">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/bgENbE" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-battlebucks-05.jpg" alt="" loading="lazy" decoding="async" width="800" height="422">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/bgENbE" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-battlebucks-06.jpg" alt="" loading="lazy" decoding="async" width="800" height="422">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/bgENbE" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-battlebucks-07.jpg" alt="" loading="lazy" decoding="async" width="800" height="422">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/bgENbE" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-battlebucks-08.jpg" alt="" loading="lazy" decoding="async" width="800" height="422">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/bgENbE" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-battlebucks-09.jpg" alt="" loading="lazy" decoding="async" width="800" height="422">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/bgENbE" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-battlebucks-10.jpg" alt="" loading="lazy" decoding="async" width="800" height="505">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/bgENbE" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-battlebucks-11.jpg" alt="" loading="lazy" decoding="async" width="800" height="505">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/bgENbE" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-battlebucks-12.jpg" alt="" loading="lazy" decoding="async" width="800" height="400">
+                  </a>
+                </div>
+                <div class="link-pop-foot">
+                  <span class="link-pop-title">Lionel Messi the G.O.A.T</span>
+                  <span class="link-pop-host">artstation.com &#8599;</span>
+                </div>
+              </div>
+            </div>
           </li>
           <li class="timeline-item">
             <div class="timeline-meta">
@@ -106,6 +184,123 @@
               <li>Partnered with Art, Design, Engineering, and Animation to ship player-facing features.</li>
               <li>Optimized pipeline performance; prioritized fidelity, cost, and timeline trade-offs.</li>
             </ul>
+
+            <!-- Collage tile linking out to the ArtStation project. The panel is a
+                 local gallery, not an embed: ArtStation serves
+                 `x-frame-options: SAMEORIGIN`, so an iframe of the real page
+                 renders blank in every browser. Drop exports into assets/ as
+                 artstation-hitwicket-N.jpg and they appear here; a missing
+                 file leaves its placeholder block (see script.js). -->
+            <div class="work-link">
+              <a class="work-tile" href="https://www.artstation.com/artwork/GvdVP3"
+                 target="_blank" rel="noopener" aria-describedby="artstation-hitwicket">
+                <span class="work-tile-grid" aria-hidden="true">
+                  <img src="assets/artstation-hitwicket-tile-1.jpg" alt="" width="240" height="240" loading="lazy" decoding="async">
+                  <img src="assets/artstation-hitwicket-tile-2.jpg" alt="" width="240" height="240" loading="lazy" decoding="async">
+                  <img src="assets/artstation-hitwicket-tile-3.jpg" alt="" width="240" height="240" loading="lazy" decoding="async">
+                  <img src="assets/artstation-hitwicket-tile-4.jpg" alt="" width="240" height="240" loading="lazy" decoding="async">
+                </span>
+                <span class="work-tile-badge" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path fill="currentColor" d="M0 17.723l2.027 3.505h.001a2.424 2.424 0 0 0 2.164 1.333h13.457l-2.792-4.838H0zm24 .025c0-.484-.143-.935-.388-1.314L15.728 2.728a2.424 2.424 0 0 0-2.142-1.289H9.419L21.598 22.54l1.92-3.325c.378-.637.482-.919.482-1.467zm-11.129-3.462L7.428 4.858l-5.444 9.428h10.887z"/>
+                  </svg>
+                </span>
+                <span class="sr-only">View the Hitwicket character project on ArtStation (opens in a new tab)</span>
+              </a>
+
+              <div class="link-pop" id="artstation-hitwicket" role="tooltip">
+                <div class="link-pop-strip">
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-01.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-02.jpg" alt="" loading="lazy" decoding="async" width="800" height="64">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-03.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-04.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-05.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-06.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-07.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-08.jpg" alt="" loading="lazy" decoding="async" width="800" height="261">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-09.jpg" alt="" loading="lazy" decoding="async" width="800" height="225">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-10.jpg" alt="" loading="lazy" decoding="async" width="800" height="219">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-11.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-12.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-13.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-14.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-15.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-16.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-17.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-18.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-19.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-20.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-21.jpg" alt="" loading="lazy" decoding="async" width="800" height="326">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-22.jpg" alt="" loading="lazy" decoding="async" width="800" height="330">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-23.jpg" alt="" loading="lazy" decoding="async" width="800" height="271">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-24.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-25.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-26.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-27.jpg" alt="" loading="lazy" decoding="async" width="800" height="407">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/GvdVP3" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-hitwicket-28.jpg" alt="" loading="lazy" decoding="async" width="800" height="64">
+                  </a>
+                </div>
+                <div class="link-pop-foot">
+                  <span class="link-pop-title">Hitwicket 3d character art</span>
+                  <span class="link-pop-host">artstation.com &#8599;</span>
+                </div>
+              </div>
+            </div>
           </li>
           <li class="timeline-item">
             <div class="timeline-meta">
@@ -118,6 +313,44 @@
               <li>Partnered with design and engineering to scale customization into reusable systems.</li>
               <li>Shifted workflow from one-off assets to systemized, reusable components.</li>
             </ul>
+            <!-- Collage tile linking out to the ArtStation project. The panel is a
+                 local gallery, not an embed: ArtStation serves
+                 `x-frame-options: SAMEORIGIN`, so an iframe of the real page
+                 renders blank in every browser. -->
+            <div class="work-link">
+              <a class="work-tile" href="https://www.artstation.com/artwork/Xg5NLn"
+                 target="_blank" rel="noopener" aria-describedby="artstation-altworld">
+                <span class="work-tile-grid work-tile-grid--mosaic" aria-hidden="true">
+                  <img src="assets/artstation-altworld-tile-1.jpg" alt="" width="210" height="312" loading="lazy" decoding="async">
+                  <img src="assets/artstation-altworld-tile-2.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                  <img src="assets/artstation-altworld-tile-3.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                </span>
+                <span class="work-tile-badge" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path fill="currentColor" d="M0 17.723l2.027 3.505h.001a2.424 2.424 0 0 0 2.164 1.333h13.457l-2.792-4.838H0zm24 .025c0-.484-.143-.935-.388-1.314L15.728 2.728a2.424 2.424 0 0 0-2.142-1.289H9.419L21.598 22.54l1.92-3.325c.378-.637.482-.919.482-1.467zm-11.129-3.462L7.428 4.858l-5.444 9.428h10.887z"/>
+                  </svg>
+                </span>
+                <span class="sr-only">View the AltWorld project on ArtStation (opens in a new tab)</span>
+              </a>
+
+              <div class="link-pop" id="artstation-altworld" role="tooltip">
+                <div class="link-pop-strip">
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/Xg5NLn" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-altworld-01.jpg" alt="" loading="lazy" decoding="async" width="800" height="334">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/Xg5NLn" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-altworld-02.jpg" alt="" loading="lazy" decoding="async" width="800" height="334">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/Xg5NLn" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-altworld-03.jpg" alt="" loading="lazy" decoding="async" width="800" height="334">
+                  </a>
+                </div>
+                <div class="link-pop-foot">
+                  <span class="link-pop-title">Game Ready Character Avtar</span>
+                  <span class="link-pop-host">artstation.com &#8599;</span>
+                </div>
+              </div>
+            </div>
           </li>
           <li class="timeline-item">
             <div class="timeline-meta">
@@ -129,6 +362,48 @@
               <li>Delivered digital characters from concept through production under tight constraints.</li>
               <li>Converted creative requirements into production-ready assets cross-functionally.</li>
             </ul>
+            <!-- Collage tile linking out to the ArtStation project. The panel is a
+                 local gallery, not an embed: ArtStation serves
+                 `x-frame-options: SAMEORIGIN`, so an iframe of the real page
+                 renders blank in every browser. -->
+            <div class="work-link">
+              <a class="work-tile" href="https://www.artstation.com/artwork/14V5vo"
+                 target="_blank" rel="noopener" aria-describedby="artstation-warlands">
+                <span class="work-tile-grid" aria-hidden="true">
+                  <img src="assets/artstation-warlands-tile-1.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                  <img src="assets/artstation-warlands-tile-2.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                  <img src="assets/artstation-warlands-tile-3.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                  <img src="assets/artstation-warlands-tile-4.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                </span>
+                <span class="work-tile-badge" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path fill="currentColor" d="M0 17.723l2.027 3.505h.001a2.424 2.424 0 0 0 2.164 1.333h13.457l-2.792-4.838H0zm24 .025c0-.484-.143-.935-.388-1.314L15.728 2.728a2.424 2.424 0 0 0-2.142-1.289H9.419L21.598 22.54l1.92-3.325c.378-.637.482-.919.482-1.467zm-11.129-3.462L7.428 4.858l-5.444 9.428h10.887z"/>
+                  </svg>
+                </span>
+                <span class="sr-only">View the Warlands NFT Game project on ArtStation (opens in a new tab)</span>
+              </a>
+
+              <div class="link-pop" id="artstation-warlands" role="tooltip">
+                <div class="link-pop-strip">
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/14V5vo" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-warlands-01.jpg" alt="" loading="lazy" decoding="async" width="800" height="618">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/14V5vo" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-warlands-02.jpg" alt="" loading="lazy" decoding="async" width="800" height="618">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/14V5vo" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-warlands-03.jpg" alt="" loading="lazy" decoding="async" width="800" height="618">
+                  </a>
+                  <a class="link-pop-shot" href="https://www.artstation.com/artwork/14V5vo" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                    <img data-src="assets/artstation-warlands-04.jpg" alt="" loading="lazy" decoding="async" width="800" height="618">
+                  </a>
+                </div>
+                <div class="link-pop-foot">
+                  <span class="link-pop-title">Lucius — Warlands NFT</span>
+                  <span class="link-pop-host">artstation.com &#8599;</span>
+                </div>
+              </div>
+            </div>
           </li>
           <li class="timeline-item">
             <div class="timeline-meta">

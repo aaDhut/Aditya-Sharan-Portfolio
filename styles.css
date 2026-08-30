@@ -7,6 +7,12 @@
   --color-accent: #2d6a4f;
   --color-accent-contrast: #ffffff;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Borel is the closest released face to Apple's hand-lettered "hello": a
+     true monoline — one uniform stroke width, no thick/thin modulation — with
+     rounded terminals and looped ascenders. Sacramento, which this replaced,
+     is a modulated signature script and reads as a different gesture entirely.
+     Snell Roundhand is the macOS fallback with the nearest connected build. */
+  --font-script: 'Borel', 'Snell Roundhand', 'Apple Chancery', cursive;
   --max-width: 1040px;
   /* The ch unit measures the "0" glyph, which is wider than Inter's average
      character — 56ch lands at ~70 real characters, inside the 45–75 range. */
@@ -19,14 +25,15 @@
      Weight encodes hierarchy: chrome is the heaviest material, interactive
      chips the lightest. A light translucent surface is never stacked on
      another — legibility collapses when it is. */
-  /* Tint is set by the contrast floor, not by taste. Measured with the lens and
-     specular in place, against the darkest part of the portrait showing through
-     the bar: 0.42 -> 3.45:1 and 0.46 -> 3.98:1 both fail AA, and 0.50 -> 4.58:1
-     only just scrapes over. 0.52 is as transparent as the nav can go and still
-     keep its labels legible with a little margin. */
-  --glass-chrome: rgba(255, 255, 255, 0.52);
-  --glass-surface: rgba(255, 255, 255, 0.62);
-  --glass-chip: rgba(255, 255, 255, 0.55);
+  /* Fill opacity was reduced 60% across all three materials (0.40/0.62/0.55 ->
+     0.16/0.25/0.22) for a thinner, more transparent glass.
+     Note: the chrome fill now sits below the 0.30 floor at which nav-label
+     contrast was last measured at ~5.15:1, so labels over the darkest part of
+     the backdrop can fall under 4.5:1. Raise --glass-chrome back toward 0.30,
+     or darken the label color, if that becomes visible. */
+  --glass-chrome: rgba(255, 255, 255, 0.16);
+  --glass-surface: rgba(255, 255, 255, 0.25);
+  --glass-chip: rgba(255, 255, 255, 0.22);
 
   /* The bright edge where light catches the top of a pane, and the faint
      shade where it leaves the bottom. */
@@ -184,73 +191,113 @@ section[id] {
     var(--glass-chrome);
   /* Blur stays low so the refraction stays legible as refraction — heavy blur
      dissolves the very distortion the lens is creating. */
-  backdrop-filter: blur(5px) saturate(170%);
-  -webkit-backdrop-filter: blur(5px) saturate(170%);
+  backdrop-filter: blur(2.5px) saturate(170%);
+  -webkit-backdrop-filter: blur(2.5px) saturate(170%);
   box-shadow: var(--glass-rim), var(--shadow-chrome);
 }
 
+/* The wordmark is set as a signature — a monoline script against the Inter of
+   the nav labels, so the name reads as a mark rather than another link. */
 .logo {
-  font-weight: 700;
-  font-size: 1.1rem;
+  font-family: var(--font-script);
+  /* Borel ships a single weight; 700 here would make the browser synthesise a
+     fake bold, and a smeared stroke is exactly what a monoline cannot survive. */
+  font-weight: 400;
+  /* Borel is drawn on a large x-height — roughly half again Sacramento's for
+     the same em — so it needs to come down several steps to sit on visual par
+     with the 0.95rem nav labels rather than shouting over them. */
+  font-size: 1.3rem;
+  /* Borel's ascent and descent are symmetric (21/21 per 21em), unlike Inter's
+     asymmetric 15/4. With line-height:1 the half-leading therefore parks the
+     baseline at the exact middle of the line box — but a baseline belongs well
+     below centre, so the wordmark floated 4.28px above the nav's.
+     0.266em is measured, not guessed: it drops this baseline onto the nav
+     labels' at 45.50px, which also lands the ink centre within 0.6px of the
+     60px bar's centre. Re-measure if the font-size or --nav-h changes. */
+  line-height: 1;
+  position: relative;
+  top: 0.266em;
+  /* The word space is drawn for connected handwriting and opens a gap at this
+     size; pulling it in holds the two words together as one mark. */
+  word-spacing: -0.06em;
   color: var(--color-text);
   text-decoration: none;
+  /* A monoline this thin loses its stroke to subpixel rounding on the
+     translucent bar; grayscale AA keeps the weight even across the curve. */
+  -webkit-font-smoothing: antialiased;
 }
 
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 28px;
+  /* Tight, because every item now carries its own capsule padding. */
+  gap: 2px;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
+/* Bare label at rest. The capsule is reserved for the two states that mean
+   something — pointing at an item, or standing in its section — so the bar
+   stays quiet until it has something to say. The border is transparent rather
+   than absent so the capsule can appear without shifting the layout.
+   Only background-color and box-shadow carry the material here: a
+   background-image gradient can't interpolate, so it would pop in while
+   everything else faded. The rim light supplies the highlight instead. */
 .nav-links a {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 16px;
+  border-radius: 999px;
   color: var(--color-text);
   text-decoration: none;
   font-size: 0.95rem;
   /* Vibrancy: labels sitting on a translucent surface carry extra weight so
      they hold up as the backdrop changes underneath them. */
   font-weight: 600;
-  transition: color 0.15s ease;
+  background-color: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+  /* Without a capsule behind it, a resting label sits straight on the bar —
+     and over the dark portrait that measured 3.49:1, under the 4.5 floor.
+     This halo lifts the pixels immediately around each glyph where the
+     backdrop goes dark, doing the job the capsule used to do. Kept tight and
+     low-opacity: a wider, denser glow was legible as a white bleed around the
+     glyphs against the pale backdrop the bar sits on most of the time, which
+     is the majority case. Contrast still clears the 4.5 floor at the worst
+     spot; the halo just stops announcing itself the rest of the time. */
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.65), 0 0 1px rgba(255, 255, 255, 0.6);
+  transition: color 0.18s ease, background-color 0.18s ease,
+    border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
+/* Once the capsule is there it supplies the contrast, so the halo retires. */
+.nav-links a:hover,
+.nav-links a.is-active {
+  text-shadow: none;
+}
+
+/* Hovered, or the section you're currently in. */
+.nav-links a:hover,
+.nav-links a.is-active {
+  color: var(--color-accent);
+  background-color: var(--glass-chip);
+  /* A white hairline vanishes against a white-ish bar, so the edge is defined
+     by a soft neutral instead. */
+  border-color: rgba(31, 38, 34, 0.13);
+  box-shadow: var(--glass-rim);
+}
+
+/* Pointing at something reads a touch stronger than merely being in it. */
 .nav-links a:hover {
-  color: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  box-shadow: var(--glass-rim), var(--shadow-surface);
 }
 
-/* Scroll-spy: tells the reader which section they're currently in. */
-.nav-links a.is-active:not(.nav-cta) {
-  color: var(--color-accent);
-}
-
-.nav-links a:not(.nav-cta)::after {
-  content: '';
-  display: block;
-  height: 2px;
-  margin-top: 3px;
-  border-radius: 2px;
-  background: var(--color-accent);
-  transform: scaleX(0);
-  transform-origin: center;
-  transition: transform 0.18s ease-out;
-}
-
-.nav-links a.is-active:not(.nav-cta)::after {
-  transform: scaleX(1);
-}
-
+/* Contact now shares the capsule above; only its slightly wider gutters remain
+   so the label doesn't crowd the bar's right edge. */
 .nav-cta {
-  border: 1px solid var(--color-text);
-  padding: 8px 16px;
-  border-radius: 6px;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-/* Specificity matched to .nav-links a:hover so no !important is needed. */
-.nav-links a.nav-cta:hover {
-  background: var(--color-text);
-  color: var(--color-bg);
+  padding-inline: 18px;
 }
 
 .nav-toggle {
@@ -292,8 +339,304 @@ section[id] {
 
 /* Hero */
 .hero {
+  position: relative;
+  /* Own stacking context, so the z-index:-1 orb field sits behind the hero's
+     own content without falling behind the page background. */
+  isolation: isolate;
+  /* Orbs overhang the section deliberately; clip on x only so they can't add
+     document width, while the vertical bleed still shows. */
+  overflow-x: clip;
   padding: clamp(64px, 11vw, 120px) 0 clamp(48px, 8vw, 80px);
   text-align: center;
+}
+
+/* ---- Hero orb field ---------------------------------------------------- */
+
+.hero-orbs {
+  position: absolute;
+  inset: -12% -6%;
+  z-index: -1;
+  pointer-events: none;
+  /* Dissolve toward the section edges rather than clipping, so the field is
+     contained to the hero without a visible cut line where it ends.
+     One axis only: a second masking gradient composited with mask-composite
+     measured as the single most expensive item in the hero (~4ms/frame), and
+     the horizontal fade was redundant — the hero already clips on x. */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 14%,
+    #000 68%,
+    transparent 97%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 14%,
+    #000 68%,
+    transparent 97%
+  );
+}
+
+.orb {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  /* This element carries only the pointer response — parallax plus the
+     repulsion shove — written from script.js. Keeping it separate from the
+     child means the JS transform and the CSS keyframes never fight over the
+     same property. */
+  will-change: transform;
+  /* Confines plus-lighter to the four tints inside this orb. Without it the
+     additive blend would also reach the orbs behind, and every overlap would
+     blow out to white. */
+  isolation: isolate;
+}
+
+/* Four tinted copies per orb, rotating. Colour cycling this way is a pure
+   opacity animation, which the compositor handles on its own; the filter it
+   replaces (hue-rotate) had to re-filter the whole field every single frame.
+   Four layers rather than two because at this speed a two-colour crossfade
+   reads as a flicker between two states — a longer rotation reads as flow. */
+.orb > span {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  /* A soft-stopped radial gradient is its own blur — no filter: blur() pass,
+     which is what makes six of these cheap enough to animate. Five stops
+     rather than three: a short stop list puts a sharp shoulder in the falloff,
+     which the eye reads as a hot nucleus in the middle of the orb. These
+     approximate a gaussian instead — near-flat across the core, then a long
+     tail — so the orb reads as diffuse cloud with no visible centre. */
+  /* closest-side, so 100% is the element's own radius — which is exactly the
+     circle border-radius cuts. A gradient still carrying alpha at that radius
+     gets clipped into a visible hard rim. */
+  background: radial-gradient(
+    circle closest-side at 50% 50%,
+    color-mix(in srgb, var(--tint) 78%, transparent) 0%,
+    color-mix(in srgb, var(--tint) 68%, transparent) 34%,
+    color-mix(in srgb, var(--tint) 40%, transparent) 58%,
+    color-mix(in srgb, var(--tint) 14%, transparent) 78%,
+    transparent 100%
+  );
+  /* The four opacities sum to exactly 1 at every instant, but stacked alpha
+     compositing would still dip mid-crossfade (0.5 over 0.5 is 0.75, not 1).
+     plus-lighter is truly additive, so the orb holds a constant brightness
+     right through the colour change instead of pulsing darker once per
+     handover. Browsers without it fall back to normal blending — slightly
+     softer transitions, nothing broken. */
+  mix-blend-mode: plus-lighter;
+  animation: orb-drift var(--dur) ease-in-out infinite alternate,
+    orb-revolve var(--rev) linear infinite,
+    orb-cycle var(--cycle) linear infinite;
+  /* Drift and revolve share the orb's phase offset so the four layers move as
+     one body; only the colour rotation is staggered per layer. */
+  animation-delay: var(--delay), var(--delay),
+    calc(var(--delay) - var(--cycle) * var(--slot));
+}
+
+/* Each layer owns one quarter of the cycle, so the orb walks c1 -> c2 -> c3 ->
+   c4 and back round. */
+.orb > span:nth-child(1) {
+  --tint: var(--c1);
+  --slot: 0;
+}
+
+.orb > span:nth-child(2) {
+  --tint: var(--c2);
+  --slot: 0.75;
+}
+
+.orb > span:nth-child(3) {
+  --tint: var(--c3);
+  --slot: 0.5;
+}
+
+.orb > span:nth-child(4) {
+  --tint: var(--c4);
+  --slot: 0.25;
+}
+
+/* --cycle is the full four-colour rotation, so one colour change takes a
+   quarter of it. Raise these together to slow the whole field down. The
+   values differ slightly per orb so the six never pulse in lockstep, which
+   would read as a strobe rather than a colour field.
+
+   --orbit is the radius of the revolve, as a share of that orb's own
+   diameter. It is tuned per orb so all six sweep roughly the same number of
+   pixels despite differing in size — a constant percentage would have the
+   big orbs travelling twice as far as the small ones. --dir flips half the
+   field to orbit the other way; all six turning together read as a mechanism
+   rather than as drift. */
+.orb-1 {
+  --size: 30rem;
+  --c1: rgba(94, 231, 175, 0.68);
+  --c2: rgba(88, 214, 236, 0.66);
+  --c3: rgba(180, 240, 130, 0.66);
+  --c4: rgba(255, 214, 120, 0.66);
+  --cycle: 6s;
+  --dur: 6s;
+  --rev: 16s;
+  --orbit: 10%;
+  --dir: 1;
+  --delay: 0s;
+  top: 2%;
+  left: 16%;
+}
+
+.orb-2 {
+  --size: 26rem;
+  --c1: rgba(126, 168, 255, 0.64);
+  --c2: rgba(178, 148, 255, 0.62);
+  --c3: rgba(255, 150, 190, 0.62);
+  --c4: rgba(88, 214, 236, 0.64);
+  --cycle: 6.66s;
+  --dur: 7.5s;
+  --rev: 20s;
+  --orbit: 12%;
+  --dir: -1;
+  --delay: -4s;
+  top: 24%;
+  right: 8%;
+}
+
+.orb-3 {
+  --size: 22rem;
+  --c1: rgba(255, 214, 120, 0.66);
+  --c2: rgba(255, 168, 132, 0.64);
+  --c3: rgba(255, 150, 190, 0.62);
+  --c4: rgba(94, 231, 175, 0.66);
+  --cycle: 5.5s;
+  --dur: 5.4s;
+  --rev: 17s;
+  --orbit: 14%;
+  --dir: 1;
+  --delay: -8s;
+  top: 6%;
+  right: 22%;
+}
+
+.orb-4 {
+  --size: 24rem;
+  --c1: rgba(178, 148, 255, 0.62);
+  --c2: rgba(126, 168, 255, 0.64);
+  --c3: rgba(88, 214, 236, 0.64);
+  --c4: rgba(94, 231, 175, 0.64);
+  --cycle: 6.5s;
+  --dur: 8s;
+  --rev: 21s;
+  --orbit: 13%;
+  --dir: -1;
+  --delay: -2s;
+  bottom: 4%;
+  left: 30%;
+}
+
+.orb-5 {
+  --size: 28rem;
+  --c1: rgba(88, 214, 236, 0.66);
+  --c2: rgba(94, 231, 175, 0.66);
+  --c3: rgba(180, 240, 130, 0.64);
+  --c4: rgba(126, 168, 255, 0.64);
+  --cycle: 5.86s;
+  --dur: 6.4s;
+  --rev: 18s;
+  --orbit: 11%;
+  --dir: 1;
+  --delay: -11s;
+  bottom: -6%;
+  right: 26%;
+}
+
+.orb-6 {
+  --size: 20rem;
+  --c1: rgba(255, 168, 132, 0.62);
+  --c2: rgba(255, 150, 190, 0.62);
+  --c3: rgba(178, 148, 255, 0.6);
+  --c4: rgba(255, 214, 120, 0.64);
+  --cycle: 7s;
+  --dur: 8.6s;
+  --rev: 22s;
+  --orbit: 15%;
+  --dir: -1;
+  --delay: -6s;
+  top: 34%;
+  left: 2%;
+}
+
+/* Hover/bob. Scale and offset only — both composited, neither triggers layout. */
+@keyframes orb-drift {
+  from {
+    transform: translate3d(-6%, -7%, 0) scale(0.88);
+  }
+  to {
+    transform: translate3d(7%, 8%, 0) scale(1.12);
+  }
+}
+
+/* A real orbit, walked directly in `translate`. The previous version paired
+   `rotate` with a constant `translate`, but the individual transform
+   properties always resolve in the order translate -> rotate -> scale, so it
+   read as `translate(5%,0) rotate(deg)` — the orb spun about its own centre,
+   which is invisible on a radially symmetric gradient, and never actually
+   went anywhere. Rotating first is not expressible with these properties, so
+   the path is traced by hand instead.
+
+   Eight stops rather than four: four would trace a diamond, and the velocity
+   reverses hard at each corner, which reads as a snap. The 0.707 stops are
+   the diagonals of the circle, and at these periods the remaining octagon is
+   indistinguishable from a circle.
+
+   Stays on `translate`, so it still composes with the drift on `transform`
+   and the parallax the JS writes to the parent — three separate properties,
+   no fighting. Compositor-only. */
+@keyframes orb-revolve {
+  0% {
+    translate: var(--orbit) 0;
+  }
+  12.5% {
+    translate: calc(var(--orbit) * 0.707) calc(var(--orbit) * 0.707 * var(--dir));
+  }
+  25% {
+    translate: 0 calc(var(--orbit) * var(--dir));
+  }
+  37.5% {
+    translate: calc(var(--orbit) * -0.707) calc(var(--orbit) * 0.707 * var(--dir));
+  }
+  50% {
+    translate: calc(var(--orbit) * -1) 0;
+  }
+  62.5% {
+    translate: calc(var(--orbit) * -0.707) calc(var(--orbit) * -0.707 * var(--dir));
+  }
+  75% {
+    translate: 0 calc(var(--orbit) * -1 * var(--dir));
+  }
+  87.5% {
+    translate: calc(var(--orbit) * 0.707) calc(var(--orbit) * -0.707 * var(--dir));
+  }
+  100% {
+    translate: var(--orbit) 0;
+  }
+}
+
+/* Each layer holds its quarter, then hands over across the next quarter.
+   Linear on purpose: with plus-lighter underneath, a straight ramp is a
+   straight interpolation between the two tints, and the four opacities always
+   total 1. Compositor-only — no filter, no repaint. */
+@keyframes orb-cycle {
+  0% {
+    opacity: 1;
+  }
+  25% {
+    opacity: 0;
+  }
+  75% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .eyebrow {
@@ -319,7 +662,10 @@ section[id] {
 
 .hero-tagline {
   font-size: 1.2rem;
-  color: var(--color-text-muted);
+  /* Darker than the muted grey used elsewhere: that tone reads fine on a plain
+     surface but measured 3.25:1 against the orb field behind it. Scoped to the
+     hero so body copy on flat sections keeps its lighter voice. */
+  color: #3a3a3a;
   max-width: 560px;
   margin: 0 auto 32px;
   text-wrap: balance;
@@ -333,21 +679,6 @@ section[id] {
   gap: 16px;
   flex-wrap: wrap;
   padding: 24px 0;
-}
-
-.hero-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  /* Fixed 420px overflowed the viewport on phones (<420px wide). */
-  width: min(420px, 88vw);
-  height: 180px;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, var(--color-accent) 0%, transparent 70%);
-  opacity: 0.12;
-  filter: blur(30px);
-  pointer-events: none;
-  z-index: -1;
 }
 
 /* Buttons */
@@ -372,8 +703,8 @@ section[id] {
   background: var(--glass-chip);
   color: var(--color-text);
   border-color: var(--glass-hairline);
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  backdrop-filter: blur(7px) saturate(180%);
+  -webkit-backdrop-filter: blur(7px) saturate(180%);
   box-shadow: var(--glass-rim), var(--shadow-surface);
 }
 
@@ -462,13 +793,20 @@ section[id] {
 
 /* Timeline */
 .timeline {
+  /* Gutter the spine runs down, to the left of the cards. Both the spine and
+     each dot are positioned from this one value. */
+  --spine-gutter: 36px;
+  /* Vertical centre of a card's first text line — where its dot must sit.
+     Card padding (22px) plus half the role's line box; measured, not guessed. */
+  --dot-center: 35px;
+
   position: relative;
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 0 0 var(--spine-gutter);
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 18px;
 }
 
 /* One continuous spine instead of five disconnected bars, fading out at the
@@ -477,9 +815,9 @@ section[id] {
   content: '';
   position: absolute;
   left: 0;
-  /* Starts at the first dot's centre (8px offset + 6px radius), and fades to
-     fully transparent so the tail past the last dot isn't a visible stub. */
-  top: 14px;
+  /* Starts at the first dot's centre, and fades to fully transparent so the
+     tail past the last dot isn't a visible stub. */
+  top: var(--dot-center);
   bottom: 0;
   width: 2px;
   border-radius: 2px;
@@ -491,16 +829,42 @@ section[id] {
   );
 }
 
+/* Each role is its own pane of glass, threaded onto the spine by its dot.
+
+   Two columns: the copy on the left, the project tile parked in the right-hand
+   one, with the meta row spanning both so the dates keep the full width to
+   right-align against. Laying the tile out rather than floating it absolutely
+   is what holds it the same distance below the dates on every card — centred
+   against the card, it drifted with the length of the bullet list. */
 .timeline-item {
   position: relative;
-  padding-left: 26px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'meta meta'
+    'desc tile';
+  column-gap: 24px;
+  padding: 22px 24px;
+  border-radius: var(--radius-md);
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-hairline);
+  backdrop-filter: blur(8px) saturate(180%);
+  -webkit-backdrop-filter: blur(8px) saturate(180%);
+  box-shadow: var(--glass-rim), var(--shadow-surface);
 }
 
+.timeline-item:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  box-shadow: var(--glass-rim), var(--shadow-lifted);
+}
+
+/* Sits out in the gutter, centred on the spine: back out the gutter, then
+   half the dot's width. */
 .timeline-item::before {
   content: '';
   position: absolute;
-  left: -5px;
-  top: 8px;
+  left: calc(-1 * var(--spine-gutter) - 5px);
+  top: calc(var(--dot-center) - 6px);
   width: 12px;
   height: 12px;
   border-radius: 50%;
@@ -509,14 +873,12 @@ section[id] {
 }
 
 .timeline-meta {
+  grid-area: meta;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: baseline;
-  margin-bottom: 6px;
-  /* Without a cap, margin-left:auto flung the dates ~500px from the role they
-     label, breaking the visual pairing. */
-  max-width: 78ch;
+  margin-bottom: 10px;
 }
 
 .timeline-role {
@@ -530,13 +892,28 @@ section[id] {
   font-weight: 500;
 }
 
+/* Same capsule as the nav items: bare until pointed at, then the glass chip
+   materialises. The negative margin claws back most of the pill's padding so
+   it doesn't shove the dates around, but leaves ~6px so the capsule has
+   clearance from the role text instead of butting against it. */
 .timeline-company a {
+  display: inline-block;
+  padding: 3px 9px;
+  margin: -3px -2px;
+  border-radius: 999px;
   color: inherit;
   text-decoration: none;
+  background-color: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+  transition: color 0.18s ease, background-color 0.18s ease,
+    border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .timeline-company a:hover {
-  text-decoration: underline;
+  background-color: var(--glass-chip);
+  border-color: rgba(31, 38, 34, 0.13);
+  box-shadow: var(--glass-rim);
 }
 
 .timeline-dates {
@@ -546,6 +923,7 @@ section[id] {
 }
 
 .timeline-desc {
+  grid-area: desc;
   color: var(--color-text-muted);
   margin: 0;
   max-width: var(--measure);
@@ -553,6 +931,7 @@ section[id] {
 }
 
 .timeline-desc-list {
+  grid-area: desc;
   color: var(--color-text-muted);
   margin: 0;
   padding-left: 18px;
@@ -566,6 +945,273 @@ section[id] {
 
 .timeline-desc-list li:last-child {
   margin-bottom: 0;
+}
+
+/* ---- Work link: project tile + panel ------------------------------------
+   A collage of the project parked in the card's empty right-hand column.
+   Hovering or focusing it surfaces the full set; clicking opens the real
+   ArtStation page.
+
+   The tile is shaped the way macOS shapes an app icon: a squircle, whose
+   curvature eases continuously into the straight edges instead of meeting
+   them at a tangent the way a plain border-radius arc does. `corner-shape`
+   draws that properly where it is supported; elsewhere the radius alone is
+   a close enough read. */
+.work-link {
+  grid-area: tile;
+  /* Relative, not static: the panel is anchored to this box, and dropping it
+     out of the positioned chain would re-anchor it to the whole card. */
+  position: relative;
+  /* Top of the tile on the top of the first bullet, so it sits a fixed step
+     below the dates no matter how many lines the card runs to. */
+  align-self: start;
+}
+
+/* The card owns a stacking context (its backdrop-filter makes one), so the
+   panel can never paint above a later sibling card from inside it. Raising the
+   whole card while it is the one being pointed at is what lets the panel
+   overhang its neighbours. */
+.timeline-item:hover,
+.timeline-item:focus-within {
+  z-index: 3;
+}
+
+.work-tile {
+  position: relative;
+  display: block;
+  width: 140px;
+  height: 104px;
+  /* Radius tracks the shorter side, so the corners stay in proportion to the
+     box rather than swallowing it. */
+  border-radius: 24px;
+  text-decoration: none;
+  /* Ambient spread plus a tighter key shadow, so the tile sits above the card
+     without the single soft blur that reads as a drop shadow from 2012. */
+  box-shadow: 0 1px 1px rgba(31, 38, 34, 0.1),
+    0 8px 20px -8px rgba(31, 38, 34, 0.3),
+    0 18px 40px -22px rgba(31, 38, 34, 0.4);
+  transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.15),
+    box-shadow 0.32s ease;
+}
+
+/* Apple's icon grid puts the corner radius at just over 22% of the short side. */
+@supports (corner-shape: squircle) {
+  .work-tile,
+  .work-tile-grid {
+    corner-shape: squircle;
+  }
+}
+
+.work-tile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  /* Flush, no gutters — the four frames meet edge to edge. */
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
+  background: var(--color-bg-alt);
+  /* A dark hairline, not a white one: the tile sits on a near-white card, so a
+     light edge would dissolve into it rather than contain the photos. */
+  box-shadow: inset 0 0 0 1px rgba(31, 38, 34, 0.12);
+}
+
+.work-tile-grid img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* A project with three frames instead of four. The first takes the full left
+   column and the other two stack beside it, so the tile stays a filled
+   rectangle rather than a 2x2 with a hole in it. Its crop is cut portrait to
+   match — see the -tile-1 asset. */
+.work-tile-grid--mosaic img:first-child {
+  grid-row: 1 / span 2;
+}
+
+/* Says where the tile goes without a caption taking up room. Tucked inside the
+   corner rather than riding half off it: the tile's right edge and the dates
+   above share one line, and a badge hanging past that edge is read as the
+   tile's own boundary, which breaks the alignment the eye is looking for. */
+.work-tile-badge {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  color: var(--color-accent);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(6px) saturate(180%);
+  -webkit-backdrop-filter: blur(6px) saturate(180%);
+  box-shadow: var(--glass-rim), 0 3px 8px -3px rgba(31, 38, 34, 0.34),
+    0 0 0 1px rgba(31, 38, 34, 0.06);
+}
+
+.work-tile-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+.work-link:hover .work-tile,
+.work-link:focus-within .work-tile {
+  transform: scale(1.04);
+  box-shadow: 0 1px 1px rgba(31, 38, 34, 0.1),
+    0 14px 30px -10px rgba(31, 38, 34, 0.34),
+    0 28px 56px -26px rgba(31, 38, 34, 0.45);
+}
+
+/* Same specificity as the hover rule above, so it has to come after it. */
+.work-link .work-tile:active {
+  transform: scale(0.98);
+}
+
+/* The panel opens up and to the left — the tile sits near the card's right
+   edge, so opening rightward would run it off the viewport.
+
+   It is opaque rather than glass by design. The material rules at the top of
+   this file only ever stack one translucent surface, and the card underneath
+   is already one; a second would take the images with it. */
+.link-pop {
+  position: absolute;
+  right: -6px;
+  bottom: calc(100% + 12px);
+  width: 380px;
+  max-width: calc(100vw - 48px);
+  padding: 8px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 22px 46px -18px rgba(31, 38, 34, 0.36),
+    0 4px 12px -6px rgba(31, 38, 34, 0.16);
+  /* Anchored under the tile's centre, so it grows out of the collage. */
+  transform-origin: 78% 100%;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.94);
+  /* Leaving: 90ms of grace before the fade, and visibility flips only once the
+     fade has finished, so the panel stays hittable on the way out. */
+  transition: opacity 0.16s ease 0.09s, transform 0.16s ease 0.09s,
+    visibility 0s linear 0.25s;
+}
+
+/* An invisible bridge across the 12px gap. Without it the panel is scrollable
+   in theory only — the pointer drops out of :hover crossing the gap and the
+   panel closes before it can be reached. */
+.link-pop::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 14px;
+}
+
+/* The panel is a child of .work-link, so pointing at it keeps the group
+   hovered — that is what makes a scrollable panel work at all. */
+.work-link:hover .link-pop,
+.work-link:focus-within .link-pop {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.2s ease 0.12s,
+    transform 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2) 0.12s,
+    visibility 0s linear 0.12s;
+}
+
+.link-pop-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 360px;
+  overflow-y: auto;
+  /* Don't hand the scroll back to the page when the strip bottoms out. */
+  overscroll-behavior: contain;
+  border-radius: var(--radius-sm);
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+.link-pop-shot {
+  display: block;
+  /* The strip is a flex column with a capped height, so without this every
+     slot would be squashed to fit instead of the strip scrolling. */
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    var(--color-bg-alt),
+    color-mix(in srgb, var(--color-border) 70%, var(--color-bg-alt))
+  );
+}
+
+/* A real image carries width/height and sizes its own slot, so the strip keeps
+   each piece's true proportions rather than cropping them to a common ratio.
+   The fixed ratio is only a fallback, for a slot whose file is missing —
+   without it that slot would collapse to nothing. */
+.link-pop-shot:has(img[hidden]) {
+  aspect-ratio: 3 / 2;
+}
+
+.link-pop-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* `display: block` above outranks the UA stylesheet's [hidden] rule, so
+   script.js hiding a 404'd image would otherwise do nothing and the broken
+   glyph would sit on the placeholder. */
+.link-pop-shot img[hidden] {
+  display: none;
+}
+
+.link-pop-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 6px 4px;
+}
+
+.link-pop-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+.link-pop-host {
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+/* Touch: there is no hover to reveal the panel, and a tap should just follow
+   the link rather than trap the user in a tooltip. */
+@media (hover: none) {
+  .link-pop {
+    display: none;
+  }
+}
+
+/* Screen-reader-only text that stays in the accessibility tree. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Cards */
@@ -590,8 +1236,8 @@ section[id] {
   border: 1px solid var(--glass-hairline);
   border-radius: var(--radius-md);
   padding: 28px;
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(8px) saturate(180%);
+  -webkit-backdrop-filter: blur(8px) saturate(180%);
   box-shadow: var(--glass-rim), var(--shadow-surface);
 }
 
@@ -665,8 +1311,8 @@ section[id] {
      tracking to stay crisp — vibrancy, not flat grey. */
   font-weight: 500;
   letter-spacing: 0.005em;
-  backdrop-filter: blur(12px) saturate(170%);
-  -webkit-backdrop-filter: blur(12px) saturate(170%);
+  backdrop-filter: blur(6px) saturate(170%);
+  -webkit-backdrop-filter: blur(6px) saturate(170%);
   box-shadow: var(--glass-rim);
   transition: border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -690,8 +1336,8 @@ section[id] {
   border-left: 3px solid var(--color-accent);
   background: var(--glass-surface);
   border-radius: var(--radius-sm) var(--radius-md) var(--radius-md) var(--radius-sm);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(8px) saturate(180%);
+  -webkit-backdrop-filter: blur(8px) saturate(180%);
   box-shadow: var(--glass-rim), var(--shadow-surface);
 }
 
@@ -732,6 +1378,19 @@ section[id] {
   border-top: 1px solid var(--color-border);
 }
 
+/* Between the desktop layout and the burger the six capsules run out of room —
+   the logo and nav met exactly at 740px. Tightening the pill padding buys back
+   ~60px so the full nav survives down to the breakpoint. */
+@media (max-width: 960px) {
+  .nav-links a {
+    padding: 9px 11px;
+  }
+
+  .nav-links {
+    gap: 0;
+  }
+}
+
 /* Responsive nav */
 @media (max-width: 720px) {
   .nav-toggle {
@@ -751,8 +1410,8 @@ section[id] {
        through and collided with the nav labels. Near-opaque is the correct
        weight for a surface that takes over the screen. */
     background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(30px) saturate(190%);
-    -webkit-backdrop-filter: blur(30px) saturate(190%);
+    backdrop-filter: blur(15px) saturate(190%);
+    -webkit-backdrop-filter: blur(15px) saturate(190%);
     box-shadow: var(--glass-rim), var(--shadow-chrome);
     flex-direction: column;
     align-items: stretch;
@@ -774,10 +1433,6 @@ section[id] {
     font-size: 1.05rem;
   }
 
-  .nav-links a:not(.nav-cta)::after {
-    display: none;
-  }
-
   .nav-links .nav-cta {
     justify-content: center;
     margin-top: 12px;
@@ -796,6 +1451,35 @@ section[id] {
   .timeline-dates {
     margin-left: 0;
   }
+
+  /* A narrow screen can't spare 36px of gutter for the spine, and the cards
+     need their padding back for the text. */
+  .timeline {
+    --spine-gutter: 22px;
+    --dot-center: 30px;
+    gap: 14px;
+  }
+
+  /* No spare right-hand column at this width — the text now fills it, so the
+     card collapses to a single column and the tile drops below the bullets. */
+  .timeline-item {
+    padding: 18px 18px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'meta'
+      'desc'
+      'tile';
+  }
+
+  .work-link {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+  }
+
+  .link-pop {
+    transform-origin: right bottom;
+  }
 }
 
 /* Scroll reveal */
@@ -813,7 +1497,8 @@ section[id] {
 /* `transition` is a shorthand, so a later declaration replaces the whole list.
    Cards need both the reveal and the hover properties in one place, declared
    after .reveal — otherwise one silently cancels the other. */
-.card {
+.card,
+.timeline-item {
   transition: border-color 0.2s ease, box-shadow 0.2s ease,
     opacity 0.5s ease-out, transform 0.5s ease-out;
 }
@@ -824,15 +1509,48 @@ section[id] {
   }
 
   .reveal,
-  .card {
+  .card,
+  .timeline-item {
     opacity: 1;
     transform: none;
     transition: none;
   }
 
   .nav-toggle span,
-  .nav-links a:not(.nav-cta)::after {
+  .nav-links a {
     transition: none;
+  }
+
+  /* The orb field stays as a still colour wash — no drift, revolve, colour
+     cycle or pointer tracking (that last one is skipped in script.js). */
+  .hero-orbs,
+  .orb > span {
+    animation: none;
+  }
+
+  /* With the cycle stopped every layer would sit at full opacity, and four
+     additive tints stacked would blow the orb out to white. Keep one. */
+  .orb > span + span {
+    display: none;
+  }
+
+  .orb > span {
+    mix-blend-mode: normal;
+  }
+
+  /* The tile holds still and the panel appears rather than springing out of
+     it. Opacity alone still marks the change of state. */
+  .work-link:hover .work-tile,
+  .work-link:focus-within .work-tile,
+  .work-link .work-tile:active {
+    transform: none;
+  }
+
+  .link-pop,
+  .work-link:hover .link-pop,
+  .work-link:focus-within .link-pop {
+    transform: none;
+    transition: opacity 0.12s ease, visibility 0s linear 0.12s;
   }
 }
 
@@ -847,6 +1565,11 @@ section[id] {
   .site-header {
     position: static;
   }
+
+  /* A hover panel has no meaning on paper. */
+  .link-pop {
+    display: none;
+  }
 }
 
 /* Reduced transparency: trade blur for solid, high-contrast surfaces.
@@ -860,6 +1583,7 @@ section[id] {
   .header-inner,
   .nav-links,
   .card,
+  .timeline-item,
   .testimonial,
   .tag-list li,
   .btn-primary,
@@ -875,6 +1599,19 @@ section[id] {
   .nav-links {
     box-shadow: var(--shadow-chrome);
   }
+
+  /* Only the badge was ever translucent; the collage itself is photographs
+     and stays exactly as it is. */
+  .work-tile-badge {
+    background: var(--color-bg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: var(--shadow-surface), 0 0 0 1px var(--color-border-strong);
+  }
+
+  .link-pop {
+    border-color: var(--color-border-strong);
+  }
 }
 
 /* High contrast: near-solid surfaces with a defined, contrasting border. */
@@ -886,6 +1623,7 @@ section[id] {
   .header-inner,
   .nav-links,
   .card,
+  .timeline-item,
   .testimonial,
   .tag-list li,
   .btn-primary,
@@ -901,5 +1639,23 @@ section[id] {
   .timeline-desc-list,
   .timeline-dates {
     color: var(--color-text);
+  }
+
+  .link-pop {
+    background: var(--color-bg);
+    border: 1px solid var(--color-text);
+  }
+
+  .work-tile-badge {
+    background: var(--color-bg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 0 0 1px var(--color-text);
+  }
+
+  /* A photo collage has no border of its own to strengthen, so give the tile
+     a real edge against the card. */
+  .work-tile-grid {
+    box-shadow: inset 0 0 0 1px var(--color-text);
   }
 }
