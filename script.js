@@ -329,10 +329,52 @@ if ('IntersectionObserver' in window) {
   revealTargets.forEach((el) => el.classList.add('is-visible'));
 }
 
-// Droplet project links. Reveal and dismissal are CSS (:hover / :focus-within
-// on the .work-link group); only the two things CSS can't express live here.
+// [logo] Company marks on the experience cards. Same reasoning as the gallery
+// slots below: a logo whose file isn't in assets/ yet gets a broken-image glyph
+// painted over the monogram underneath, so the element has to go, not just its
+// src. Dropping the real file in later needs no code change.
+document.querySelectorAll('.timeline-logo img').forEach((img) => {
+  const fit = () => {
+    // A load that finished with no intrinsic size is a file that isn't in
+    // assets/. Chrome paints a broken-image glyph over whatever is behind it,
+    // so the element has to go, not just its src — the monogram underneath
+    // then stands in until the real logo is dropped in.
+    if (!img.naturalWidth || !img.naturalHeight) {
+      img.hidden = true;
+      img.parentElement.classList.remove('has-logo');
+      return;
+    }
+
+    // A real logo is on the tile, so the monogram fallback stands down. It
+    // can't just stay behind the image: a logo with transparency lets the
+    // accent-coloured glyph through its gaps. See .has-logo in styles.css.
+    img.parentElement.classList.add('has-logo');
+
+    // A wordmark is far wider than it is tall, so cropping it square (the
+    // default full-bleed treatment) would leave two unreadable letters.
+    // Measured rather than hand-flagged per company: swap a logo for a
+    // differently-shaped file and the tile re-decides on its own.
+    const ratio = img.naturalWidth / img.naturalHeight;
+    img.parentElement.classList.toggle('is-wordmark', ratio > 1.25 || ratio < 0.8);
+  };
+
+  img.addEventListener('error', () => {
+    img.hidden = true;
+    img.parentElement.classList.remove('has-logo');
+  });
+  img.addEventListener('load', fit);
+
+  // This script runs after the markup, so a fast load — or a fast 404, which
+  // is what a missing local file is — has already settled and will fire
+  // neither event. Those have to be caught by inspection.
+  if (img.complete) fit();
+});
+
+// Droplet hover panels — the project tiles and the résumé button both. Reveal
+// and dismissal are CSS (:hover / :focus-within on the group); only the two
+// things CSS can't express live here.
 (function () {
-  const links = document.querySelectorAll('.work-link');
+  const links = document.querySelectorAll('.work-link, .resume-link');
   if (!links.length) return;
 
   links.forEach((group) => {
@@ -348,11 +390,12 @@ if ('IntersectionObserver' in window) {
     });
 
     // The panel holds the whole project — a couple of megabytes that most
-    // visitors never open. `loading="lazy"` alone wouldn't save them: the
-    // panel is only hidden, not out of the document, so the fetches would
-    // still fire on scrolling past. Holding the src back until the first
-    // hover is what actually makes it free. The lazy attribute still earns
-    // its place afterwards, staggering the rest against the strip's scroll.
+    // visitors never open, and the résumé render is another 200KB.
+    // `loading="lazy"` alone wouldn't save them: the panel is only hidden, not
+    // out of the document, so the fetches would still fire on scrolling past.
+    // Holding the src back until the first hover is what actually makes it
+    // free. The lazy attribute still earns its place afterwards, staggering
+    // the rest against the strip's scroll.
     let armed = false;
     const load = () => {
       if (armed) return;
@@ -367,12 +410,13 @@ if ('IntersectionObserver' in window) {
 
     // Escape closes the panel the same way it closes any transient layer. The
     // panel is tied to focus, so surrendering focus is what actually shuts it.
+    // The group's first link is its trigger — the tile, or the résumé button.
     group.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
-      const tile = group.querySelector('.work-tile');
-      if (tile && group.contains(document.activeElement)) {
+      const trigger = group.querySelector('a');
+      if (trigger && group.contains(document.activeElement)) {
         e.stopPropagation();
-        tile.blur();
+        trigger.blur();
       }
     });
   });

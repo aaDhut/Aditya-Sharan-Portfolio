@@ -135,7 +135,12 @@
       var frosted = 'blur(' + o.fallbackBlur + 'px) saturate(' + o.saturate + ')';
       el.style.backdropFilter = frosted;
       el.style.webkitBackdropFilter = frosted;
-      return { supported: false, refresh: function () {}, destroy: function () {} };
+      return {
+        supported: false,
+        refresh: function () {},
+        setScale: function () {}, /* [droplet] */
+        destroy: function () {},
+      };
     }
 
     var id = 'droplet-' + ++uid;
@@ -154,6 +159,11 @@
     feImage.setAttribute('preserveAspectRatio', 'none');
     filter.appendChild(feImage);
 
+    // [droplet] Each pass is kept alongside its share of the base scale, so
+    // setScale() below can re-drive the whole stack from one multiplier
+    // without losing the per-channel dispersion spread.
+    var passes = [];
+
     function displacePass(scale, result) {
       var d = document.createElementNS(SVG_NS, 'feDisplacementMap');
       d.setAttribute('in', 'SourceGraphic');
@@ -163,6 +173,7 @@
       d.setAttribute('yChannelSelector', 'G');
       if (result) d.setAttribute('result', result);
       filter.appendChild(d);
+      passes.push({ node: d, base: scale }); /* [droplet] */
       return d;
     }
 
@@ -240,6 +251,15 @@
     return {
       supported: true,
       refresh: refresh,
+      // [droplet] Re-drive every displacement pass from one multiplier: 1 is
+      // the configured bend, higher bends harder. Animating this is the only
+      // way to deepen the refraction itself — a CSS transform scales the
+      // element, not the lens.
+      setScale: function (mult) {
+        for (var i = 0; i < passes.length; i++) {
+          passes[i].node.setAttribute('scale', passes[i].base * mult);
+        }
+      },
       destroy: function () {
         ro.disconnect();
         clearTimeout(timer);

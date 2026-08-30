@@ -20,6 +20,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Borel&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <!-- [dark-mode] Removable feature. Delete this line and dark-mode.css to
+       remove it entirely; see REMOVE-DARK-MODE.md. Must load after styles.css,
+       since it overrides tokens declared there. -->
+  <link rel="stylesheet" href="dark-mode.css">
+  <!-- [droplet] Removable feature. Delete this line, droplet-buttons.css and
+       droplet-buttons.js to remove it entirely; see REMOVE-DROPLET-BUTTONS.md.
+       Loads last so it can override the shared .btn glass in styles.css and
+       read the palette tokens dark-mode.css re-points. -->
+  <link rel="stylesheet" href="droplet-buttons.css">
 </head>
 <body>
 
@@ -67,7 +76,31 @@
         <p class="hero-tagline">From concept to ship: 5 years in game production, now applying that discipline to AI product management.</p>
         <div class="hero-actions">
           <a href="#contact" class="btn btn-primary">Get in touch</a>
-          <a href="assets/resume.pdf" class="btn btn-secondary" download="Aditya Sharan - Resume.pdf">Download résumé</a>
+
+          <!-- The same droplet panel the project tiles use, hung off the résumé
+               button: hovering shows the page you are about to download.
+               assets/resume-preview.png is a render of assets/resume.pdf, so
+               regenerate it whenever the PDF changes:
+                 qlmanage -t -s 2400 -o . assets/resume.pdf
+                 sips --resampleWidth 900 resume.pdf.png --out assets/resume-preview.png -->
+          <div class="resume-link">
+            <a href="assets/resume.pdf" class="btn btn-secondary" download="Aditya Sharan - Resume.pdf"
+               aria-describedby="resume-preview">Download résumé</a>
+
+            <div class="link-pop link-pop--resume" id="resume-preview" role="tooltip">
+              <div class="link-pop-strip">
+                <!-- Opens the PDF in a tab rather than downloading it — the panel
+                     is for reading, the button beneath it is for keeping. -->
+                <a class="link-pop-shot" href="assets/resume.pdf" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                  <img data-src="assets/resume-preview.png" alt="" loading="lazy" decoding="async" width="900" height="1165">
+                </a>
+              </div>
+              <div class="link-pop-foot">
+                <span class="link-pop-title">Aditya Sharan — Résumé</span>
+                <span class="link-pop-host">PDF &#183; 1 page</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -96,10 +129,26 @@
         <h2 class="section-title">Experience</h2>
         <ul class="timeline">
           <li class="timeline-item">
+            <!-- [logo] The mark links to the same LinkedIn page as the
+                 company name beside it. That makes it a second route to one
+                 destination, not a second destination: aria-hidden and
+                 tabindex="-1" keep it out of the tab order and off the
+                 screen-reader's list so the name is announced once, and the
+                 tile stays a mouse affordance. The monogram is the fallback
+                 for a logo file that isn't in assets/ yet — see
+                 .timeline-logo in styles.css. -->
+            <a class="timeline-logo" href="https://www.linkedin.com/company/battlebucks/" target="_blank" rel="noopener" data-monogram="B" aria-hidden="true" tabindex="-1">
+              <img src="assets/logo-battlebucks.jpg" alt="" width="104" height="104" loading="lazy" decoding="async">
+            </a>
             <div class="timeline-meta">
-              <span class="timeline-role">Lead 3D Character Artist / Look Development</span>
-              <span class="timeline-company"><a href="https://www.linkedin.com/company/battlebucks/" target="_blank" rel="noopener">Battlebucks</a></span>
-              <span class="timeline-dates">Nov 2025 — Present</span>
+              <div class="timeline-headline">
+                <span class="timeline-role">Lead 3D Character Artist / Look Development</span>
+                <span class="timeline-company"><a href="https://www.linkedin.com/company/battlebucks/" target="_blank" rel="noopener">Battlebucks</a></span>
+              </div>
+              <div class="timeline-when">
+                <span class="timeline-dates">Nov 2025 — Present</span>
+                <span class="timeline-place">Remote</span>
+              </div>
             </div>
             <ul class="timeline-desc-list">
               <li>Own the requirements-to-delivery pipeline for character content end-to-end.</li>
@@ -174,10 +223,18 @@
             </div>
           </li>
           <li class="timeline-item">
+            <a class="timeline-logo" href="https://www.linkedin.com/company/metasports-media/" target="_blank" rel="noopener" data-monogram="H" aria-hidden="true" tabindex="-1">
+              <img src="assets/logo-hitwicket.png" alt="" width="104" height="104" loading="lazy" decoding="async">
+            </a>
             <div class="timeline-meta">
-              <span class="timeline-role">Senior 3D Character Artist / Look Development</span>
-              <span class="timeline-company"><a href="https://www.linkedin.com/company/metasports-media/" target="_blank" rel="noopener">Hitwicket</a></span>
-              <span class="timeline-dates">Apr 2024 — Nov 2025</span>
+              <div class="timeline-headline">
+                <span class="timeline-role">Senior 3D Character Artist / Look Development</span>
+                <span class="timeline-company"><a href="https://www.linkedin.com/company/metasports-media/" target="_blank" rel="noopener">Hitwicket</a></span>
+              </div>
+              <div class="timeline-when">
+                <span class="timeline-dates">Apr 2024 — Nov 2025</span>
+                <span class="timeline-place">Hyderabad, India</span>
+              </div>
             </div>
             <ul class="timeline-desc-list">
               <li>Directed requirements, quality standards, and delivery for a 60+ character initiative.</li>
@@ -303,10 +360,18 @@
             </div>
           </li>
           <li class="timeline-item">
+            <a class="timeline-logo" href="https://www.linkedin.com/company/altworld/" target="_blank" rel="noopener" data-monogram="A" aria-hidden="true" tabindex="-1">
+              <img src="assets/logo-altworld.jpg" alt="" width="104" height="104" loading="lazy" decoding="async">
+            </a>
             <div class="timeline-meta">
-              <span class="timeline-role">3D Character Artist / Designer / Concept Artist</span>
-              <span class="timeline-company"><a href="https://www.linkedin.com/company/altworld/" target="_blank" rel="noopener">AltWorld</a></span>
-              <span class="timeline-dates">Aug 2022 — Apr 2024</span>
+              <div class="timeline-headline">
+                <span class="timeline-role">3D Character Artist / Designer / Concept Artist</span>
+                <span class="timeline-company"><a href="https://www.linkedin.com/company/altworld/" target="_blank" rel="noopener">AltWorld</a></span>
+              </div>
+              <div class="timeline-when">
+                <span class="timeline-dates">Aug 2022 — Apr 2024</span>
+                <span class="timeline-place">Bangalore, India</span>
+              </div>
             </div>
             <ul class="timeline-desc-list">
               <li>Built a modular character customization system (shared meshes, reusable textures, blendshapes).</li>
@@ -353,10 +418,18 @@
             </div>
           </li>
           <li class="timeline-item">
+            <a class="timeline-logo" href="https://www.linkedin.com/company/warlands-corp/" target="_blank" rel="noopener" data-monogram="W" aria-hidden="true" tabindex="-1">
+              <img src="assets/logo-warlands.jpg" alt="" width="104" height="104" loading="lazy" decoding="async">
+            </a>
             <div class="timeline-meta">
-              <span class="timeline-role">3D Character Artist / Designer / Concept Artist</span>
-              <span class="timeline-company"><a href="https://www.linkedin.com/company/warlands-corp/" target="_blank" rel="noopener">Warlands NFT Game</a></span>
-              <span class="timeline-dates">Dec 2021 — Feb 2022</span>
+              <div class="timeline-headline">
+                <span class="timeline-role">3D Character Artist / Designer / Concept Artist</span>
+                <span class="timeline-company"><a href="https://www.linkedin.com/company/warlands-corp/" target="_blank" rel="noopener">Warlands NFT Game</a></span>
+              </div>
+              <div class="timeline-when">
+                <span class="timeline-dates">Dec 2021 — Feb 2022</span>
+                <span class="timeline-place">Remote</span>
+              </div>
             </div>
             <ul class="timeline-desc-list">
               <li>Delivered digital characters from concept through production under tight constraints.</li>
@@ -406,10 +479,18 @@
             </div>
           </li>
           <li class="timeline-item">
+            <a class="timeline-logo" href="https://www.linkedin.com/company/kotak-mahindra-bank/" target="_blank" rel="noopener" data-monogram="K" aria-hidden="true" tabindex="-1">
+              <img src="assets/logo-kotak.jpg" alt="" width="104" height="104" loading="lazy" decoding="async">
+            </a>
             <div class="timeline-meta">
-              <span class="timeline-role">Character Animator / Video Editor Intern</span>
-              <span class="timeline-company"><a href="https://www.linkedin.com/company/kotak-mahindra-bank/" target="_blank" rel="noopener">Kotak Mahindra Foundation (Umang)</a></span>
-              <span class="timeline-dates">Jun 2021 — Jul 2021</span>
+              <div class="timeline-headline">
+                <span class="timeline-role">Character Animator / Video Editor Intern</span>
+                <span class="timeline-company"><a href="https://www.linkedin.com/company/kotak-mahindra-bank/" target="_blank" rel="noopener">Kotak Mahindra Foundation (Umang)</a></span>
+              </div>
+              <div class="timeline-when">
+                <span class="timeline-dates">Jun 2021 — Jul 2021</span>
+                <span class="timeline-place">Remote</span>
+              </div>
             </div>
             <ul class="timeline-desc-list">
               <li>Produced character animation and motion graphics for a digital learning product.</li>
@@ -535,6 +616,9 @@
   </div>
 
   <script src="glass.js"></script>
+  <!-- [droplet] Removable feature. Must load after glass.js, which owns the
+       lens it applies to the hero buttons. -->
+  <script src="droplet-buttons.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
