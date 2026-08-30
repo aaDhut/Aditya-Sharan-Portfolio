@@ -67,7 +67,31 @@
         <p class="hero-tagline">From concept to ship: 5 years in game production, now applying that discipline to AI product management.</p>
         <div class="hero-actions">
           <a href="#contact" class="btn btn-primary">Get in touch</a>
-          <a href="assets/resume.pdf" class="btn btn-secondary" download="Aditya Sharan - Resume.pdf">Download résumé</a>
+
+          <!-- The same droplet panel the project tiles use, hung off the résumé
+               button: hovering shows the page you are about to download.
+               assets/resume-preview.png is a render of assets/resume.pdf, so
+               regenerate it whenever the PDF changes:
+                 qlmanage -t -s 2400 -o . assets/resume.pdf
+                 sips --resampleWidth 900 resume.pdf.png --out assets/resume-preview.png -->
+          <div class="resume-link">
+            <a href="assets/resume.pdf" class="btn btn-secondary" download="Aditya Sharan - Resume.pdf"
+               aria-describedby="resume-preview">Download résumé</a>
+
+            <div class="link-pop link-pop--resume" id="resume-preview" role="tooltip">
+              <div class="link-pop-strip">
+                <!-- Opens the PDF in a tab rather than downloading it — the panel
+                     is for reading, the button beneath it is for keeping. -->
+                <a class="link-pop-shot" href="assets/resume.pdf" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                  <img data-src="assets/resume-preview.png" alt="" loading="lazy" decoding="async" width="900" height="1165">
+                </a>
+              </div>
+              <div class="link-pop-foot">
+                <span class="link-pop-title">Aditya Sharan — Résumé</span>
+                <span class="link-pop-host">PDF &#183; 1 page</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

@@ -340,6 +340,12 @@ section[id] {
 /* Hero */
 .hero {
   position: relative;
+  /* Above every section that follows, so the résumé panel can hang out of the
+     hero and over the About section. This is deliberately unconditional: the
+     About column and the portrait both carry transforms, which puts them in
+     the same paint layer as the hero, and raising the hero only on hover left
+     the ordering to be re-established mid-interaction. */
+  z-index: 1;
   /* Own stacking context, so the z-index:-1 orb field sits behind the hero's
      own content without falling behind the page background. */
   isolation: isolate;
@@ -1095,10 +1101,18 @@ section[id] {
   opacity: 0;
   visibility: hidden;
   transform: translateY(10px) scale(0.94);
-  /* Leaving: 90ms of grace before the fade, and visibility flips only once the
-     fade has finished, so the panel stays hittable on the way out. */
-  transition: opacity 0.16s ease 0.09s, transform 0.16s ease 0.09s,
-    visibility 0s linear 0.25s;
+  /* Leaving: 90ms of grace before the fade, so the pointer can cross the gap
+     into the panel. Then the opacity is dropped on a front-loaded curve rather
+     than an even one. An opaque panel dissolving over body copy shows both
+     layers at once, and the middle of the fade — where the two are equally
+     legible — is the part that reads as the panel being *behind* the text.
+     Falling fast gets through it in about a frame; the transform keeps its own
+     slower timing, so the panel is still seen to retract rather than blink out.
+     Visibility flips only once the fade has finished, so the panel stays
+     hittable on the way out. */
+  transition: opacity 0.11s cubic-bezier(0.16, 1, 0.3, 1) 0.09s,
+    transform 0.16s ease 0.09s,
+    visibility 0s linear 0.2s;
 }
 
 /* An invisible bridge across the 12px gap. Without it the panel is scrollable
@@ -1120,7 +1134,7 @@ section[id] {
   opacity: 1;
   visibility: visible;
   transform: none;
-  transition: opacity 0.2s ease 0.12s,
+  transition: opacity 0.14s cubic-bezier(0.16, 1, 0.3, 1) 0.12s,
     transform 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2) 0.12s,
     visibility 0s linear 0.12s;
 }
@@ -1191,6 +1205,56 @@ section[id] {
   color: var(--color-accent);
   font-size: 0.8rem;
   white-space: nowrap;
+}
+
+/* ---- Résumé preview ---------------------------------------------------- */
+
+/* The project panel again, hung off the hero button instead of a tile. Two
+   things have to differ: there is nothing above the hero to open into, so it
+   drops downward, and it is centred on the button rather than tucked to one
+   edge. */
+.resume-link {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Two classes deep on purpose: the narrow-viewport block further down
+   re-points .link-pop's origin, and this panel must not follow it. */
+.link-pop.link-pop--resume {
+  right: auto;
+  bottom: auto;
+  left: 50%;
+  top: calc(100% + 12px);
+  width: 440px;
+  transform-origin: 50% 0;
+  /* A transform is one value, not a stack, so the centring translate has to
+     be repeated in every transform this panel is given. */
+  transform: translateX(-50%) translateY(-10px) scale(0.94);
+}
+
+/* The invisible bridge across the gap flips to the top edge with the panel. */
+.link-pop--resume::before {
+  top: auto;
+  bottom: 100%;
+}
+
+.resume-link:hover .link-pop,
+.resume-link:focus-within .link-pop {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%);
+  transition: opacity 0.14s cubic-bezier(0.16, 1, 0.3, 1) 0.12s,
+    transform 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2) 0.12s,
+    visibility 0s linear 0.12s;
+}
+
+/* One page, taller than the room under the hero button on most screens, so
+   the strip scrolls the same way a project gallery does. The cap is whatever
+   the viewport has left once the header, headline and button row have taken
+   their share — clamped so it neither runs off a laptop screen nor collapses
+   to a sliver on a short one. */
+.link-pop--resume .link-pop-strip {
+  max-height: clamp(160px, calc(100vh - 560px), 400px);
 }
 
 /* Touch: there is no hover to reveal the panel, and a tap should just follow
@@ -1480,6 +1544,13 @@ section[id] {
   .link-pop {
     transform-origin: right bottom;
   }
+
+  /* The button sits right of the viewport centre while the two hero actions
+     share a row, so a full-width panel centred on it would hang off the edge. */
+  .link-pop.link-pop--resume {
+    width: min(380px, calc(100vw - 32px));
+    transform-origin: 50% 0;
+  }
 }
 
 /* Scroll reveal */
@@ -1550,7 +1621,18 @@ section[id] {
   .work-link:hover .link-pop,
   .work-link:focus-within .link-pop {
     transform: none;
-    transition: opacity 0.12s ease, visibility 0s linear 0.12s;
+    transition: opacity 0.1s cubic-bezier(0.16, 1, 0.3, 1),
+      visibility 0s linear 0.1s;
+  }
+
+  /* The résumé panel is centred by its own transform, so it can't be zeroed
+     the way the others are — only the spring and the slide come off it. */
+  .link-pop.link-pop--resume,
+  .resume-link:hover .link-pop,
+  .resume-link:focus-within .link-pop {
+    transform: translateX(-50%);
+    transition: opacity 0.1s cubic-bezier(0.16, 1, 0.3, 1),
+      visibility 0s linear 0.1s;
   }
 }
 
