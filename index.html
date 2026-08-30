@@ -29,6 +29,11 @@
        Loads last so it can override the shared .btn glass in styles.css and
        read the palette tokens dark-mode.css re-points. -->
   <link rel="stylesheet" href="droplet-buttons.css">
+  <!-- [meeting] Removable feature. Delete this line, meeting-picker.css and
+       meeting-picker.js, and the block in the contact section, to remove it
+       entirely; see REMOVE-MEETING-PICKER.md. Loads after dark-mode.css so it
+       can read the palette tokens that file re-points. -->
+  <link rel="stylesheet" href="meeting-picker.css">
 </head>
 <body>
 
@@ -602,6 +607,97 @@
           <a href="https://www.linkedin.com/in/adityasharan10" class="btn btn-secondary" target="_blank" rel="noopener">LinkedIn</a>
           <a href="tel:+919004349389" class="btn btn-secondary">+91 90043 49389</a>
         </div>
+
+        <!-- [meeting] Removable feature — see REMOVE-MEETING-PICKER.md.
+             All copy lives here. The six wheel columns are filled in by
+             meeting-picker.js, since the days in a month and the year range
+             depend on today's date. -->
+        <div class="mp" data-open="false">
+          <button type="button" class="btn btn-secondary mp-toggle"
+                  aria-expanded="false" aria-controls="mp-panel">Book a 30-min call</button>
+
+          <div class="mp-collapse">
+            <div>
+              <div class="mp-panel" id="mp-panel">
+
+                <!-- Step 1 — the slot -->
+                <div class="mp-step" data-step="pick">
+                  <p class="mp-legend" id="mp-lg-date">Pick a date</p>
+                  <div class="mp-row">
+                    <div class="mp-band" aria-hidden="true"></div>
+                    <div class="mp-wheel" data-wheel="day" aria-label="Day"></div>
+                    <div class="mp-wheel" data-wheel="month" aria-label="Month"></div>
+                    <div class="mp-wheel" data-wheel="year" aria-label="Year"></div>
+                  </div>
+
+                  <p class="mp-legend" id="mp-lg-time">Pick a time</p>
+                  <div class="mp-row">
+                    <div class="mp-band" aria-hidden="true"></div>
+                    <div class="mp-wheel" data-wheel="hour" aria-label="Hour"></div>
+                    <div class="mp-wheel" data-wheel="minute" aria-label="Minute"></div>
+                    <div class="mp-wheel" data-wheel="ampm" aria-label="AM or PM"></div>
+                  </div>
+
+                  <p class="mp-summary"></p>
+                  <p class="mp-note"></p>
+
+                  <div class="mp-actions">
+                    <button type="button" class="btn btn-primary" data-action="next">Next</button>
+                  </div>
+                </div>
+
+                <!-- Step 2 — who is asking. Nothing is sent before this. -->
+                <form class="mp-step mp-form" data-step="details" hidden>
+                  <p class="mp-legend">Where should the invite go?</p>
+
+                  <div class="mp-fields">
+                    <div class="mp-field">
+                      <label for="mp-email">Your email</label>
+                      <input type="email" id="mp-email" name="email" required
+                             autocomplete="email" placeholder="you@example.com">
+                    </div>
+                    <div class="mp-field">
+                      <label for="mp-name">Your name <span aria-hidden="true">(optional)</span></label>
+                      <input type="text" id="mp-name" name="name"
+                             autocomplete="name" placeholder="Jane Doe">
+                    </div>
+                    <div class="mp-field">
+                      <label for="mp-note">What is it about? <span aria-hidden="true">(optional)</span></label>
+                      <input type="text" id="mp-note" name="note" maxlength="140"
+                             placeholder="A line of context">
+                    </div>
+                  </div>
+
+                  <!-- Honeypot: a real visitor never sees this, a bot fills it. -->
+                  <div class="mp-hp" aria-hidden="true">
+                    <label for="mp-company">Company</label>
+                    <input type="text" id="mp-company" name="company" tabindex="-1" autocomplete="off">
+                  </div>
+
+                  <div class="mp-actions">
+                    <button type="submit" class="btn btn-primary" data-action="send">Request meeting</button>
+                  </div>
+                  <button type="button" class="mp-back" data-action="back">Back to the times</button>
+                </form>
+
+                <!-- Step 3 — confirmation, or the error state. Copy is written
+                     in by JS because it names the address and the outcome. -->
+                <div class="mp-step" data-step="done" hidden>
+                  <div class="mp-done">
+                    <div class="mp-tick" aria-hidden="true">&#10003;</div>
+                    <h3></h3>
+                    <p></p>
+                  </div>
+                  <div class="mp-actions">
+                    <button type="button" class="mp-back" data-action="back">Pick another slot</button>
+                  </div>
+                </div>
+
+                <p class="mp-sr" role="status" aria-live="polite"></p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -619,6 +715,14 @@
   <!-- [droplet] Removable feature. Must load after glass.js, which owns the
        lens it applies to the hero buttons. -->
   <script src="droplet-buttons.js"></script>
+  <!-- [meeting] Removable feature. Reads the shell in the contact section
+       above; see REMOVE-MEETING-PICKER.md. -->
+  <script src="meeting-picker.js"></script>
+  <!-- [dial-tick] Removable feature. Adds the detent click to the picker's
+       wheels by reading their scroll position; it touches nothing in
+       meeting-picker.js, so removing either one leaves the other working.
+       See REMOVE-DIAL-TICK.md. -->
+  <script src="dial-tick.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
