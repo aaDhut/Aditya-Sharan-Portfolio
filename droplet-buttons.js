@@ -15,8 +15,10 @@
  *      visibly bends *harder* as you approach. A CSS transform scales the
  *      element; only this scales the refraction.
  *
- * The specular glint is a collaboration: this file writes the pointer position
- * into --gx/--gy, droplet-buttons.css decides what light to make of it.
+ * The glint is a collaboration: this file writes the pointer position into
+ * --gx/--gy, droplet-buttons.css decides what light to make of it. It is the
+ * only specular on the surface, and it only exists while the pointer is on the
+ * button — at rest these capsules are refraction and rim, nothing painted on.
  */
 (function () {
   'use strict';
@@ -27,8 +29,9 @@
   var calm = window.matchMedia('(prefers-reduced-motion: reduce)');
   var fine = window.matchMedia('(hover: hover) and (pointer: fine)');
 
-  // Resting position of the glint, matching the CSS initial-value: overhead
-  // and slightly forward, where the top rim crescent already sits.
+  // Where the glint returns to on leave, matching the CSS initial-value. It is
+  // invisible by then — the highlight fades out with the hover — so this is
+  // only about where it starts from the next time the pointer arrives.
   var HOME_X = 0.5;
   var HOME_Y = 0.12;
 
@@ -126,7 +129,6 @@
 
     btn.addEventListener('pointerleave', function () {
       swellTo(1);
-      // The CSS transition on --gx/--gy eases it back rather than snapping.
       home();
     });
 

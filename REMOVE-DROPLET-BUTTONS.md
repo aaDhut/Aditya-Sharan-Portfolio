@@ -60,8 +60,11 @@ returned handles. To revert, delete all of them.
   settings are far too strong at this size and shear the image.
 - **Chromatic aberration** at the rim only, from `glass.js`'s three-pass
   channel split, plus a CSS conic hairline on the edge itself.
-- **Specular** — a fixed overhead crescent, an underside bounce, and a glint
-  that tracks the pointer via `--gx`/`--gy`.
+- **Specular** — a single glint that tracks the pointer via `--gx`/`--gy`, and
+  only while the pointer is on the button. At rest the capsules carry no
+  painted highlight at all: a soft overhead wash was tried and pulled, because
+  on a capsule this small it read as haze on the glass rather than light on a
+  curved surface.
 - **Deformation** — the lens bends harder as the pointer approaches (the swell,
   which only JS can do), and the capsule squashes wider-and-shorter under a
   press before overshooting back to round.

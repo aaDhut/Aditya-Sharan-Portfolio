@@ -40,19 +40,17 @@
      has to hold contrast against whichever orb drifts underneath. */
   --droplet-tint: rgba(255, 255, 255, 0.14);
   --droplet-edge: rgba(255, 255, 255, 0.55);
-  /* Primary light, raking across the top rim. */
-  --droplet-glint: rgba(255, 255, 255, 0.72);
-  /* Light returning off the page into the underside of the droplet. */
-  --droplet-bounce: rgba(255, 255, 255, 0.3);
-  --droplet-glow: rgba(255, 255, 255, 0.6);
+  /* The moving highlight, and the only specular on the surface. A broad
+     overhead wash was tried here and pulled: on a capsule this small it does
+     not read as a curved highlight, it reads as a milky patch sitting on the
+     glass. The rim does that job better — see the note on ::before. */
+  --droplet-glow: rgba(255, 255, 255, 0.5);
 
   /* Dark mode wants a much quieter surface: the same specular over a dark
      backdrop reads as chalk rather than light. */
   --dark-droplet-tint: rgba(255, 255, 255, 0.07);
   --dark-droplet-edge: rgba(255, 255, 255, 0.24);
-  --dark-droplet-glint: rgba(255, 255, 255, 0.5);
-  --dark-droplet-bounce: rgba(255, 255, 255, 0.14);
-  --dark-droplet-glow: rgba(255, 255, 255, 0.42);
+  --dark-droplet-glow: rgba(255, 255, 255, 0.34);
 }
 
 /* Both triggers mirror dark-mode.css: the system setting, and the explicit
@@ -61,8 +59,6 @@
   :root:not([data-theme='light']) {
     --droplet-tint: var(--dark-droplet-tint);
     --droplet-edge: var(--dark-droplet-edge);
-    --droplet-glint: var(--dark-droplet-glint);
-    --droplet-bounce: var(--dark-droplet-bounce);
     --droplet-glow: var(--dark-droplet-glow);
   }
 }
@@ -70,8 +66,6 @@
 :root[data-theme='dark'] {
   --droplet-tint: var(--dark-droplet-tint);
   --droplet-edge: var(--dark-droplet-edge);
-  --droplet-glint: var(--dark-droplet-glint);
-  --droplet-bounce: var(--dark-droplet-bounce);
   --droplet-glow: var(--dark-droplet-glow);
 }
 
@@ -96,6 +90,14 @@
 
 /* ---- Specular ---------------------------------------------------------- */
 
+/* One highlight, and it only exists under the pointer.
+   
+   Real glass this thin puts its specular *on the rim*, where the surface
+   turns — which is already handled, by the --glass-rim inset edge from
+   styles.css and by the chromatic hairline below. A soft highlight bled into
+   the body instead reads as haze on top of the button rather than light on a
+   curved surface, so the resting state carries none: at rest these capsules
+   are refraction and rim, nothing painted over them. */
 .hero-actions .btn::before {
   content: '';
   position: absolute;
@@ -103,27 +105,20 @@
   z-index: -1;
   border-radius: inherit;
   pointer-events: none;
-  background:
-    /* Pointer glint. --gx/--gy are written by droplet-buttons.js; the
-       defaults put it top-centre so the button is lit before it is touched
-       and on devices that never send a pointer. */
-    radial-gradient(
-      38% 105% at calc(var(--gx) * 100%) calc(var(--gy) * 100%),
-      var(--droplet-glow),
-      transparent 55%
-    ),
-    /* Top rim crescent — the primary light source, fixed overhead. */
-      radial-gradient(
-        130% 90% at 50% -32%,
-        var(--droplet-glint),
-        transparent 62%
-      ),
-    /* Underside bounce, dimmer and tighter. */
-      radial-gradient(
-        130% 75% at 50% 132%,
-        var(--droplet-bounce),
-        transparent 60%
-      );
+  opacity: 0;
+  transition: opacity 0.28s ease;
+  /* --gx/--gy are written by droplet-buttons.js. Tight, so it reads as a
+     travelling glint and not a wash. */
+  background: radial-gradient(
+    34% 95% at calc(var(--gx) * 100%) calc(var(--gy) * 100%),
+    var(--droplet-glow),
+    transparent 55%
+  );
+}
+
+.hero-actions .btn:hover::before,
+.hero-actions .btn:focus-visible::before {
+  opacity: 1;
 }
 
 /* ---- Chromatic rim ----------------------------------------------------- */
