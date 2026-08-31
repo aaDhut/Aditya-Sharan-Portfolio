@@ -1,0 +1,540 @@
+/* ==========================================================================
+   Call pop-up — the booking picker as a floating panel, not an accordion
+   ==========================================================================
+
+   Self-contained and removable: see REMOVE-CALL-POPUP.md.
+
+   What this changes: "Book a 30-min call" used to expand in place, pushing
+   the footer down the page. Everything here re-renders that same open state
+   as a panel that floats out of the button — the treatment the Experience
+   section already uses for its ArtStation panel (.link-pop in styles.css).
+
+   Division of labour with meeting-picker.css:
+     - that file owns the picker's insides: wheels, band, fields, steps
+     - this file owns only where the picker sits and what it is made of
+
+   Nothing in meeting-picker.css or meeting-picker.js is edited. This works by
+   reusing the state they already keep — .mp[data-open] — and drawing it
+   differently. Removing this file hands the accordion straight back.
+
+   Every rule is scoped under .mp[data-popup='on'], a hook only call-popup.js
+   sets. So the CSS without the JS is inert rather than half-applied: if the
+   script fails to load, the accordion still works.
+
+   Positioning is split deliberately: .mp-collapse does the centring, .mp-panel
+   does the motion. Keeping the two on separate elements is what lets the panel
+   animate with a plain translateY/scale — a transform is one value, not a
+   stack, so a panel that centred itself would have to repeat translateX(-50%)
+   in every state it has. styles.css carries a note about that trap on
+   .link-pop--resume, which does exactly that.
+   ========================================================================== */
+
+:root {
+  /* How far the panel floats off the button, and the room it keeps from a
+     viewport edge. */
+  --cp-gap: 12px;
+  --cp-margin: 16px;
+
+  /* The band and field fills. meeting-picker.css tuned its own values against
+     a *glass* panel on the off-white .section-alt; this panel is opaque white,
+     where a white-on-white fill is nothing at all. These are the same two
+     surfaces re-mixed for the ground they now sit on. */
+  --cp-band: #f0efec;
+  --cp-band-edge: rgba(0, 0, 0, 0.08);
+  --cp-field: #f7f7f5;
+
+  /* Dark mode's originals already assume an opaque ground — a white overlay at
+     6-9% over a dark panel reads the same whether the panel is glass or solid
+     — so these restate them rather than re-mixing. */
+  --dark-cp-band: rgba(255, 255, 255, 0.09);
+  --dark-cp-band-edge: rgba(255, 255, 255, 0.14);
+  --dark-cp-field: rgba(255, 255, 255, 0.06);
+}
+
+/* Both triggers, mirroring dark-mode.css and meeting-picker.css: the system
+   setting, and the explicit data-theme hook for a toggle that does not exist
+   yet. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --cp-band: var(--dark-cp-band);
+    --cp-band-edge: var(--dark-cp-band-edge);
+    --cp-field: var(--dark-cp-field);
+  }
+}
+
+:root[data-theme='dark'] {
+  --cp-band: var(--dark-cp-band);
+  --cp-band-edge: var(--dark-cp-band-edge);
+  --cp-field: var(--dark-cp-field);
+}
+
+/* --------------------------------------------------------------------------
+   Anchor
+   -------------------------------------------------------------------------- */
+
+/* The positioning frame for the panel. No z-index of its own on purpose: that
+   would open a stacking context here and trap the panel's z-index inside the
+   section, underneath the header. Left alone, the panel's 150 competes at the
+   top level, where it belongs. */
+.mp[data-popup='on'] {
+  position: relative;
+}
+
+/* --------------------------------------------------------------------------
+   The floating layer
+   -------------------------------------------------------------------------- */
+
+/* .mp-collapse was the accordion's clipping frame — a 0fr -> 1fr grid. All of
+   that goes: the panel no longer grows a row, it floats.
+
+   It opens upward. The contact section is the last on the page, so there is
+   rarely anything below the button to open into; call-popup.js flips this to
+   data-place="below" on the screens where the reverse is true.
+
+   z-index 150 clears the sticky header (100 in styles.css) and stays under
+   .skip-link (200), which has to remain reachable. */
+.mp[data-popup='on'] .mp-collapse {
+  display: block;
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + var(--cp-gap));
+  z-index: 150;
+  width: 560px;
+  max-width: calc(100vw - var(--cp-margin) * 2);
+  transform: translateX(-50%);
+  /* The grid-template-rows transition this used to animate is gone with the
+     grid; the panel inside owns the motion now. */
+  transition: none;
+}
+
+.mp[data-popup='on'][data-place='below'] .mp-collapse {
+  bottom: auto;
+  top: calc(100% + var(--cp-gap));
+}
+
+/* The accordion's inner clipper. Its overflow:hidden would now crop the
+   panel's own shadow, and min-height:0 only ever mattered inside a grid row. */
+.mp[data-popup='on'] .mp-collapse > div {
+  overflow: visible;
+  min-height: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Panel material
+   -------------------------------------------------------------------------- */
+
+/* Opaque, not glass — the one substantive change to how the picker looks.
+
+   meeting-picker.css builds this as a glass surface, which was right when it
+   was an inline block with only the page's flat section colour behind it. A
+   panel that floats over body copy is a different problem, and styles.css
+   already worked it out for .link-pop: the page's material rules only ever
+   stack one translucent surface, and text showing through a picker is not a
+   material, it is a legibility bug.
+
+   Radius steps down from --radius-lg to --radius-md to match .link-pop, which
+   is the panel this is quoting. */
+.mp[data-popup='on'] .mp-panel {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: var(--cp-pad);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 0 22px 46px -18px rgba(var(--shadow-rgb), 0.36),
+    0 4px 12px -6px rgba(var(--shadow-rgb), 0.16);
+
+  /* Whatever room call-popup.js measured on the chosen side. The fallback
+     matters: it is what renders for the frame before the first measurement,
+     and it is the whole behaviour if the script fails after setting its
+     hook. */
+  max-height: var(--cp-max-h, 78vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+
+  /* Closed. visibility rather than display:none, deliberately: the wheels are
+     scroll containers, and an element with no box has no scrollTop to keep.
+     Hidden this way they hold their layout, so a panel that is closed and
+     reopened comes back on the date it was left on instead of resetting.
+
+     Leaving is front-loaded the way .link-pop's is — opacity falls fast, the
+     transform keeps its own slower timing so the panel is seen to retract
+     rather than blink out, and visibility flips only once the fade is done so
+     the panel stays hittable on the way there. */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.94);
+  transform-origin: 50% 100%;
+  transition: opacity 0.11s cubic-bezier(0.16, 1, 0.3, 1) 0.09s,
+    transform 0.16s ease 0.09s,
+    visibility 0s linear 0.2s;
+}
+
+/* Flipped below, the panel grows down out of the button rather than up. */
+.mp[data-popup='on'][data-place='below'] .mp-panel {
+  transform: translateY(-10px) scale(0.94);
+  transform-origin: 50% 0;
+}
+
+/* Open. The overshoot curve is .link-pop's, unchanged — this panel is meant to
+   read as the same object arriving. */
+.mp[data-popup='on'][data-open='true'] .mp-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.14s cubic-bezier(0.16, 1, 0.3, 1) 0.12s,
+    transform 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2) 0.12s,
+    visibility 0s linear 0.12s;
+}
+
+/* --------------------------------------------------------------------------
+   Insides, re-mixed for the opaque ground
+   -------------------------------------------------------------------------- */
+
+/* Two fills that were tuned against glass. See --cp-band above for why they
+   cannot carry over unchanged. Scoped here rather than edited in
+   meeting-picker.css, so the accordion keeps its own correct values. */
+.mp[data-popup='on'] .mp-band {
+  background: var(--cp-band);
+  box-shadow: inset 0 0 0 1px var(--cp-band-edge);
+}
+
+.mp[data-popup='on'] .mp-field input {
+  background: var(--cp-field);
+}
+
+/* The wheels' mask fades each column to transparent at both ends, which is
+   only ever the panel's own colour while nothing shows through — true now that
+   the surface is opaque, and the reason the fade still reads as a curved
+   surface rather than a cut. Nothing to change; noted so it is not "fixed". */
+
+/* --------------------------------------------------------------------------
+   Fitting the whole picker on screen at once
+   -------------------------------------------------------------------------- */
+
+/* The panel is a pop-up, not a page: everything it asks for — both dials, the
+   summary and Next — has to be visible the moment it opens. Scrolling a
+   floating layer to reach its own submit button is the worst of both worlds,
+   and the wheels make it worse still, since a drag that misses a column
+   scrolls the panel instead of turning a dial.
+
+   Stacked at its original size the picker wants ~690px. A laptop leaves 500 to
+   670 above the button, so it opened clipped. Two things close that gap:
+
+     1. the dials sit side by side rather than one above the other, which is
+        the single biggest saving available — one 200px row instead of two
+     2. call-popup.js steps the geometry down through --cp-fit when even that
+        does not fit, on a short window or a phone
+
+   Both are scoped to the pop-up. The accordion has the whole page to grow
+   into and keeps its original stacked layout. */
+
+.mp[data-popup='on'] {
+  /* The panel's own spacing, as tokens the fit ladder below can tighten. */
+  --cp-pad: 22px;
+  --cp-row-gap: 12px;
+  --cp-col-gap: 18px;
+}
+
+/* Date on the left, time on the right; summary, note and Next run the full
+   width underneath.
+
+   Auto-placement does the bottom half: rows 1 and 2 are claimed explicitly
+   below, so the three full-width children land on rows 3, 4 and 5 in source
+   order. Written that way rather than as grid-template-areas so that an empty
+   note can take itself out of the flow entirely — an empty *area* would still
+   leave its row-gap behind. */
+.mp[data-popup='on'] .mp-step[data-step='pick'] {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--cp-col-gap);
+  row-gap: var(--cp-row-gap);
+}
+
+/* meeting-picker.css hides an inactive step with .mp-step[hidden], which the
+   rule above outranks. Without this, step 2 would show the wheels behind the
+   email form. */
+.mp[data-popup='on'] .mp-step[data-step='pick'][hidden] {
+  display: none;
+}
+
+/* Keyed off the two legend ids that are already in the markup, rather than
+   nth-child — this survives someone adding a paragraph to the step. */
+.mp[data-popup='on'] #mp-lg-date {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.mp[data-popup='on'] #mp-lg-date + .mp-row {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.mp[data-popup='on'] #mp-lg-time {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.mp[data-popup='on'] #mp-lg-time + .mp-row {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.mp[data-popup='on'] .mp-step[data-step='pick'] > .mp-summary,
+.mp[data-popup='on'] .mp-step[data-step='pick'] > .mp-note,
+.mp[data-popup='on'] .mp-step[data-step='pick'] > .mp-actions {
+  grid-column: 1 / -1;
+}
+
+/* The note is empty unless something is wrong. Removed from the grid rather
+   than left at zero height, so it does not spend a row-gap saying nothing. */
+.mp[data-popup='on'] .mp-note:empty {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   The fit ladder
+   -------------------------------------------------------------------------- */
+
+/* call-popup.js measures the panel against the room it has and walks these
+   rungs until it fits. Each one is a real step down in size, not a nudge —
+   there is no point spending a reflow on 4px.
+
+   Rung 1 drops the dials from five visible values to three. Deliberately the
+   first thing to go: the outer values are context, not controls — you cannot
+   land on one without scrolling it to the centre anyway — and it buys 80px per
+   row for nothing that was being read.
+
+   Note what rung 1 does *not* touch: --mp-item-h. A wheel's scrollTop for the
+   selected value is index * item height, which means it is unaffected by the
+   row count — the list's padding absorbs the whole change. So the dials stay
+   exactly where they were parked. Rung 2 does change the item height, and
+   call-popup.js re-centres the columns after any rung change to cover it. */
+
+.mp[data-popup='on'][data-fit='compact'] {
+  --mp-rows: 3;
+  --cp-pad: 18px;
+  --cp-row-gap: 10px;
+}
+
+.mp[data-popup='on'][data-fit='tight'] {
+  --mp-rows: 3;
+  --mp-item-h: 34px;
+  --cp-pad: 14px;
+  --cp-row-gap: 8px;
+}
+
+/* Two lines held open for a summary that is usually two lines, so the panel
+   does not jump as the text changes. At the bottom rung the reserved line is
+   worth more as room. */
+.mp[data-popup='on'][data-fit='tight'] .mp-summary {
+  min-height: 0;
+}
+
+.mp[data-popup='on'][data-fit='tight'] .mp-actions .btn {
+  padding: 10px 22px;
+}
+
+/* Three rows leaves each outer value one step from the centre, where the mask
+   built for five rows would fade most of it away — and the depth pass in
+   meeting-picker.js is already dimming it. Pulled back to a hairline fade at
+   each end, which still reads as a drum running off rather than a cut list. */
+.mp[data-popup='on'][data-fit] .mp-wheel {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%);
+}
+
+/* --------------------------------------------------------------------------
+   Scrim
+   -------------------------------------------------------------------------- */
+
+/* Only ever visible in sheet mode, below. On desktop the panel floats over a
+   page that stays readable around it — that is the point of anchoring it to
+   the button, and a scrim there would make it a modal instead.
+
+   A pseudo-element rather than a div: no DOM to add, and nothing left behind
+   when the feature is removed. */
+.mp[data-popup='on']::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 149;
+  background: rgba(18, 20, 19, 0.42);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.24s ease, visibility 0s linear 0.24s;
+}
+
+/* --------------------------------------------------------------------------
+   Bottom sheet
+   -------------------------------------------------------------------------- */
+
+/* Two ways to end up here.
+
+   Under 560px the panel is wider than the viewport and there is no useful
+   "beside" to anchor it to. Under 520px *tall*, the room above the button is
+   gone whatever the width — the bottom rung of the fit ladder still wants
+   ~265px and a window that short has about 255 to give, so the anchored panel
+   is out of moves.
+
+   Both become what a phone would do with a picker: slide one up from the
+   bottom edge. Pinned there it is measured against 86vh rather than the
+   scraps above a button, which is the whole point — it fits again.
+
+   position:fixed detaches it from .mp entirely, so the placement JS stands
+   down here — the sheet is always in the same place. The centring transform
+   has to come off with it, or the sheet leaves the screen to the left.
+
+   The trigger is written twice more: SHEET_AT in call-popup.js, and the
+   reduced-motion block at the end of this file. All three have to change
+   together. */
+@media (max-width: 560px), (max-height: 520px) {
+  .mp[data-popup='on'] .mp-collapse,
+  .mp[data-popup='on'][data-place='below'] .mp-collapse {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: auto;
+    max-width: none;
+    transform: none;
+  }
+
+  .mp[data-popup='on'] .mp-panel,
+  .mp[data-popup='on'][data-place='below'] .mp-panel {
+    /* On a phone this is the full width anyway. It earns its keep on a short
+       wide window, where a full-bleed sheet would stretch six dials across the
+       whole screen. */
+    max-width: 560px;
+    margin-inline: auto;
+    /* Bottom corners meet the screen edge, so they square off. */
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom: 0;
+    /* Room for the grabber, and clearance for the home indicator. */
+    padding-top: 30px;
+    padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -18px 40px -18px rgba(var(--shadow-rgb), 0.42);
+    /* Past this the sheet covers the screen and stops reading as a layer over
+       the page. The JS cap still applies when it is the smaller of the two. */
+    max-height: min(86vh, var(--cp-max-h, 86vh));
+    /* Sheets travel from an edge, not out of a point — no scale, no origin. */
+    transform: translateY(100%);
+    transform-origin: 50% 100%;
+  }
+
+  .mp[data-popup='on'][data-open='true'] .mp-panel {
+    transform: translateY(0);
+  }
+
+  /* The grabber. Decoration only — the sheet is dismissed by the button, the
+     scrim or Escape — so being a pseudo-element is also what keeps it out of
+     the accessibility tree. */
+  .mp[data-popup='on'] .mp-panel::before {
+    content: '';
+    position: absolute;
+    top: 11px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 38px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--color-border-strong);
+  }
+
+  .mp[data-popup='on'][data-open='true']::before {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.24s ease, visibility 0s linear 0s;
+  }
+}
+
+/* Back to stacked — narrow only, not merely short. Two dial groups side by
+   side on a phone would be six columns in ~330px, and "2026" does not fit in
+   55px. A short wide window keeps them side by side: there the height is
+   exactly what is scarce.
+
+   After the sheet block on purpose. These override the two-column placement
+   set further up, and they do it on source order, not specificity. */
+@media (max-width: 560px) {
+  .mp[data-popup='on'] .mp-step[data-step='pick'] {
+    grid-template-columns: 1fr;
+  }
+
+  .mp[data-popup='on'] #mp-lg-time {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .mp[data-popup='on'] #mp-lg-time + .mp-row {
+    grid-column: 1;
+    grid-row: 4;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Preferences
+   -------------------------------------------------------------------------- */
+
+/* No travel and no spring — the panel is simply there or not. Kept as a fade
+   rather than an instant swap so its arrival still registers as a change on
+   the page; visibility has to be driven alongside it either way. */
+@media (prefers-reduced-motion: reduce) {
+  .mp[data-popup='on'] .mp-panel,
+  .mp[data-popup='on'][data-place='below'] .mp-panel {
+    transform: none;
+    transition: opacity 0.12s linear, visibility 0s linear 0.12s;
+  }
+
+  .mp[data-popup='on'][data-open='true'] .mp-panel {
+    transform: none;
+    transition: opacity 0.12s linear, visibility 0s linear 0s;
+  }
+}
+
+/* Written flat rather than nested inside the block above: nested at-rules need
+   CSS Nesting, and nothing else in this project relies on it. The two halves
+   of the comma are the sheet's two triggers — a media query list cannot be
+   factored, so each condition carries the reduced-motion half itself. */
+@media (prefers-reduced-motion: reduce) and (max-width: 560px),
+  (prefers-reduced-motion: reduce) and (max-height: 520px) {
+  .mp[data-popup='on'] .mp-panel,
+  .mp[data-popup='on'][data-place='below'] .mp-panel,
+  .mp[data-popup='on'][data-open='true'] .mp-panel {
+    transform: none;
+  }
+}
+
+/* The panel is already opaque, so both of these have only the border left to
+   strengthen — which is the whole reason the material change above is worth
+   having. */
+@media (prefers-reduced-transparency: reduce) {
+  .mp[data-popup='on'] .mp-panel {
+    border-color: var(--color-border-strong);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .mp[data-popup='on'] .mp-panel {
+    border-color: var(--color-border-strong);
+  }
+
+  .mp[data-popup='on']::before {
+    background: rgba(18, 20, 19, 0.6);
+  }
+}
+
+/* A transient layer that only exists after a click. There is nothing to
+   print. */
+@media print {
+  .mp[data-popup='on'] .mp-collapse {
+    display: none;
+  }
+}

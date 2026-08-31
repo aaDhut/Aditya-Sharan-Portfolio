@@ -1,0 +1,501 @@
+/* ==========================================================================
+   Call glass — full liquid glass for the booking button and its pop-up
+   ==========================================================================
+
+   Self-contained and removable: see REMOVE-CALL-GLASS.md.
+
+   Division of labour with call-glass.js:
+     - the bend of the backdrop and the bend of the content are real SVG
+       lenses, driven from there
+     - everything you see *on* the surface is here: tint, chromatic rim,
+       specular, squash
+
+   That split is also the fallback story. Safari and Firefox cannot run an SVG
+   filter inside backdrop-filter, so they lose the backdrop bend — but
+   `filter:` works everywhere, so the text deform and its chromatic split
+   survive, and the surface layers below are ordinary CSS.
+
+   Every rule is scoped under .mp[data-glass='on'], a hook only call-glass.js
+   sets. The CSS without the JS is inert rather than half-applied: a page that
+   loads this file but not the script keeps call-popup.css's opaque panel.
+
+   Division of labour with call-popup.css:
+     - that file owns where the panel sits, how big it is, and the fit ladder
+     - this file owns only what it is made of
+
+   The one structural thing this changes is which element carries the panel's
+   material. call-popup.css draws it on .mp-panel; that element is now the
+   filtered *content*, and a displacement map sampling outward eats a lip of
+   pixels off whatever it is applied to. So the tint, border, radius and shadow
+   move out to .mp-collapse > div — the accordion's old inner clipper, which is
+   already in the markup and which call-popup.css already restyles. The lip
+   then lands in the panel's own padding, where there is nothing to lose, and
+   the rim stays a crisp hairline because the slab behind it is not filtered.
+
+     .cg-slab (.mp-collapse > div)   tint, border, radius, shadow, backdrop lens
+       .mp-panel                     transparent, scrolls, filter: the content lens
+   ========================================================================== */
+
+:root {
+  /* The header's material, not a frosted card. .header-inner is 16% white
+     under a 2.5px blur, and this is that recipe held a little heavier: the
+     header floats over the hero, this floats over body copy with six dials on
+     it that have to stay readable. Raise it back toward 0.45 if the paragraph
+     underneath starts reading through the panel. */
+  --cg-slab: rgba(255, 255, 255, 0.32);
+
+  /* The pill is the opposite case: a droplet is mostly the thing behind it,
+     and it sits over the orb field, which is the only backdrop on the page
+     worth refracting. Thin enough to see through, not so thin the label
+     loses contrast against whichever orb drifts under it. */
+  --cg-pill: rgba(255, 255, 255, 0.16);
+  --cg-pill-edge: rgba(255, 255, 255, 0.55);
+
+  /* The travelling specular. The fixed one is the header's own
+     --glass-specular-top / --glass-specular-bottom, used directly. */
+  --cg-glow: rgba(255, 255, 255, 0.5);
+
+  /* Re-mixed for a translucent ground. call-popup.css tuned --cp-band and
+     --cp-field against an opaque white panel, where these values would be
+     invisible; they are re-pointed rather than edited, so removing this file
+     hands that file its own correct values back.
+
+     Both came down with the slab. They were mixed against a 0.62 panel and
+     only had to be a little brighter than it; on a 0.32 panel the old 0.75
+     band was no longer a brighter frosted lozenge marking the selected row,
+     it was an opaque white pill sitting on a window. The gap between panel
+     and band is what has to stay constant, not the band's own value. */
+  --cg-band: rgba(255, 255, 255, 0.5);
+  /* Dark, not white. The band is a light fill on a light panel, so its edge is
+     the only thing that says which row is selected — a white hairline on a
+     white-tinted slab is nothing at all, and the picker loses its selection. */
+  --cg-band-edge: rgba(0, 0, 0, 0.1);
+  --cg-field: rgba(255, 255, 255, 0.38);
+
+  /* Dark mode wants a much quieter surface throughout: the same white overlay
+     over a dark backdrop reads as chalk rather than light. */
+  --dark-cg-slab: rgba(26, 26, 29, 0.42);
+  --dark-cg-pill: rgba(255, 255, 255, 0.08);
+  --dark-cg-pill-edge: rgba(255, 255, 255, 0.24);
+  --dark-cg-glow: rgba(255, 255, 255, 0.34);
+  --dark-cg-band: rgba(255, 255, 255, 0.1);
+  --dark-cg-band-edge: rgba(255, 255, 255, 0.16);
+  --dark-cg-field: rgba(255, 255, 255, 0.07);
+}
+
+/* Both triggers, mirroring dark-mode.css: the system setting, and the explicit
+   data-theme hook for a toggle that does not exist yet. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --cg-slab: var(--dark-cg-slab);
+    --cg-pill: var(--dark-cg-pill);
+    --cg-pill-edge: var(--dark-cg-pill-edge);
+    --cg-glow: var(--dark-cg-glow);
+    --cg-band: var(--dark-cg-band);
+    --cg-band-edge: var(--dark-cg-band-edge);
+    --cg-field: var(--dark-cg-field);
+  }
+}
+
+:root[data-theme='dark'] {
+  --cg-slab: var(--dark-cg-slab);
+  --cg-pill: var(--dark-cg-pill);
+  --cg-pill-edge: var(--dark-cg-pill-edge);
+  --cg-glow: var(--dark-cg-glow);
+  --cg-band: var(--dark-cg-band);
+  --cg-band-edge: var(--dark-cg-band-edge);
+  --cg-field: var(--dark-cg-field);
+}
+
+/* Registered so they can be transitioned. An unregistered custom property is
+   an untyped token and animates as a step change, which makes the glint jump
+   home when the pointer leaves instead of easing. */
+@property --gx {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0.5;
+}
+
+@property --gy {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0.12;
+}
+
+/* The glint's opacity. Registered because it is consumed inside color-mix():
+   an untyped custom property there is a step change, and the highlight would
+   snap on and off instead of arriving with the pointer. */
+@property --cg-glow-a {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+/* ==========================================================================
+   The pill
+   ========================================================================== */
+
+.mp[data-glass='on'] .mp-toggle {
+  border: 1px solid transparent;
+
+  /* The tint, and the travelling glint, as two background layers rather than a
+     pseudo-element: ::after is already the caret and ::before is spent on the
+     chromatic ring below, so there is no third pseudo-element to spare.
+
+     --gx/--gy are written by call-glass.js; --cg-glow-a is the fade, and it is
+     a registered property so it can be transitioned inside color-mix(). Tight,
+     so it reads as a travelling glint and not a wash. */
+  background: radial-gradient(
+      34% 95% at calc(var(--gx) * 100%) calc(var(--gy) * 100%),
+      color-mix(in srgb, var(--cg-glow) var(--cg-glow-a), transparent),
+      transparent 55%
+    ),
+    /* The header's specular, verbatim: a grazing highlight along the top face
+       and a soft return off the bottom. On the header this is the only thing
+       painted on the surface besides the tint, and it is what makes the edge
+       read as a curve without a line being drawn on it. */
+    linear-gradient(
+      to bottom,
+      var(--glass-specular-top),
+      rgba(255, 255, 255, 0) 42%,
+      rgba(255, 255, 255, 0) 78%,
+      var(--glass-specular-bottom)
+    ),
+    linear-gradient(var(--cg-pill), var(--cg-pill));
+  background-clip: padding-box;
+
+  box-shadow: var(--glass-rim), var(--shadow-surface),
+    /* A droplet resting on a surface throws a tight contact shadow, not the
+       diffuse one a flat card gets. */ 0 1px 2px rgba(0, 0, 0, 0.08);
+
+  /* The overshoot is the release curve — see :active. */
+  transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.28, 1.25),
+    color 0.2s ease, box-shadow 0.3s ease, --cg-glow-a 0.28s ease,
+    --gx 0.45s ease-out, --gy 0.45s ease-out;
+}
+
+/* There is deliberately no painted ring here.
+
+   This used to carry a conic gradient masked down to a 1px hairline, which is
+   the cheap way to fake dispersion — and it read as exactly that: a rainbow
+   line drawn around the button. The header does not have one. Its colour
+   fringe is real, produced by the three-pass displacement in glass.js where
+   each channel bends by a different amount, so it only appears where the
+   surface actually curves and it moves when the backdrop behind it moves.
+   The pill gets its fringe the same way; see the lens options in
+   call-glass.js. The only edge painted on top is --glass-rim, which is the
+   header's. */
+
+/* styles.css turns the border accent-coloured on hover, which would draw a
+   flat green line around a surface that is supposed to have no line on it. */
+.mp[data-glass='on'] .mp-toggle:hover,
+.mp[data-glass='on'] .mp-toggle:focus-visible {
+  --cg-glow-a: 100%;
+  border-color: transparent;
+  /* The lens bends harder at the same time — call-glass.js ramps the
+     displacement scale on both the backdrop and the label. This transform is
+     only the swell of the body. */
+  transform: scale(1.025);
+  box-shadow: var(--glass-rim), var(--shadow-lifted),
+    0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Surface tension: the droplet flattens against the page under the press —
+   wider and shorter, not uniformly smaller — then the release curve above lets
+   it overshoot back to round. */
+.mp[data-glass='on'] .mp-toggle:active {
+  transform: scale(1.06, 0.9);
+  transition: transform 0.09s ease-out;
+}
+
+/* The wrapper call-glass.js puts around the button's text. It no longer
+   carries a lens — see the note in call-glass.js — so this is now only what
+   makes the label one box instead of an anonymous flex item, which is the
+   hook to have if the label ever needs treating on its own. */
+.mp[data-glass='on'] .cg-label {
+  display: inline-block;
+}
+
+/* ==========================================================================
+   The slab
+   ==========================================================================
+
+   .mp-collapse > div, relabelled by call-glass.js. call-popup.css already
+   turned this back into a plain wrapper (overflow: visible; min-height: 0)
+   when it retired the accordion's grid; this gives it a job again. */
+
+.mp[data-glass='on'][data-popup='on'] .cg-slab {
+  position: relative;
+  border-radius: var(--radius-md);
+
+  /* .header-inner's material, at panel scale. Same two-stop specular over the
+     same kind of thin tint, the same --glass-rim, and no border: the header
+     draws no line around itself, and the edge still reads because the rim
+     highlight and the lens's own fringe are doing that job.
+
+     The specular sits in the background rather than in an ::after, which is
+     also how the header does it — it belongs under the content, not over it. */
+  background:
+    linear-gradient(
+      to bottom,
+      var(--glass-specular-top),
+      rgba(255, 255, 255, 0) 42%,
+      rgba(255, 255, 255, 0) 78%,
+      var(--glass-specular-bottom)
+    ),
+    var(--cg-slab);
+
+  /* call-glass.js writes the backdrop lens here. This is the fallback that
+     renders before it runs, and the whole material if it fails. Halved from
+     13px: heavy blur dissolves the very refraction the lens is creating, which
+     is the note the header's own 2.5px carries. */
+  backdrop-filter: blur(6.5px) saturate(180%);
+  -webkit-backdrop-filter: blur(6.5px) saturate(180%);
+  box-shadow: var(--glass-rim),
+    0 22px 46px -18px rgba(var(--shadow-rgb), 0.36),
+    0 4px 12px -6px rgba(var(--shadow-rgb), 0.16);
+
+  /* The open/close animation moves here from .mp-panel, so the whole object
+     arrives rather than just its contents. The curves are call-popup.css's,
+     unchanged — this is meant to read as the same panel, in a new material.
+
+     visibility rather than display:none, deliberately: the wheels are scroll
+     containers, and an element with no box has no scrollTop to keep. Hidden
+     this way they hold their layout, so a panel that is closed and reopened
+     comes back on the date it was left on. */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.94);
+  transform-origin: 50% 100%;
+  transition: opacity 0.11s cubic-bezier(0.16, 1, 0.3, 1) 0.09s,
+    transform 0.16s ease 0.09s,
+    visibility 0s linear 0.2s;
+}
+
+.mp[data-glass='on'][data-popup='on'][data-place='below'] .cg-slab {
+  transform: translateY(-10px) scale(0.94);
+  transform-origin: 50% 0;
+}
+
+.mp[data-glass='on'][data-popup='on'][data-open='true'] .cg-slab {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.14s cubic-bezier(0.16, 1, 0.3, 1) 0.12s,
+    transform 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2) 0.12s,
+    visibility 0s linear 0.12s;
+}
+
+/* Both pseudo-elements are deliberately free. The panel used to carry a conic
+   hairline and a second, much brighter sheen stacked over its content — a
+   painted rainbow edge and a white wash, which together are what made it read
+   as a frosted card with a decorative border rather than as the same glass the
+   header is made of. The specular is now one background layer under the
+   content, and the edge colour is the lens's, not a gradient's. */
+
+/* ==========================================================================
+   The content
+   ==========================================================================
+
+   Everything that made .mp-panel a surface has moved to the slab. What is left
+   is the box the content lens is applied to: padding, scroll, and the cap
+   call-popup.js measures into --cp-max-h. */
+
+.mp[data-glass='on'][data-popup='on'] .mp-panel {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: var(--radius-md);
+
+  /* The slab owns the entrance now. Neutralised rather than deleted, since
+     call-popup.css's rules are still there and still match. */
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: none;
+
+  /* A scrollbar sits inside the deform band and would wobble with it. It only
+     appears at the bottom of the fit ladder, on a window too short for any
+     arrangement of six dials — the panel still scrolls, it just does it
+     without a bar that ripples. */
+  scrollbar-width: none;
+}
+
+.mp[data-glass='on'][data-popup='on'] .mp-panel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.mp[data-glass='on'][data-popup='on'][data-open='true'] .mp-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: none;
+}
+
+/* ==========================================================================
+   Inside
+   ==========================================================================
+
+   The band and the fields take tint and rim only — no second backdrop-filter.
+   Stacking one translucent surface on another is the legibility collapse
+   styles.css warns about where it declares the three glass materials, and
+   inside an already-frosted slab a second blur pass would buy nothing but
+   cost a full one. The Next / Book-it button is the exception: it is small,
+   it is the thing being aimed at, and it is meant to read as its own droplet
+   sitting on the panel. */
+
+.mp[data-glass='on'][data-popup='on'] .mp-band {
+  background: var(--cg-band);
+  box-shadow: inset 0 0 0 1px var(--cg-band-edge),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.mp[data-glass='on'][data-popup='on'] .mp-field input {
+  background: var(--cg-field);
+  border-color: var(--cg-band-edge);
+}
+
+.mp[data-glass='on'][data-popup='on'] .mp-actions .btn {
+  border: 1px solid transparent;
+  /* The same specular-over-tint as the pill, so the two capsules on screen are
+     visibly the same material. */
+  background: linear-gradient(
+      to bottom,
+      var(--glass-specular-top),
+      rgba(255, 255, 255, 0) 42%,
+      rgba(255, 255, 255, 0) 78%,
+      var(--glass-specular-bottom)
+    ),
+    linear-gradient(var(--cg-pill), var(--cg-pill));
+  background-clip: padding-box;
+  /* Halved with the rest. */
+  backdrop-filter: blur(3px) saturate(180%);
+  -webkit-backdrop-filter: blur(3px) saturate(180%);
+  box-shadow: var(--glass-rim), 0 1px 2px rgba(0, 0, 0, 0.08);
+  transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.28, 1.25),
+    color 0.2s ease, box-shadow 0.3s ease;
+}
+
+/* No painted ring here either — same reasoning as the pill. This button sits
+   inside the panel rather than on the page, so it has no lens of its own; the
+   rim highlight and the tint are the whole edge. */
+
+.mp[data-glass='on'][data-popup='on'] .mp-actions .btn:hover:not([disabled]),
+.mp[data-glass='on'][data-popup='on'] .mp-actions .btn:focus-visible {
+  border-color: transparent;
+  transform: scale(1.03);
+}
+
+.mp[data-glass='on'][data-popup='on'] .mp-actions .btn:active:not([disabled]) {
+  transform: scale(1.06, 0.9);
+  transition: transform 0.09s ease-out;
+}
+
+/* ==========================================================================
+   Bottom sheet
+   ==========================================================================
+
+   The two triggers are call-popup.css's, restated because a media query list
+   cannot be factored. All three copies — there, here, and SHEET_AT in
+   call-popup.js — have to change together.
+
+   Only the material moves: the geometry call-popup.css set on .mp-panel is
+   correct, it is just now describing the wrong element. */
+@media (max-width: 560px), (max-height: 520px) {
+  .mp[data-glass='on'][data-popup='on'] .cg-slab,
+  .mp[data-glass='on'][data-popup='on'][data-place='below'] .cg-slab {
+    max-width: 560px;
+    margin-inline: auto;
+    /* Bottom corners meet the screen edge, so they square off. */
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-bottom: 0;
+    box-shadow: var(--glass-rim),
+      0 -18px 40px -18px rgba(var(--shadow-rgb), 0.42);
+    /* Sheets travel from an edge, not out of a point — no scale, no origin. */
+    transform: translateY(100%);
+    transform-origin: 50% 100%;
+  }
+
+  .mp[data-glass='on'][data-popup='on'][data-open='true'] .cg-slab {
+    transform: translateY(0);
+  }
+
+  /* call-popup.css put these on .mp-panel, which is now the content box inside
+     the slab. Width and radius belong to the surface; the padding stays. */
+  .mp[data-glass='on'][data-popup='on'] .mp-panel,
+  .mp[data-glass='on'][data-popup='on'][data-place='below'] .mp-panel {
+    max-width: none;
+    margin-inline: 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .mp[data-glass='on'][data-popup='on'][data-open='true'] .mp-panel {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   Preferences
+   ========================================================================== */
+
+/* The refraction and both specular layers are static, so they stay. Only the
+   motion goes: no swell, no squash, no spring, no travelling glint.
+   call-glass.js declines to ramp the lens under the same query. */
+@media (prefers-reduced-motion: reduce) {
+  .mp[data-glass='on'] .mp-toggle,
+  .mp[data-glass='on'] .mp-toggle:hover,
+  .mp[data-glass='on'] .mp-toggle:focus-visible,
+  .mp[data-glass='on'] .mp-toggle:active,
+  .mp[data-glass='on'][data-popup='on'] .mp-actions .btn,
+  .mp[data-glass='on'][data-popup='on'] .mp-actions .btn:hover:not([disabled]),
+  .mp[data-glass='on'][data-popup='on'] .mp-actions .btn:focus-visible,
+  .mp[data-glass='on'][data-popup='on'] .mp-actions .btn:active:not([disabled]) {
+    transform: none;
+    transition: color 0.2s ease;
+  }
+
+  /* Only the travelling glint goes; the refraction and its fringe are static
+     and stay. */
+  .mp[data-glass='on'] .mp-toggle,
+  .mp[data-glass='on'] .mp-toggle:hover,
+  .mp[data-glass='on'] .mp-toggle:focus-visible {
+    --cg-glow-a: 0%;
+  }
+
+  .mp[data-glass='on'][data-popup='on'] .cg-slab,
+  .mp[data-glass='on'][data-popup='on'][data-place='below'] .cg-slab {
+    transform: none;
+    transition: opacity 0.12s linear, visibility 0s linear 0.12s;
+  }
+
+  .mp[data-glass='on'][data-popup='on'][data-open='true'] .cg-slab {
+    transform: none;
+    transition: opacity 0.12s linear, visibility 0s linear 0s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) and (max-width: 560px),
+  (prefers-reduced-motion: reduce) and (max-height: 520px) {
+  .mp[data-glass='on'][data-popup='on'] .cg-slab,
+  .mp[data-glass='on'][data-popup='on'][data-place='below'] .cg-slab,
+  .mp[data-glass='on'][data-popup='on'][data-open='true'] .cg-slab {
+    transform: none;
+  }
+}
+
+/* Both of these are handled in call-glass.js, which returns before setting the
+   hook — so none of the rules above apply and call-popup.css's opaque panel is
+   what renders. Stated here only so the next person does not add the CSS
+   fallback that is already there by omission. */
+
+/* A lens has no meaning on paper. */
+@media print {
+  .mp[data-glass='on'][data-popup='on'] .mp-panel {
+    filter: none !important;
+  }
+}
