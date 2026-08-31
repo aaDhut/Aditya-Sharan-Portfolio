@@ -542,16 +542,17 @@
          backdrop capture and the fringe stops being a fringe: it becomes a
          saturated smear that runs along the whole bottom edge. */
       dispersion: 0.34,
-      /* Halved again, to a quarter of the original 13. 13 was the frosted-card
-         setting and turned the page behind the panel into a wash; 6.5 made it
-         a window; this makes it a window with barely any frost on it at all.
-         Blur and refraction are in direct competition — every px of blur here
-         erases some of the bend the lens is drawing — so what keeps the six
-         dials readable is --cg-slab in call-glass.css, not this. Raise that
-         tint before raising this back. */
-      blur: 3.25,
+      /* 50% up on the 3.25 this sat at, which was itself a quarter of the
+         original 13. 13 was the frosted-card setting and turned the page
+         behind the panel into a wash; this is a window with a light frost on
+         it. Blur and refraction are in direct competition — every px of blur
+         here erases some of the bend the lens is drawing — so if the six dials
+         still need help, raise --cg-slab in call-glass.css rather than this.
+         Track the CSS: this and the fallback `backdrop-filter` there are the
+         same number twice. */
+      blur: 4.875,
       saturate: 1.8,
-      fallbackBlur: 5,
+      fallbackBlur: 7.5,
       radius: 18,
     });
   }

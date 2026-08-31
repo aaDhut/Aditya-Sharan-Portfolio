@@ -1,6 +1,18 @@
 :root {
-  --color-bg: #ffffff;
-  --color-bg-alt: #f7f7f5;
+  /* Not white, but only just off it. Pure #ffffff gave the white glass
+     surfaces nothing to sit on — a white fill over a white page composites to
+     white, so there was no foreground. A faintly warm, near-neutral ground
+     fixes that while staying bright: the separation here is deliberately
+     subtle and is carried by the hairline and shadow, not by a dark ground.
+     Ground taken from misfit-platform.vercel.app, which solves the same
+     problem the same way (ground #faf9f7, cards white). The alt band is
+     deliberately NOT their #f5f4f1: at a 1.045 step the banded sections were
+     indistinguishable from the page. #ebeae5 steps 1.145 instead, which is
+     visible, and it is hue-matched to the ground (red-to-blue spread held at
+     6) so the extra darkness does not arrive as a yellow cast. It carries
+     Experience, Skills & Tools and Get in touch. */
+  --color-bg: #faf9f7;
+  --color-bg-alt: #ebeae5;
   --color-text: #1a1a1a;
   --color-text-muted: #5c5c5c;
   --color-border: #e7e5e0;
@@ -19,21 +31,23 @@
   --measure: 56ch;
   /* Borders on interactive elements need more definition than the hairline
      used for static surfaces, especially on the off-white alt sections. */
-  --color-border-strong: #d5d1c8;
+  --color-border-strong: #d7d4cc;
 
   /* ---- Liquid Glass materials ----
      Weight encodes hierarchy: chrome is the heaviest material, interactive
      chips the lightest. A light translucent surface is never stacked on
      another — legibility collapses when it is. */
   /* Fill opacity was reduced 60% across all three materials (0.40/0.62/0.55 ->
-     0.16/0.25/0.22) for a thinner, more transparent glass.
-     Note: the chrome fill now sits below the 0.30 floor at which nav-label
-     contrast was last measured at ~5.15:1, so labels over the darkest part of
-     the backdrop can fall under 4.5:1. Raise --glass-chrome back toward 0.30,
-     or darken the label color, if that becomes visible. */
-  --glass-chrome: rgba(255, 255, 255, 0.16);
-  --glass-surface: rgba(255, 255, 255, 0.25);
-  --glass-chip: rgba(255, 255, 255, 0.22);
+     0.16/0.25/0.22) for a thinner, more transparent glass. It is now partly
+     back up, because the canvas moved: a white fill over a white page produced
+     no surface at all, so the glass only became a foreground once there was an
+     off-white ground under it. These land between the two revisions — enough
+     lift to separate card from page, still transparent enough to refract.
+     --glass-chrome is back at the 0.30 floor at which nav-label contrast was
+     measured at ~5.15:1, so labels clear 4.5:1 over the darkest backdrop. */
+  --glass-chrome: rgba(255, 255, 255, 0.3);
+  --glass-surface: rgba(255, 255, 255, 0.42);
+  --glass-chip: rgba(255, 255, 255, 0.36);
 
   /* The bright edge where light catches the top of a pane, and the faint
      shade where it leaves the bottom. */
