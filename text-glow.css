@@ -1,0 +1,128 @@
+/* [text-glow] Removable feature.
+   Lights the About paragraph one rendered line at a time as the page scrolls,
+   at a pace of its own rather than the scrollbar's. A whole line sits at full
+   brightness while the light is inside it; at each line boundary the outgoing
+   and incoming lines cross at half brightness. Scroll back up and the light
+   travels backward.
+   See REMOVE-TEXT-GLOW.md.
+
+   Loads after dark-mode.css so the palette tokens below resolve to whichever
+   theme is live. Nothing here is scoped to the light theme specifically. */
+
+/* --tg is the brightness of one word, 0 (dim) to 1 (peak). Every word on the
+   same rendered line is written the same value — the line is the unit, the
+   word is only the smallest thing the script can address, since a line has no
+   element of its own. Registering it as a real <number> rather than leaving it
+   an untyped custom property is what makes the calc()s below cheap: the engine
+   parses it once as a number instead of re-tokenising a string on every write,
+   and a word outside the light falls back to 0 without JS having to write it. */
+@property --tg {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+:root {
+  /* The halo colour needs raw channels for the rgb(... / alpha) below, so it
+     cannot be read off --color-accent. */
+  --tg-glow-rgb: 45 106 79;
+
+  /* The lit end of the ramp. Deliberately past --color-text rather than equal
+     to it: a lit line should read as brighter than the body copy around it,
+     not merely as un-dimmed. Together with the halo alphas below, this is
+     what "intensity" means here — raise or lower both together. */
+  --tg-lit: #000000;
+}
+
+/* Wired the same three ways dark-mode.css wires its own tokens, so the two
+   stay in step. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --tg-glow-rgb: 147 216 179;
+    --tg-lit: #ffffff;
+  }
+}
+
+:root[data-theme="dark"] {
+  --tg-glow-rgb: 147 216 179;
+  --tg-lit: #ffffff;
+}
+
+/* The split paragraph. Its words are plain text inside plain spans, so this is
+   still the sentence a screen reader reads — there is no second, hidden copy
+   to keep in step. */
+.tg-split {
+  /* Unlit words sit at exactly the colour the paragraph had before this
+     feature existed. Since only one line is lit at a time, that is the state
+     most of the paragraph is in most of the time — so the resting look of the
+     section is unchanged and the text stays fully readable. */
+  color: var(--color-text-muted);
+}
+
+/* Structural only, and load-bearing twice over. The word spans stay
+   `display: inline` because inline box boundaries create no line-break
+   opportunities, so wrapping each word leaves line wrapping byte-identical to
+   the unwrapped paragraph — and because the script reads `offsetTop` off these
+   spans to work out which words share a rendered line. An `inline-block` here
+   would both re-wrap the paragraph and change what those reads mean. Change
+   nothing here. */
+.tg-word {
+  display: inline;
+
+  /* Every word is driven by --tg alone. There is no second, "already lit"
+     state — a word is only ever some distance up this one ramp. The light
+     leaves nothing lit behind it as it travels; at the end of its run it
+     simply stops moving, so the last line holds whatever --tg it arrived at
+     rather than entering a state of its own. */
+  color: color-mix(in oklab, var(--tg-lit) calc(var(--tg) * 100%), var(--color-text-muted));
+
+  /* Blur and alpha both ride --tg, so a line blooms outward as it warms
+     rather than snapping a fixed halo on at some threshold. */
+  text-shadow:
+    0 0 calc(var(--tg) * 12px) rgb(var(--tg-glow-rgb) / calc(var(--tg) * 0.6)),
+    0 0 calc(var(--tg) * 26px) rgb(var(--tg-glow-rgb) / calc(var(--tg) * 0.32));
+}
+
+/* color-mix has shipped everywhere this site's backdrop-filter work already
+   requires, and styles.css leans on it too. If it ever fails to resolve, the
+   paragraph must not fall back to transparent text — so drop to plain muted
+   text. That is the feature silently absent rather than broken, which for a
+   decorative glow is the right way to lose. */
+@supports not (color: color-mix(in oklab, #000 50%, #fff)) {
+  .tg-word {
+    color: var(--color-text-muted);
+    text-shadow: none;
+  }
+}
+
+/* Reduced motion: text-glow.js never splits the paragraph in this case, so
+   these rules normally have nothing to match. They are here for the window
+   between the stylesheet applying and the script deciding, and for a
+   preference that flips mid-session. */
+@media (prefers-reduced-motion: reduce) {
+  .tg-word {
+    color: var(--color-text-muted);
+    text-shadow: none;
+  }
+}
+
+/* A halo is decoration; in forced colours it is noise over a palette the user
+   picked deliberately. Drop it and let the text be text. */
+@media (forced-colors: active) {
+  .tg-split,
+  .tg-word {
+    color: CanvasText;
+    text-shadow: none;
+  }
+}
+
+/* Print: the light is frozen wherever the reader happened to be scrolled,
+   which on paper would read as one bright line in an otherwise grey
+   paragraph. Print it flat. */
+@media print {
+  .tg-split,
+  .tg-word {
+    color: #000;
+    text-shadow: none;
+  }
+}

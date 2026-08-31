@@ -52,6 +52,11 @@
        deforms at the edge. Must load after call-popup.css, whose panel
        material it moves onto the wrapper element. See REMOVE-CALL-GLASS.md. -->
   <link rel="stylesheet" href="call-glass.css">
+  <!-- [text-glow] Removable feature. Lights the About paragraph one rendered
+       line at a time against scroll position. Loads after dark-mode.css so its
+       glow colour follows the live theme; it styles only its own spans and
+       overrides nothing. See REMOVE-TEXT-GLOW.md. -->
+  <link rel="stylesheet" href="text-glow.css">
 </head>
 <body>
 
@@ -752,6 +757,12 @@
        data-popup hook its own rules are scoped alongside.
        See REMOVE-CALL-GLASS.md. -->
   <script defer src="call-glass.js"></script>
+  <!-- [text-glow] Removable feature. Splits the About paragraph into words,
+       groups them into rendered lines, and drives the light from scroll
+       position. Independent of script.js, whose scroll-reveal fades the same
+       paragraph's wrapper in — the two animate different properties on
+       different elements. See REMOVE-TEXT-GLOW.md. -->
+  <script defer src="text-glow.js"></script>
   <script defer src="script.js"></script>
 </body>
 </html>
