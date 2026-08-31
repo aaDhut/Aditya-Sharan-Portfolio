@@ -125,6 +125,6 @@ a flood can do is fill a spreadsheet and your inbox, never your calendar. Under
 that, `meeting-invite.gs` re-checks every slot rule server-side (the ones in
 `meeting-picker.js` are for the UI and prove nothing), rejects slots that clash
 with your real free/busy or with a request already pending, and caps requests
-at ten a day and one per email address per 24 hours. The shared token sits in
+at ten a day overall and five a day from any one address. The shared token sits in
 client-side source, so treat it as a speed bump against drive-by posts rather
 than a secret — the rate limits are what actually bound a bad day.
