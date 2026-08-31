@@ -18,7 +18,15 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Borel&display=swap" rel="stylesheet">
+  <!-- [perf] The font stylesheet is loaded off the critical path: media="print"
+       makes it non-blocking, and the onload flips it to all once it has
+       arrived. The URL already carries display=swap, so text was always going
+       to paint in the fallback face first — this only stops a cross-origin
+       round-trip from holding up first paint. Revert by restoring the plain
+       stylesheet link kept in the <noscript> below. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Borel&display=swap"
+        media="print" onload="this.media='all';this.onload=null">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Borel&display=swap"></noscript>
   <link rel="stylesheet" href="styles.css">
   <!-- [dark-mode] Removable feature. Delete this line and dark-mode.css to
        remove it entirely; see REMOVE-DARK-MODE.md. Must load after styles.css,
@@ -721,29 +729,29 @@
 
   </div>
 
-  <script src="glass.js"></script>
+  <script defer src="glass.js"></script>
   <!-- [droplet] Removable feature. Must load after glass.js, which owns the
        lens it applies to the hero buttons. -->
-  <script src="droplet-buttons.js"></script>
+  <script defer src="droplet-buttons.js"></script>
   <!-- [meeting] Removable feature. Reads the shell in the contact section
        above; see REMOVE-MEETING-PICKER.md. -->
-  <script src="meeting-picker.js"></script>
+  <script defer src="meeting-picker.js"></script>
   <!-- [dial-tick] Removable feature. Adds the detent click to the picker's
        wheels by reading their scroll position; it touches nothing in
        meeting-picker.js, so removing either one leaves the other working.
        See REMOVE-DIAL-TICK.md. -->
-  <script src="dial-tick.js"></script>
+  <script defer src="dial-tick.js"></script>
   <!-- [call-popup] Removable feature. Places and dismisses the floating
        panel; it watches the picker's data-open attribute and binds nothing on
        it, so removing either one leaves the other working.
        See REMOVE-CALL-POPUP.md. -->
-  <script src="call-popup.js"></script>
+  <script defer src="call-popup.js"></script>
   <!-- [call-glass] Removable feature. Builds the two lenses and wraps the
        button's label so it can be filtered. Must load after glass.js, which it
        reuses for the backdrop refraction, and after call-popup.js, whose
        data-popup hook its own rules are scoped alongside.
        See REMOVE-CALL-GLASS.md. -->
-  <script src="call-glass.js"></script>
-  <script src="script.js"></script>
+  <script defer src="call-glass.js"></script>
+  <script defer src="script.js"></script>
 </body>
 </html>

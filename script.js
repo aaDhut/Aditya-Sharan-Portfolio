@@ -258,20 +258,42 @@ document.querySelectorAll('.nav-links a[href^="#"]').forEach((a) => {
 
 const spySections = [...navAnchors.keys()].sort((a, b) => a.offsetTop - b.offsetTop);
 
+// [perf] Section offsets and page height are cached rather than read per frame.
+// offsetTop and scrollHeight are both layout-forcing reads: asking for them
+// inside a scroll handler makes the browser flush layout synchronously before
+// it can answer, on every single frame. The values only move when the page is
+// re-laid-out, so they are measured on resize and after load instead — reveal
+// animations run on transform, which does not shift offsetTop.
+let spyOffsets = [];
+let spyMaxScroll = 0;
+
+function measureSpy() {
+  spyOffsets = spySections.map((section) => section.offsetTop);
+  spyMaxScroll = document.body.scrollHeight;
+}
+
+// The section the last write left active, so a frame that changes nothing
+// does no DOM work at all. Scrolling through one section is hundreds of
+// frames; only the handful that cross a boundary need to touch the nav.
+let spyCurrent;
+
 function updateActiveNav() {
   // Offset by the sticky header so a section counts as "current" once it
   // reaches the point where it's actually readable.
   const probe = window.scrollY + 100;
   let current = null;
 
-  for (const section of spySections) {
-    if (section.offsetTop <= probe) current = section;
+  for (let i = 0; i < spySections.length; i++) {
+    if (spyOffsets[i] <= probe) current = spySections[i];
   }
 
   // At the very bottom the last section may be too short to ever pass the
   // probe line — treat reaching the end as landing on it.
-  const atBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 2;
+  const atBottom = window.innerHeight + window.scrollY >= spyMaxScroll - 2;
   if (atBottom && spySections.length) current = spySections[spySections.length - 1];
+
+  if (current === spyCurrent) return;
+  spyCurrent = current;
 
   navAnchors.forEach((anchor, section) => {
     const active = section === current;
@@ -295,7 +317,17 @@ function requestNavUpdate() {
 }
 
 window.addEventListener('scroll', requestNavUpdate, { passive: true });
-window.addEventListener('resize', requestNavUpdate, { passive: true });
+window.addEventListener('resize', () => {
+  measureSpy();
+  requestNavUpdate();
+}, { passive: true });
+// Late-loading images and fonts can still reflow the page after this runs.
+window.addEventListener('load', () => {
+  measureSpy();
+  requestNavUpdate();
+});
+
+measureSpy();
 updateActiveNav();
 
 // Scroll reveal

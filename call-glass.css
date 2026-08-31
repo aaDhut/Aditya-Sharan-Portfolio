@@ -270,12 +270,13 @@
     var(--cg-slab);
 
   /* call-glass.js writes the backdrop lens here. This is the fallback that
-     renders before it runs, and the whole material if it fails. A quarter of
-     the original 13px: heavy blur dissolves the very refraction the lens is
-     creating, which is the note the header's own 2.5px carries. Track the JS
-     — this and the lens's own `blur` are the same number twice. */
-  backdrop-filter: blur(3.25px) saturate(180%);
-  -webkit-backdrop-filter: blur(3.25px) saturate(180%);
+     renders before it runs, and the whole material if it fails. Raised 50%
+     off the 3.25 that was here, to about three-eighths of the original 13px:
+     heavy blur dissolves the very refraction the lens is creating, so this is
+     as much frost as the bend survives. Track the JS — this and the lens's
+     own `blur` are the same number twice. */
+  backdrop-filter: blur(4.875px) saturate(180%);
+  -webkit-backdrop-filter: blur(4.875px) saturate(180%);
   box-shadow: var(--glass-rim),
     0 22px 46px -18px rgba(var(--shadow-rgb), 0.36),
     0 4px 12px -6px rgba(var(--shadow-rgb), 0.16);
