@@ -34,6 +34,16 @@
        entirely; see REMOVE-MEETING-PICKER.md. Loads after dark-mode.css so it
        can read the palette tokens that file re-points. -->
   <link rel="stylesheet" href="meeting-picker.css">
+  <!-- [call-popup] Removable feature. Re-renders the meeting picker's open
+       state as a panel floating out of the button instead of an accordion.
+       Must load after meeting-picker.css, whose panel rules it overrides.
+       See REMOVE-CALL-POPUP.md. -->
+  <link rel="stylesheet" href="call-popup.css">
+  <!-- [call-glass] Removable feature. Renders the call button and its pop-up
+       as liquid glass: backdrop refraction, a chromatic rim, and text that
+       deforms at the edge. Must load after call-popup.css, whose panel
+       material it moves onto the wrapper element. See REMOVE-CALL-GLASS.md. -->
+  <link rel="stylesheet" href="call-glass.css">
 </head>
 <body>
 
@@ -723,6 +733,17 @@
        meeting-picker.js, so removing either one leaves the other working.
        See REMOVE-DIAL-TICK.md. -->
   <script src="dial-tick.js"></script>
+  <!-- [call-popup] Removable feature. Places and dismisses the floating
+       panel; it watches the picker's data-open attribute and binds nothing on
+       it, so removing either one leaves the other working.
+       See REMOVE-CALL-POPUP.md. -->
+  <script src="call-popup.js"></script>
+  <!-- [call-glass] Removable feature. Builds the two lenses and wraps the
+       button's label so it can be filtered. Must load after glass.js, which it
+       reuses for the backdrop refraction, and after call-popup.js, whose
+       data-popup hook its own rules are scoped alongside.
+       See REMOVE-CALL-GLASS.md. -->
+  <script src="call-glass.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
