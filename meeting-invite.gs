@@ -30,6 +30,8 @@
  *     Execute as: Me, Who has access: Anyone. Authorise when prompted.
  *  5. Copy the /exec URL into ENDPOINT at the top of meeting-picker.js, and
  *     the same token into TOKEN there.
+ *  6. Paste that same /exec URL into WEB_APP_URL below, so the approve link
+ *     mailed to you is always the public one and opens in any browser.
  *
  * The spreadsheet makes itself on the first request — there is nothing to
  * create or paste. It is a normal Sheet in your Drive; open it any time.
@@ -38,8 +40,31 @@
  * Deploying a *new deployment* instead changes the URL.
  */
 
+/* The public /exec URL of this deployment, pasted in rather than discovered.
+   ScriptApp.getService().getUrl() is not dependable: it can return the private
+   /dev URL, or the URL of a different deployment. Either one opens fine in a
+   browser already signed into your account and dies with Google Drive's
+   "unable to open the file" in one that is not — which is how a review link
+   works on your laptop and fails in Safari on your phone. Left empty, the code
+   falls back to asking, so the file still works if you forget. */
+var WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzCQShwR3SIzzJ6Wn8-9zncTocOZyh8onHg37vISukeINGTa2bO5RfBv5X7YJ4-SI-d/exec';
+
 var TZ = 'Asia/Kolkata';
-var HOST_EMAIL = '20adityasharan@gmail.com';
+
+/* Two addresses, two jobs — do not collapse them back into one.
+
+   HOST_EMAIL is the guest-facing identity: the Reply-to on every mail a
+   stranger receives, and the address the picker's own fallbacks point at. It
+   has to be the account this script runs as, because Gmail stamps the From
+   with the executing account and no code can change that. A different value
+   here just means guests see a From and a Reply-to that disagree.
+
+   NOTIFY_EMAIL is where the approve/decline mail is sent — the inbox actually
+   read. It appears nowhere a guest can see it: it is only ever a To: on mail
+   sent from this account to itself. */
+var HOST_EMAIL = 'aadhut10@gmail.com';
+var NOTIFY_EMAIL = '20adityasharan@gmail.com';
+
 var HOST_NAME = 'Aditya Sharan';
 var CALENDAR_ID = 'primary';
 
@@ -61,9 +86,14 @@ var HORIZON_DAYS = 1825;
 var LEAD_MIN = 15;
 
 /* A public endpoint is a spam surface even when it only writes to a sheet.
-   These are the ceiling on how many review emails a bad day can send you. */
+   These are the ceiling on how many review emails a bad day can send you.
+
+   One address may ask for several slots — different days, different times, all
+   fine. What it may not do is ask an unbounded number of times, so the per-day
+   cap below is the bound. Asking twice for the *same* slot is caught
+   separately, by the pending hold in heldBy(). */
 var MAX_PER_DAY = 10;
-var GUEST_COOLDOWN_H = 24;
+var MAX_PER_GUEST_PER_DAY = 5;
 
 /* The request log. Created on first use; its id is remembered in Script
    Properties. Column order is the sheet's contract — rowToRequest() and
@@ -75,6 +105,7 @@ var HEADERS = ['id', 'requested', 'status', 'when (IST)', 'start (epoch ms)',
 
 var COL_STATUS = 3;
 var COL_START = 5;
+var COL_EMAIL = 6;
 var COL_DECIDED = 10;
 var COL_EVENT = 11;
 
@@ -109,8 +140,14 @@ function doPost(e) {
     try {
       var limited = checkLimits(email);
       if (limited) return reply(false, limited);
-      if (isBusy(start, end) || isHeld(start, end)) {
+      if (isBusy(start, end)) {
         return reply(false, 'That slot just filled — please pick another.');
+      }
+      var holder = heldBy(start, end);
+      if (holder) {
+        return reply(false, holder === email.toLowerCase()
+          ? 'You have already asked for that slot — check your inbox.'
+          : 'That slot just filled — please pick another.');
       }
 
       id = Utilities.getUuid();
@@ -181,28 +218,46 @@ function checkLimits(email) {
   var props = PropertiesService.getScriptProperties();
   var today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
 
-  if (Number(props.getProperty('count:' + today) || 0) >= MAX_PER_DAY) {
+  if (Number(props.getProperty(dayKey(today)) || 0) >= MAX_PER_DAY) {
     return 'Today is fully booked — try tomorrow.';
   }
-
-  var last = Number(props.getProperty('guest:' + email.toLowerCase()) || 0);
-  if (last && Date.now() - last < GUEST_COOLDOWN_H * 3600000) {
-    return 'You already have a request in. Reply to that email to change it.';
+  if (Number(props.getProperty(guestKey(today, email)) || 0) >= MAX_PER_GUEST_PER_DAY) {
+    return 'That is as many times as one address can ask in a day. Reply to ' +
+           'one of those emails and we can sort the rest out there.';
   }
   return null;
 }
 
-function clearCooldown(email) {
-  PropertiesService.getScriptProperties()
-    .deleteProperty('guest:' + String(email).toLowerCase());
-}
+function dayKey(day) { return 'd:' + day; }
+function guestKey(day, email) { return 'g:' + day + ':' + String(email).toLowerCase(); }
 
 function recordBooking(email) {
   var props = PropertiesService.getScriptProperties();
   var today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
-  props.setProperty('count:' + today,
-    String(Number(props.getProperty('count:' + today) || 0) + 1));
-  props.setProperty('guest:' + email.toLowerCase(), String(Date.now()));
+  bump(props, dayKey(today));
+  bump(props, guestKey(today, email));
+  pruneCounters(props, today);
+}
+
+function bump(props, key) {
+  props.setProperty(key, String(Number(props.getProperty(key) || 0) + 1));
+}
+
+/**
+ * The counters are per day, so every key from an earlier day is dead weight.
+ * Cleared here because this is the only place that writes them — otherwise the
+ * property store grows by one key per guest forever, which is what the old
+ * per-address cooldown did.
+ */
+function pruneCounters(props, today) {
+  var all = props.getProperties();
+  for (var k in all) {
+    var day = null;
+    if (k.indexOf('d:') === 0) day = k.slice(2);
+    else if (k.indexOf('g:') === 0) day = k.slice(2, 12);
+    else if (k.indexOf('count:') === 0 || k.indexOf('guest:') === 0) day = '';  // old scheme
+    if (day !== null && day !== today) props.deleteProperty(k);
+  }
 }
 
 function isBusy(start, end) {
@@ -222,7 +277,7 @@ function isBusy(start, end) {
  * Pending rows whose slot has already passed are ignored: they were never
  * acted on, and they should not block a slot forever.
  */
-function isHeld(start, end) {
+function heldBy(start, end) {
   var rows = allRows();
   var now = Date.now();
   for (var i = 0; i < rows.length; i++) {
@@ -231,9 +286,11 @@ function isHeld(start, end) {
     if (!s) continue;
     var e = s + DURATION_MIN * 60000;
     if (e < now) continue;
-    if (s < end.getTime() && e > start.getTime()) return true;
+    if (s < end.getTime() && e > start.getTime()) {
+      return String(rows[i][COL_EMAIL - 1]).toLowerCase();
+    }
   }
-  return false;
+  return null;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -365,9 +422,6 @@ function decide(id, decision, message) {
 
     if (decision === 'decline') {
       setStatus(found.row, 'declined', '');
-      /* You just asked them to try another time, so do not also make them wait
-         a day for it. Approving leaves the cooldown in place. */
-      clearCooldown(r.email);
       try { declineGuest(r, message); } catch (err) { console.error(err); }
       return { ok: true, message: 'Declined. ' + r.email + ' has been told.' };
     }
@@ -415,7 +469,7 @@ function createEvent(start, end, email, r) {
 function notifyHost(id, start, email, body) {
   var when = Utilities.formatDate(start, TZ, 'EEE d MMM, h:mm a') + ' IST';
   MailApp.sendEmail({
-    to: HOST_EMAIL,
+    to: NOTIFY_EMAIL,
     subject: 'Meeting request: ' + (body.name || email) + ' — ' + when,
     body: [
       (body.name || 'Someone') + ' asked for a ' + DURATION_MIN + '-minute call.',
@@ -505,7 +559,8 @@ function guestWhen(start, tz) {
 }
 
 function reviewUrl(id) {
-  return ScriptApp.getService().getUrl() + '?id=' + encodeURIComponent(id);
+  return (WEB_APP_URL || ScriptApp.getService().getUrl()) +
+    '?id=' + encodeURIComponent(id);
 }
 
 /* -------------------------------------------------------------------------- */

@@ -31,7 +31,7 @@
   var TOKEN = 'Rx0L0V_jQGBcURG8J_pivBJFWEACHYoNa1c1svjDNpk';
 
   var HOST_NAME = 'Aditya Sharan';
-  var HOST_EMAIL = '20adityasharan@gmail.com';
+  var HOST_EMAIL = 'aadhut10@gmail.com';
   var HOST_TZ = 'Asia/Kolkata';
 
   var DURATION_MIN = 30;
