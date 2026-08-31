@@ -459,6 +459,27 @@
   while (toggle.firstChild) label.appendChild(toggle.firstChild);
   toggle.appendChild(label);
 
+  /* ---- The surface -------------------------------------------------------
+
+     The pill's *own* light — its specular and its edge highlight — moved off
+     the button and onto a layer of its own, so a lens can be put on it without
+     the label going through the same filter. That split is the whole point:
+     the label stays crisp (see the long note further down for why), and the
+     light on the surface bends.
+
+     This is what makes the edge read as glass on this page in particular.
+     Backdrop refraction only shows where something is passing behind, and the
+     button sits on a flat section colour with nothing crossing it — bend that
+     backdrop as hard as you like and it looks identical. The surface, on the
+     other hand, always has something on it to bend.
+
+     Inserted first and pulled to z-index -1 in the stylesheet, so it sits
+     under the label and the caret without either needing a stacking rule. */
+  var surface = document.createElement('span');
+  surface.className = 'cg-surface';
+  surface.setAttribute('aria-hidden', 'true');
+  toggle.insertBefore(surface, toggle.firstChild);
+
   /* ---- Backdrop refraction ----------------------------------------------
 
      glass.js unchanged, which is also where the Safari/Firefox fallback to a
@@ -508,15 +529,29 @@
          rather than most of a 60px bar. */
       band: 40,
       scale: 110,
-      dispersion: 0.15,
-      /* Halved, from 13. The old value was the frosted-card setting: it turned
-         the page behind the panel into a wash, which also dissolved the very
-         refraction the lens above is creating. Now the panel is a window with
-         a lens in it, like the header — the tint in call-glass.css is what
-         keeps the six dials readable. */
-      blur: 6.5,
+      /* Twice the header's 0.15. This is the real fringe — three passes of the
+         same map, each channel bent by a different amount — so it only appears
+         where the backdrop behind the rim has something to split, and it moves
+         when the page under the panel moves. That is also why it needs the
+         painted fringe in call-glass.css beside it: over a flat dark section
+         there is nothing here for it to colour.
+
+         Held at 0.34 rather than pushed further because the outer channel ends
+         up at scale 147 against a 40px band — 3.7x, still inside the header's
+         own 4.3x. Past that the rim samples outside Chromium's element-clipped
+         backdrop capture and the fringe stops being a fringe: it becomes a
+         saturated smear that runs along the whole bottom edge. */
+      dispersion: 0.34,
+      /* Halved again, to a quarter of the original 13. 13 was the frosted-card
+         setting and turned the page behind the panel into a wash; 6.5 made it
+         a window; this makes it a window with barely any frost on it at all.
+         Blur and refraction are in direct competition — every px of blur here
+         erases some of the bend the lens is drawing — so what keeps the six
+         dials readable is --cg-slab in call-glass.css, not this. Raise that
+         tint before raising this back. */
+      blur: 3.25,
       saturate: 1.8,
-      fallbackBlur: 10,
+      fallbackBlur: 5,
       radius: 18,
     });
   }

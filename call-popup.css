@@ -112,6 +112,24 @@
   top: calc(100% + var(--cp-gap));
 }
 
+/* A closed panel keeps its box. That is deliberate — the wheels are scroll
+   containers and an element with no box has no scrollTop to keep — but the box
+   is 560x423 at z-index 150, sitting over the contact section's copy and its
+   email link, and a box that is merely invisible still takes the pointer.
+   Nothing inside a closed panel is meant to be reachable, so the whole thing
+   stands down until it is open.
+
+   Set on the wrapper rather than on .mp-panel so it covers the slab
+   call-glass.js hangs in between; pointer-events inherits, and nothing below
+   re-declares it. */
+.mp[data-popup='on'] .mp-collapse {
+  pointer-events: none;
+}
+
+.mp[data-popup='on'][data-open='true'] .mp-collapse {
+  pointer-events: auto;
+}
+
 /* The accordion's inner clipper. Its overflow:hidden would now crop the
    panel's own shadow, and min-height:0 only ever mattered inside a grid row. */
 .mp[data-popup='on'] .mp-collapse > div {

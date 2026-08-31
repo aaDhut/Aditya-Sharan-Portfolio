@@ -6,10 +6,15 @@ text that deforms and splits into its colour channels at the panel edge.
 
 The material is deliberately the same one `.header-inner` is made of: a thin
 tint under the header's two-stop specular, `--glass-rim` for the edge, and no
-painted border of any kind. Nothing here draws a coloured line around anything
-— the colour at the edges comes from the three-pass displacement in `glass.js`,
-where each channel bends by a different amount, so it appears only where the
-surface actually curves.
+painted border of any kind. Nothing here draws a *line* around anything. Most
+of the colour at the edges comes from the three-pass displacement in
+`glass.js`, where each channel bends by a different amount, so it appears only
+where the surface actually curves — and on the panel that is joined by a
+painted fringe (`.cg-slab::before`), which is soft-edged, directional, and
+carries only two hues. It exists because real dispersion needs contrast behind
+the glass to split, and the panel routinely opens over a flat section where
+there is none. The button has no painted fringe: it sits over the orb field,
+which gives its lens plenty to work with.
 
 Added as a self-contained, reversible feature on top of the call pop-up — it
 re-draws what the pop-up is *made of*, it does not change where it sits, how big
@@ -105,7 +110,24 @@ Two numbers do nearly all the work, both in `call-glass.js`:
 | `scale` on `panelLens` | in `contentLens(panel, …)` | px of text displacement at the panel rim. Held down by the selection band, whose ends sit at the content edge and smear before the text does. |
 
 `dispersion` on any of them is the width of the colour split — keep it small, it
-is a rim fringe, not a prism. `0.15` is the header's.
+is a rim fringe, not a prism. `0.15` is the header's, and the pill's. The slab
+runs `0.34`, which is the ceiling for it: the outer channel lands at scale 147
+against a 40px band, and past roughly 4x the band the rim samples outside
+Chromium's element-clipped backdrop capture and the fringe turns into a
+saturated smear along the bottom edge.
+
+The panel's painted fringe is tuned in `call-glass.css` instead, on
+`.cg-slab::before` and the two `--cg-fringe-*` tokens. The inset shadows are
+the wet edge, the outer pair is its spill onto the page; the negative spread is
+what keeps them soft. Turn the tokens transparent and the edge falls back to
+whatever the lens alone is producing.
+
+The blur is a quarter of what it started at (`13` → `6.5` → `3.25`), and it is
+written twice — `blur` on the slab lens in `call-glass.js`, and the
+`backdrop-filter` fallback on `.cg-slab` in `call-glass.css`. Change both. If
+body copy starts reading through the panel, raise `--cg-slab` rather than the
+blur: blur and refraction are in direct competition, and frost is what
+dissolved the fringe in the first place.
 
 Two tints carry the rest of the look, both at the top of `call-glass.css`:
 `--cg-slab` (the panel) and `--cg-pill` (the two capsules). The panel floats

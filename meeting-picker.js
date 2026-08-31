@@ -22,19 +22,24 @@
      the event and mails the Meet invite. While this is empty, Send opens a
      prefilled Google Calendar page instead — see the fallback in submit().
      Setup steps: REMOVE-MEETING-PICKER.md. */
-  var ENDPOINT = '';
+  var ENDPOINT = 'https://script.google.com/macros/s/AKfycbzCQShwR3SIzzJ6Wn8-9zncTocOZyh8onHg37vISukeINGTa2bO5RfBv5X7YJ4-SI-d/exec';
 
   /* Must match the SHARED_TOKEN script property in meeting-invite.gs. It sits
      in client-side source, so it is a speed bump against drive-by posts, not
      a secret — the rate limits and the freebusy check in the script are what
      actually bound the damage. */
-  var TOKEN = 'change-me-to-match-the-script';
+  var TOKEN = 'Rx0L0V_jQGBcURG8J_pivBJFWEACHYoNa1c1svjDNpk';
 
   var HOST_NAME = 'Aditya Sharan';
   var HOST_EMAIL = '20adityasharan@gmail.com';
   var HOST_TZ = 'Asia/Kolkata';
 
   var DURATION_MIN = 30;
+
+  /* The rule meeting-invite.gs enforces, repeated here so the visitor hears
+     about it immediately. Deliberately stricter than type="email", which
+     accepts a dotless domain like "you@gmail". */
+  var EMAIL_RE = /^[^@\s]+@[^@\s.]+\.[^@\s]+$/;
 
   /* Any day of the week, any hour of the day, AM or PM. Set this to false to
      go back to a working window and weekdays only — one switch here and the
@@ -645,9 +650,26 @@
     submit();
   });
 
+  emailInput.addEventListener('input', function () {
+    emailInput.setCustomValidity('');
+  });
+
   function submit() {
     var email = emailInput.value.trim();
+
+    /* Cleared first: a message left over from last time would otherwise keep
+       checkValidity() false no matter what they type now. */
+    emailInput.setCustomValidity('');
     if (!email || !emailInput.checkValidity()) {
+      emailInput.reportValidity();
+      emailInput.focus();
+      return;
+    }
+    /* type="email" is happy with "you@gmail", the script is not. Finding that
+       out after a round trip reads like a failure rather than a typo. */
+    if (!EMAIL_RE.test(email)) {
+      emailInput.setCustomValidity('Add the rest of the domain, like .com');
+      emailInput.reportValidity();
       emailInput.focus();
       return;
     }

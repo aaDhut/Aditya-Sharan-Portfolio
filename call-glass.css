@@ -72,6 +72,22 @@
   --cg-band-edge: rgba(0, 0, 0, 0.1);
   --cg-field: rgba(255, 255, 255, 0.38);
 
+  /* The chromatic rim.
+
+     The lens in call-glass.js splits the backdrop into its channels for real,
+     but real dispersion needs something behind the glass to split: over a flat
+     section — which is most of where this panel opens — there is nothing there
+     to colour and the edge goes plain. These two are the painted half, and
+     they are painted the way a lens actually disperses rather than as a
+     rainbow: cool bleeds off one face, warm off the opposite one, nothing in
+     between. The old conic hairline this file removed put every hue around the
+     perimeter at once, which is what made it read as a drawn border.
+
+     Both are soft-edged in use (a blurred box-shadow, not a line), so the
+     alpha is the peak at the rim and falls off across ~4px. */
+  --cg-fringe-cool: rgba(96, 205, 255, 0.5);
+  --cg-fringe-warm: rgba(255, 122, 96, 0.42);
+
   /* Dark mode wants a much quieter surface throughout: the same white overlay
      over a dark backdrop reads as chalk rather than light. */
   --dark-cg-slab: rgba(26, 26, 29, 0.42);
@@ -81,6 +97,10 @@
   --dark-cg-band: rgba(255, 255, 255, 0.1);
   --dark-cg-band-edge: rgba(255, 255, 255, 0.16);
   --dark-cg-field: rgba(255, 255, 255, 0.07);
+  /* Pulled back on dark. The same fringe over a dark backdrop has nothing
+     competing with it and reads as neon piping rather than as a wet edge. */
+  --dark-cg-fringe-cool: rgba(120, 214, 255, 0.42);
+  --dark-cg-fringe-warm: rgba(255, 138, 110, 0.34);
 }
 
 /* Both triggers, mirroring dark-mode.css: the system setting, and the explicit
@@ -94,6 +114,8 @@
     --cg-band: var(--dark-cg-band);
     --cg-band-edge: var(--dark-cg-band-edge);
     --cg-field: var(--dark-cg-field);
+    --cg-fringe-cool: var(--dark-cg-fringe-cool);
+    --cg-fringe-warm: var(--dark-cg-fringe-warm);
   }
 }
 
@@ -105,6 +127,8 @@
   --cg-band: var(--dark-cg-band);
   --cg-band-edge: var(--dark-cg-band-edge);
   --cg-field: var(--dark-cg-field);
+  --cg-fringe-cool: var(--dark-cg-fringe-cool);
+  --cg-fringe-warm: var(--dark-cg-fringe-warm);
 }
 
 /* Registered so they can be transitioned. An unregistered custom property is
@@ -246,11 +270,12 @@
     var(--cg-slab);
 
   /* call-glass.js writes the backdrop lens here. This is the fallback that
-     renders before it runs, and the whole material if it fails. Halved from
-     13px: heavy blur dissolves the very refraction the lens is creating, which
-     is the note the header's own 2.5px carries. */
-  backdrop-filter: blur(6.5px) saturate(180%);
-  -webkit-backdrop-filter: blur(6.5px) saturate(180%);
+     renders before it runs, and the whole material if it fails. A quarter of
+     the original 13px: heavy blur dissolves the very refraction the lens is
+     creating, which is the note the header's own 2.5px carries. Track the JS
+     — this and the lens's own `blur` are the same number twice. */
+  backdrop-filter: blur(3.25px) saturate(180%);
+  -webkit-backdrop-filter: blur(3.25px) saturate(180%);
   box-shadow: var(--glass-rim),
     0 22px 46px -18px rgba(var(--shadow-rgb), 0.36),
     0 4px 12px -6px rgba(var(--shadow-rgb), 0.16);
@@ -286,12 +311,53 @@
     visibility 0s linear 0.12s;
 }
 
-/* Both pseudo-elements are deliberately free. The panel used to carry a conic
-   hairline and a second, much brighter sheen stacked over its content — a
-   painted rainbow edge and a white wash, which together are what made it read
-   as a frosted card with a decorative border rather than as the same glass the
-   header is made of. The specular is now one background layer under the
-   content, and the edge colour is the lens's, not a gradient's. */
+/* ::after is deliberately still free. The panel used to carry a second, much
+   brighter sheen stacked over its content — a white wash which, with the conic
+   hairline that used to live on ::before, is what made it read as a frosted
+   card with a decorative border rather than as glass. The specular is now one
+   background layer under the content.
+
+   ::before is the chromatic rim.
+
+   Not that conic hairline coming back. That one put every hue around the whole
+   perimeter in a 1px line, which is a rainbow drawn around a box; this is a
+   lens edge. Light entering curved glass at an angle leaves it split along one
+   axis, so the fringe has a direction: cool bleeds inward off the top-left
+   face, warm off the bottom-right, and the two faces at right angles to that
+   axis carry almost nothing. That asymmetry is most of why it reads as a wet
+   droplet edge rather than as a sticker.
+
+   Blurred box-shadows rather than a masked gradient ring, for one reason that
+   matters: softness across the rim. The filter/mask order in CSS applies the
+   mask *after* the filter, so blurring a masked ring gives you soft colour
+   inside a hard 1.5px cut — a crisp line again. A shadow with a blur radius
+   and a negative spread is soft in the direction that counts, and it follows
+   border-radius exactly, which matters when the bottom sheet squares off its
+   lower corners.
+
+   Paired with dispersion: 0.34 on the slab lens in call-glass.js — the real
+   split, which only shows where the backdrop has contrast to split. These two
+   are meant to be tuned together: this is the floor the edge never falls
+   below, that is the part that lives and moves with the page behind it. */
+.mp[data-glass='on'][data-popup='on'] .cg-slab::before {
+  content: '';
+  position: absolute;
+  /* Straddles the rim rather than sitting inside it, so the fringe has a
+     little to bleed outward into — a droplet's edge is wet on both sides. */
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+
+  box-shadow:
+    /* Inward, hugging the two faces. -1px spread keeps the peak at the rim and
+       lets the falloff do the rest, so this never resolves into a line. */
+    inset 1.5px 1.5px 4px -1px var(--cg-fringe-cool),
+    inset -1.5px -1.5px 4px -1px var(--cg-fringe-warm),
+    /* Outward, half strength: the same split spilling onto the page. This is
+       the half that survives on a backdrop with no contrast for the lens. */
+    2px 2px 5px -3px var(--cg-fringe-warm),
+    -2px -2px 5px -3px var(--cg-fringe-cool);
+}
 
 /* ==========================================================================
    The content
@@ -310,9 +376,22 @@
   border-radius: var(--radius-md);
 
   /* The slab owns the entrance now. Neutralised rather than deleted, since
-     call-popup.css's rules are still there and still match. */
+     call-popup.css's rules are still there and still match.
+
+     `inherit`, not `visible`. visibility is inherited, and the closed slab is
+     `visibility: hidden` — but a child that re-declares `visible` un-hides
+     itself out from under a hidden parent. That is what this rule used to do:
+     the slab faded to opacity 0, which hides a subtree from the eye and from
+     nothing else, while the panel inside it stayed visible in every sense that
+     matters. A closed 560x423 panel sat over the contact section, invisible
+     and fully hit-testable, and since .mp-panel and the six .mp-wheel columns
+     are all scroll containers with overscroll-behavior: contain, every wheel
+     event that landed on it was swallowed. Reload with the pop-up open and the
+     restored scroll position put that dead zone under the cursor, which is
+     what "the page will not scroll" was. Inheriting means the panel is exactly
+     as hidden as the slab, in both states. */
   opacity: 1;
-  visibility: visible;
+  visibility: inherit;
   transform: none;
   transition: none;
 
@@ -330,7 +409,7 @@
 
 .mp[data-glass='on'][data-popup='on'][data-open='true'] .mp-panel {
   opacity: 1;
-  visibility: visible;
+  visibility: inherit;
   transform: none;
   transition: none;
 }
@@ -371,9 +450,10 @@
     ),
     linear-gradient(var(--cg-pill), var(--cg-pill));
   background-clip: padding-box;
-  /* Halved with the rest. */
-  backdrop-filter: blur(3px) saturate(180%);
-  -webkit-backdrop-filter: blur(3px) saturate(180%);
+  /* Halved with the rest, twice — it sits on the panel, so it has to stay in
+     proportion to the slab behind it or it reads as the frostier surface. */
+  backdrop-filter: blur(1.5px) saturate(180%);
+  -webkit-backdrop-filter: blur(1.5px) saturate(180%);
   box-shadow: var(--glass-rim), 0 1px 2px rgba(0, 0, 0, 0.08);
   transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.28, 1.25),
     color 0.2s ease, box-shadow 0.3s ease;
