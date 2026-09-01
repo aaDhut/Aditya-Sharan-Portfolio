@@ -52,6 +52,14 @@
        deforms at the edge. Must load after call-popup.css, whose panel
        material it moves onto the wrapper element. See REMOVE-CALL-GLASS.md. -->
   <link rel="stylesheet" href="call-glass.css">
+  <!-- [pop-glass] Removable feature. Renders the five .link-pop preview
+       panels — the four ArtStation portfolio pop-ups on the Experience tiles
+       and the résumé preview under the hero — as liquid glass: the header's
+       material with backdrop refraction and a chromatic rim, wrapped around
+       an opaque plate that keeps the screenshots sharp. Must load after
+       styles.css, whose opaque panel it replaces, and after dark-mode.css so
+       its tint follows the live theme. See REMOVE-POP-GLASS.md. -->
+  <link rel="stylesheet" href="pop-glass.css">
   <!-- [text-glow] Removable feature. Lights the About paragraph one rendered
        line at a time against scroll position. Loads after dark-mode.css so its
        glow colour follows the live theme; it styles only its own spans and
@@ -267,7 +275,7 @@
             <ul class="timeline-desc-list">
               <li>Directed requirements, quality standards, and delivery for a 60+ character initiative.</li>
               <li>Partnered with Art, Design, Engineering, and Animation to ship player-facing features.</li>
-              <li>Optimized pipeline performance; prioritized fidelity, cost, and timeline trade-offs.</li>
+              <li>Optimized the pipeline across fidelity, cost, and timelines.</li>
             </ul>
 
             <!-- Collage tile linking out to the ArtStation project. The panel is a
@@ -404,7 +412,7 @@
             <ul class="timeline-desc-list">
               <li>Built a modular character customization system (shared meshes, reusable textures, blendshapes).</li>
               <li>Partnered with design and engineering to scale customization into reusable systems.</li>
-              <li>Shifted workflow from one-off assets to systemized, reusable components.</li>
+              <li>Shifted from one-off assets to systemized, reusable components.</li>
             </ul>
             <!-- Collage tile linking out to the ArtStation project. The panel is a
                  local gallery, not an embed: ArtStation serves
@@ -757,6 +765,13 @@
        data-popup hook its own rules are scoped alongside.
        See REMOVE-CALL-GLASS.md. -->
   <script defer src="call-glass.js"></script>
+  <!-- [pop-glass] Removable feature. Attaches the lens to each preview panel
+       on its first hover and flips the data-pg hook its own stylesheet is
+       scoped to. Must load after glass.js, which it reuses for the backdrop
+       refraction. Independent of script.js, which lazy-loads the same panels'
+       images off the same first hover without either binding on the other.
+       See REMOVE-POP-GLASS.md. -->
+  <script defer src="pop-glass.js"></script>
   <!-- [text-glow] Removable feature. Splits the About paragraph into words,
        groups them into rendered lines, and drives the light from scroll
        position. Independent of script.js, whose scroll-reveal fades the same

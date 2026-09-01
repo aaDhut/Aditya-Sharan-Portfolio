@@ -96,19 +96,32 @@ Scoped to the About section deliberately: the contact section reuses
 Widening it to `.about-text` catches both. Note the script handles one element
 — it uses `querySelector`, not `querySelectorAll`.
 
-Colour and intensity live in `text-glow.css`, in three tokens at the top of the
+Colour and intensity live in `text-glow.css`, in four tokens at the top of the
 file. The dim end of the ramp is `--color-text-muted` straight from the
-palette. The lit end is `--tg-lit`, deliberately *past* `--color-text` — pure
-black in light mode, pure white in dark — so a lit line reads as brighter than
-the body copy around it rather than merely un-dimmed. The halo is
+palette. The lit end is `--tg-lit`, deliberately *past* `--color-text` —
+`#0a0a0a` in light mode, pure white in dark — so a lit line reads as brighter
+than the body copy around it rather than merely un-dimmed. The halo is
 `--tg-glow-rgb`, raw space-separated channels rather than a colour token
 because it feeds an `rgb(... / alpha)` whose alpha is computed per word; its
-two alphas (`0.6` and `0.32`) and blur radii (`12px` and `26px`) live on
-`.tg-word`. To dial intensity up or down, move `--tg-lit` and those alphas
-together — one without the other reads as either a flat colour change or a halo
-with nothing inside it. All three tokens are declared three times — once for
-light, once for `prefers-color-scheme: dark`, once for `[data-theme="dark"]` —
-mirroring exactly how `dark-mode.css` wires its own tokens.
+two peak alphas are `--tg-glow-a1` and `--tg-glow-a2`, and the blur radii
+(`12px` and `26px`) live on `.tg-word`. To dial intensity up or down, move
+`--tg-lit` and those alphas together — one without the other reads as either a
+flat colour change or a halo with nothing inside it. All four tokens are
+declared three times — once for light, once for `prefers-color-scheme: dark`,
+once for `[data-theme="dark"]` — mirroring exactly how `dark-mode.css` wires
+its own tokens.
+
+The halos are not the same effect in the two themes, which is why the alphas
+are tokens rather than one shared pair. On dark, a pale green halo bleeds
+colour outward from the letters into a dark ground — that is a glow in the
+ordinary sense, and `0.6` / `0.32` is plenty. On light, there is no such move
+available: any halo darker than the `#faf9f7` page reads as a sooty smear, not
+a light, so the light theme's halo is *white* and works by bleaching the paper
+immediately around a lit word. Bleaching an off-white that is already almost
+white has very little room to work in, so it is laid on much harder — `0.9` /
+`0.55`. If you ever give the light theme a coloured halo again, check it
+against the page background first: darker than the ground means a shadow, not
+a glow.
 
 ## Things worth knowing before you edit it
 

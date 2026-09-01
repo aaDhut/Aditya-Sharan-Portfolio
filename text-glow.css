@@ -24,14 +24,35 @@
 
 :root {
   /* The halo colour needs raw channels for the rgb(... / alpha) below, so it
-     cannot be read off --color-accent. */
-  --tg-glow-rgb: 45 106 79;
+     cannot be read off --color-accent.
+
+     White on the light theme, because a halo only reads as light if it is
+     lighter than the ground under it — and that ground is --color-bg,
+     #faf9f7. The dark accent green this used to be was darker than the page,
+     so it never glowed; it smeared a sooty ring around the letters and made
+     the lit line look grubbier than the grey around it rather than brighter.
+     White bleaches the paper immediately around a lit word instead, which is
+     the only direction "lit" can go on a light ground. */
+  --tg-glow-rgb: 255 255 255;
+
+  /* Halo alphas are per-theme because the two halos do opposite jobs: on dark
+     the colour bleeds outward from the letters, on light the paper is
+     bleached out from under them. Bleaching an off-white that is already 97%
+     of the way to white has far less room to work in, so it has to be laid on
+     harder to register at all. */
+  --tg-glow-a1: 0.9;
+  --tg-glow-a2: 0.55;
 
   /* The lit end of the ramp. Deliberately past --color-text rather than equal
      to it: a lit line should read as brighter than the body copy around it,
-     not merely as un-dimmed. Together with the halo alphas below, this is
-     what "intensity" means here — raise or lower both together. */
-  --tg-lit: #000000;
+     not merely as un-dimmed. Together with the halo alphas above, this is
+     what "intensity" means here — raise or lower both together.
+
+     A hair off pure black. #000 against a warm off-white is the flattest ink
+     on the page and reads as a hole rather than a highlight; #0a0a0a keeps
+     effectively the same contrast against #faf9f7 while letting the white
+     bloom, not the darkness, be the thing the eye catches. */
+  --tg-lit: #0a0a0a;
 }
 
 /* Wired the same three ways dark-mode.css wires its own tokens, so the two
@@ -39,12 +60,16 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --tg-glow-rgb: 147 216 179;
+    --tg-glow-a1: 0.6;
+    --tg-glow-a2: 0.32;
     --tg-lit: #ffffff;
   }
 }
 
 :root[data-theme="dark"] {
   --tg-glow-rgb: 147 216 179;
+  --tg-glow-a1: 0.6;
+  --tg-glow-a2: 0.32;
   --tg-lit: #ffffff;
 }
 
@@ -77,10 +102,13 @@
   color: color-mix(in oklab, var(--tg-lit) calc(var(--tg) * 100%), var(--color-text-muted));
 
   /* Blur and alpha both ride --tg, so a line blooms outward as it warms
-     rather than snapping a fixed halo on at some threshold. */
+     rather than snapping a fixed halo on at some threshold. The peak alphas
+     come from tokens so each theme can set its own without a second rule and
+     without changing the layer count — two layers is what this paints per
+     word, on every word of the paragraph, in both themes. */
   text-shadow:
-    0 0 calc(var(--tg) * 12px) rgb(var(--tg-glow-rgb) / calc(var(--tg) * 0.6)),
-    0 0 calc(var(--tg) * 26px) rgb(var(--tg-glow-rgb) / calc(var(--tg) * 0.32));
+    0 0 calc(var(--tg) * 12px) rgb(var(--tg-glow-rgb) / calc(var(--tg) * var(--tg-glow-a1))),
+    0 0 calc(var(--tg) * 26px) rgb(var(--tg-glow-rgb) / calc(var(--tg) * var(--tg-glow-a2)));
 }
 
 /* color-mix has shipped everywhere this site's backdrop-filter work already
