@@ -905,8 +905,12 @@ section[id] {
   position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
+  /* The `honour` row carries the one-line recognition under the dates. It is
+     optional — a card without one leaves the row empty, and with no row-gap on
+     the grid an empty row collapses to nothing. */
   grid-template-areas:
     'logo meta meta'
+    'logo honour honour'
     'logo desc tile';
   column-gap: 20px;
   padding: 22px 24px;
@@ -1130,6 +1134,17 @@ a.timeline-logo:hover {
   margin: 0;
   max-width: var(--measure);
   text-wrap: pretty;
+}
+
+/* Recognition line — the distinction, the medal, the award. It reads at the
+   same weight as the company name because it is the same kind of fact: a
+   claim about the institution, not a description of the work. */
+.timeline-honour {
+  grid-area: honour;
+  color: var(--color-accent);
+  font-weight: 500;
+  font-size: 0.95rem;
+  margin: 0 0 10px;
 }
 
 .timeline-desc-list {
@@ -1752,6 +1767,7 @@ a.timeline-logo:hover {
     grid-template-columns: auto minmax(0, 1fr);
     grid-template-areas:
       'logo meta'
+      'honour honour'
       'desc desc'
       'tile tile';
     column-gap: 14px;
