@@ -24,35 +24,53 @@
      which is the thing this version exists to avoid. */
   var FADE_LINES = 0.2;
 
-  /* How fast the light is allowed to travel, in lines per second. This is the
-     pace knob: 1.4 crosses this paragraph's seven lines in about 4.8 seconds,
-     so a line holds the light for roughly two thirds of a second. Scroll sets
-     where the light is heading; this caps how quickly it may get there.
+  /* The ceiling on how fast the light may travel, in lines per second.
 
-     The crossover sits near 85px of scroll per second: below that the light
-     tracks the scrollbar exactly and the cap may as well not exist, above it
-     the cap governs. Raise it toward 3 and lines flash past; below about 0.7
-     the light is slower than the reader and becomes something to wait for.
+     This started life as a reading-pace knob — it held the light to a steady
+     crawl no matter how hard you scrolled, so a flick became a slow sweep.
+     That is deliberately no longer the behaviour. The light is meant to track
+     the scrollbar: scroll fast and the highlight runs fast, scroll slowly and
+     it creeps, because the speed of the thing should read as a consequence of
+     what your hand is doing rather than a fixed animation playing out.
+
+     So this is set high enough to be transparent to any real scrolling. The
+     run spans about 293px (see START/END), i.e. roughly 0.023 lines per pixel,
+     so tracking scroll exactly costs about 7 lines/sec at a brisk 300px/s and
+     14 at a fast 600px/s. At 30 the cap sits clear of both and the mapping
+     from scroll to light is untouched.
+
+     What it still catches is the degenerate case the cap was really protecting
+     against: a jump that lands in one frame — page-down, a dragged scrollbar,
+     a hard fling — where "proportional to scroll" would mean crossing the
+     whole paragraph between two frames and showing no travel at all. Those
+     resolve in about 0.22s of visible sweep instead of a cut. Lower this only
+     to reintroduce pacing; there is no reason to raise it, since past ~30 the
+     single-frame jump is all that is left to smooth.
 
      Note this is lines, not words. A narrow viewport wraps the same paragraph
-     into more, shorter lines, so the run takes longer on a phone than on a
-     laptop — deliberately, since a line is a line and stepping through short
-     ones at laptop speed would strobe. */
-  var READ_LPS = 1.4;
+     into more, shorter lines, so the same scroll crosses more of them on a
+     phone — which is the intent, since a line is a line. */
+  var READ_LPS = 30;
 
   /* Where the light enters and leaves, as fractions of viewport height, both
      read off the rendered page. The first line lights when the paragraph's top
      edge reaches 69% of the viewport — the whole paragraph just clear of the
      fold, hero still above it. The light arrives on the last line once the
-     paragraph's bottom edge passes 42%, which is About pinned near the top of
-     the screen with the run visibly complete.
+     paragraph's bottom edge passes 55%, with the paragraph sitting around the
+     middle of the screen and the run visibly complete.
 
-     These two are not the pace knob. The span between them is about 410px, so
-     scroll commands the whole run in half a screen and READ_LPS plays it out
-     from there. Keep START above END; the code assumes the range is positive,
-     and a START below END runs the light backwards. */
+     This pair, not READ_LPS, is what sets how much light you get per notch of
+     wheel: the span between them is (paragraph height + viewport × (START −
+     END)), and the whole run is mapped across it. END was 0.42, a span of
+     about 410px on a laptop; at 0.55 it is about 293px, so the same scroll
+     now advances the light 1.4× as far. READ_LPS can only ever hold the light
+     *back* from this mapping, never push it past — which is why raising the
+     cap alone could not make the run feel quicker.
+
+     Keep START above END; the code assumes the range is positive, and a START
+     below END runs the light backwards. */
   var START = 0.69;
-  var END = 0.42;
+  var END = 0.55;
 
   /* A reader who has asked for less motion should not get a light chasing
      their scrollbar. Bail before splitting: the paragraph is then never
@@ -315,11 +333,17 @@
      the same pure mapping this feature always had. `shown` is where the light
      actually is, and it walks toward the target at no more than READ_LPS.
 
-     That gap is the whole feature: welded straight to the scrollbar, one wheel
-     notch throws the light three lines forward and the paragraph flickers.
-     Capped, a flick becomes a sweep — the light still crosses every line, just
-     at a pace a reader can follow. Scroll slower than the cap and the two
-     positions stay equal, so nothing is interposed between scroll and light. */
+     The gap between them used to be the feature — READ_LPS was low enough to
+     turn every flick into a slow sweep at a fixed reading pace. It is now a
+     ceiling instead (see READ_LPS), high enough that for any real scrolling
+     the two positions stay equal and nothing is interposed between scroll and
+     light: the highlight moves at whatever speed your hand does.
+
+     The machinery is kept rather than deleted because the one case it still
+     earns is the single-frame jump — page-down, a dragged scrollbar — where
+     tracking scroll exactly would cross the paragraph between two frames and
+     render no travel at all. Drop READ_LPS to reintroduce pacing; the walk
+     below is unchanged and will honour it. */
   var target = 0;
   var shown = 0;
 
