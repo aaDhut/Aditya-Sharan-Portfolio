@@ -127,7 +127,14 @@
          watches for that with a ResizeObserver and rebuilds the map, so there
          is nothing to do here; the note is for the next person to wonder why
          a lens built against a 50px-tall panel ends up correct. */
-      void lens;
+
+      /* Published on the panel as a handle, not a contract: nothing in this
+         file or any other currently reads it. college-projects.js used to,
+         to flatten the bend around a playing YouTube iframe, and that did not
+         work — mutating the SVG filter does not invalidate a backdrop-filter
+         already referencing it, so the panel kept painting the old bend. That
+         feature stands the whole backdrop-filter down from CSS instead. */
+      panel._pgLens = lens;
     }
 
     group.addEventListener('pointerenter', light);

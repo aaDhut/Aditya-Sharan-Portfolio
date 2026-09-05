@@ -26,9 +26,11 @@
   /* Neutral greys, calibrated against Apple's own dark surfaces rather than
      tinted toward the accent. R, G and B sit within two points of each other
      and lean very slightly cool — #1d1d1f, #f5f5f7, #a1a1a6 and #424245 are
-     Apple's values verbatim. An earlier revision carried a green cast picked
-     up from the accent, which read as a tint over the whole site rather than
-     as warmth. */
+     Apple's values verbatim. An earlier revision carried a cast picked up
+     from the accent — green, when the accent was one — which read as a tint
+     over the whole site rather than as warmth. Kept neutral for the same
+     reason now that the accent is a turquoise: a turquoise-tinted grey would
+     be worse, since cool greys already read as blue-green. */
   --dark-bg: #131315;
   --dark-bg-alt: #1d1d1f;
   --dark-text: #f5f5f7;
@@ -36,17 +38,25 @@
   --dark-border: #2e2e30;
   --dark-border-strong: #424245;
 
-  /* #2d6a4f is a dark green — on a dark ground it collapses to about 1.6:1
-     and effectively disappears, so it has to lift.
+  /* The light accent is a warm turquoise (#35c9ae), and unlike the mid blues
+     that preceded it, it does not collapse on a dark ground — it measures
+     8.94:1 on --dark-bg and 8.11:1 on --dark-bg-alt. So dark mode no longer
+     lifts the accent at all; it maps straight to the light value. The two
+     blues that shipped before this (#0066cc lifted to #3388ff) needed the
+     lift because a mid blue lands near 2.2:1 here.
 
-     How far it lifts is set by the orb field, not by the flat background. The
-     eyebrow and the hero buttons sit directly on the orbs, and the orbs drift,
-     revolve and cycle colour, so any part of the hero can become the brightest
-     spot given a few seconds. Measured against the brightest pixel the field
-     produces, #74c69d came to 3.92:1 — under the 4.5 floor. This clears it at
-     4.84:1 there, and still reads as the same mint on flat surfaces, where it
-     measures about 11:1. */
-  --dark-accent: #93d8b3;
+     The hero orb caveat from those revisions still stands and is unchanged:
+     sampling the orb layer with the hero text hidden, across 14 frames of a
+     full revolution, the brightest backdrop under the accent rows is L=0.1026.
+     No accent clears 4.5:1 against that peak — it is a property of putting
+     text on a bright drifting gradient, and it wants a scrim or a dimmer orb,
+     not a bleached accent that degrades every other surface to buy it. This
+     turquoise does better than the blues there rather than worse, since it
+     carries far more luminance (0.46 against 0.19) — most of it from the
+     green channel, which is 0.7152 of the luminance formula against blue's
+     0.0722. That is the same reason it is so much brighter than a blue of
+     the same saturation on every dark surface. */
+  --dark-accent: #35c9ae;
   /* Flips: this is the text sitting *on* the accent, not the accent itself. */
   --dark-accent-contrast: #0d0d0f;
 
@@ -183,8 +193,8 @@
 
 @media (prefers-color-scheme: dark) {
   /* The fixed wash that gives the glass something to refract. The light
-     version is a dark green at 0.09 over white; subtractive tints over a dark
-     ground do nothing at all, so these lift and warm slightly. */
+     version is the accent blue at 0.09 over white; subtractive tints over a
+     dark ground do nothing at all, so these lift and warm slightly. */
   :root:not([data-theme="light"]) body::before {
     background:
       radial-gradient(58% 44% at 14% 8%, rgba(255, 255, 255, 0.055), transparent 70%),
@@ -200,8 +210,8 @@
   :root:not([data-theme="light"]) .hero-orbs {
     /* The orbs keep their colour — they are the one place on the page that is
        meant to be chromatic, and draining them left the hero flat. What had to
-       go was the green cast on the *surfaces*, which came from the palette and
-       the ambient wash, not from here.
+       go was the accent cast on the *surfaces*, which came from the palette
+       and the ambient wash, not from here.
 
        Only the opacity moves. The orbs blend with plus-lighter, which is
        additive, so the same tints that read as a pale wash on white come up
@@ -209,6 +219,19 @@
        field keeps all six in their existing relationship to one another rather
        than re-tuning 24 colour values by hand. */
     opacity: 0.62;
+
+    /* The pointer response and the tint-stop alphas both carry the light-mode
+       tuning in styles.css, because the base sheet has to stand on its own.
+       Dark mode puts back the smaller numbers: on this ground the orbs are
+       high-contrast and additive blending runs hot, so the smaller shove reads
+       clearly and the denser gradient stops would blow out. */
+    --orb-push: 68;
+    --orb-reach: 1.15;
+    --orb-swell: 0.07;
+    --orb-a1: 78%;
+    --orb-a2: 68%;
+    --orb-a3: 40%;
+    --orb-a4: 14%;
   }
 
   /* The résumé render is a white page. It stays white — a document should look
@@ -232,6 +255,18 @@
 
 :root[data-theme="dark"] .hero-orbs {
   opacity: 0.62;
+  /* The pointer response and the tint-stop alphas both carry the light-mode
+     tuning in styles.css, because the base sheet has to stand on its own.
+     Dark mode puts back the smaller numbers: on this ground the orbs are
+     high-contrast and additive blending runs hot, so the smaller shove reads
+     clearly and the denser gradient stops would blow out. */
+  --orb-push: 68;
+  --orb-reach: 1.15;
+  --orb-swell: 0.07;
+  --orb-a1: 78%;
+  --orb-a2: 68%;
+  --orb-a3: 40%;
+  --orb-a4: 14%;
 }
 
 :root[data-theme="dark"] .link-pop--resume .link-pop-shot img {
@@ -262,8 +297,8 @@
     --color-text-muted: #5c5c5c !important;
     --color-border: #e7e5e0 !important;
     --color-border-strong: #d5d1c8 !important;
-    --color-accent: #2d6a4f !important;
-    --color-accent-contrast: #ffffff !important;
+    --color-accent: #35c9ae !important;
+    --color-accent-contrast: #1a1a1a !important;
     --color-text-hero: #3a3a3a !important;
     --color-text-card: #4f4f4f !important;
     --shadow-rgb: 31, 38, 34 !important;

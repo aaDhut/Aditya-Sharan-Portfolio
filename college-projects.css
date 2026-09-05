@@ -1,0 +1,643 @@
+/*
+ * [college-projects] The three ArtStation student films on the Amity card.
+ *
+ * Everything here is additive. The tiles and panels are the existing
+ * .work-tile / .link-pop components from styles.css — this file only adds the
+ * row that holds three of them, the video play cards inside the strip, and the
+ * two states (latched, touch-open) that a playable embed needs and a pure
+ * hover tooltip does not.
+ *
+ * Remove by deleting this file, college-projects.js, their two tags in
+ * index.html and the .work-row block on the Amity card.
+ * See REMOVE-COLLEGE-PROJECTS.md.
+ */
+
+/* ---- 1. The row ----------------------------------------------------------
+   In the `tile` grid area, the same cell the four Experience cards put their
+   single tile in, so the eye finds project work in the same place on every
+   card in both sections. That cell is content-sized — it takes whatever the
+   row asks for and the description column gets the rest.
+
+   Three tiles at the Experience size (140px) would ask for 444px of a ~908px
+   card and starve the bullets, so these three are drawn smaller: see the
+   .work-link--college .work-tile block below. At 68px they come to 224px and
+   leave the description column around 570px, which still holds both bullets
+   on one line each.
+
+   align-self: start matches .work-link's own, so the row's top lands on the
+   first bullet rather than floating in the middle of the cell.
+
+   Do not give this grid-area: desc. That was the first attempt and it puts
+   the row in the same cell as .timeline-desc-list, printing the tiles
+   straight over the bullets. */
+.work-row {
+  grid-area: tile;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  /* Lifted so the row costs the card no height.
+
+     The `desc tile` grid row is as tall as the taller of its two columns. The
+     two bullets beside these come to 55px (two 25.6px lines plus the 4px
+     between them) and the tiles are 72, so at their natural position the tiles
+     were the taller column and the Amity card carried 17px the Roorkee card
+     did not. Pulling the row up by that difference lands the bottom of the
+     tiles on the bottom of the last bullet, and hands the row back to the
+     bullets — the card is now the height its text alone asks for. The lift
+     here is larger than that, for the reason below.
+
+     .work-link's own comment says the top of the tile sits on the top of the
+     first bullet. That was the right anchor for one tile the same height as
+     the text beside it; for a row that is taller than the text, the bottom
+     edge is the one worth aligning.
+
+     Everything past that first 17px is free — the bullets govern the row from
+     there on, so the card does not get shorter or taller no matter how much
+     further the tiles rise. What they rise into is dead space: the `meta` area
+     above is as tall as its headline stack, and the right-hand column under it
+     — dates, then the College Projects heading — runs about 37px shorter, so
+     that much of the column is empty.
+
+     28 spends most of it and leaves roughly 9px between the heading and the
+     tiles, near the 6px the row itself uses between the two below 720px. That
+     ~37px is the ceiling: past about -31 the tiles start climbing into the
+     heading that names them.
+
+     Degrades safely both ways: a longer bullet list only pushes the row's
+     bottom down with it, and a shorter one leaves the tiles governing the row
+     again with the same gap under the heading. */
+  margin-top: -28px;
+}
+
+/* The tiles get their own box rather than sharing the row's. An `auto` grid
+   column is sized from its content's max-content width, and for a wrapping
+   flex row that is the sum of every item on one line — with the heading as a
+   fourth item the column came out ~100px wider than the tiles and left a hole
+   between them and the card's right edge. Nested, the column takes the wider
+   of the two boxes, which is the tiles. Still true below 720px, which is the
+   only width where the caption is inside this row at all. */
+.work-row-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* The heading over the three tiles. Three collages beside a bullet list do not
+   say what they are on their own — the Experience tiles get that from the role
+   they sit next to, and these do not.
+
+   Set as an overline rather than as another line of body text: uppercase and
+   tracked out at a size below everything around it, which is how a label that
+   titles a group is told apart from a label that states a fact. It has to be
+   distinguishable from the dates directly above it in the same column, and at
+   the muted 0.78rem it shared with them the two read as one two-line block —
+   the tiles looked like they belonged to nothing.
+
+   --color-text rather than --color-text-muted for the same reason: a heading
+   sits at or above the weight of what it introduces, and what it introduces
+   here is three full-colour images. */
+.work-row-label {
+  color: var(--color-text);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  /* Off the dates above, and grouped with the tiles below — the gap under it
+     is the column's own 2px plus the row's 6px. */
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+/* Two copies of the caption exist, and exactly one of them is in the document
+   at any width — `display: none` rather than a visual hide, so a screen reader
+   never meets it twice.
+
+   `--meta` is the desktop one, up in the dates column. It sits there because
+   the card's last grid row is only as tall as its taller column, and the
+   bullets beside the tiles come to 55px: a caption stacked under the tiles
+   pushed that row to 77 and the whole card with it. In the dates column it
+   costs nothing — the right-hand stack is one line against three on the left.
+
+   `--inline` is the one that ships below 720px, where the `tile` area is a
+   full-width row of its own under the bullets and the dates column is no
+   longer anywhere near it. There the heading sits at the top of that row, over
+   the tiles it names — the same reading order as the desktop layout. */
+.work-row-label--inline {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .work-row-label--meta {
+    display: none;
+  }
+
+  .work-row-label--inline {
+    display: block;
+  }
+}
+
+/* Below 720px the timeline drops to two columns and its template moves the
+   `tile` area to a full-width row of its own beneath the bullets, so the row
+   spans the card again with no change of placement needed here. It only wants
+   a little air off the last bullet, which the shared cell above it does not. */
+@media (max-width: 720px) {
+  .work-row {
+    margin-top: 4px;
+  }
+}
+
+/* The row is inside the card's own stacking context, and a panel opening from
+   the left-hand tile has to paint over the two tiles to its right. Without
+   this the later siblings win on source order and clip it. */
+.work-link--college:hover,
+.work-link--college:focus-within,
+.work-link--college[data-playing],
+.work-link--college[data-open] {
+  z-index: 4;
+}
+
+/* The same problem the latch solves for the panel, one level up. styles.css
+   raises the whole card with `.timeline-item:hover, :focus-within { z-index: 3 }`
+   — that lift is what lets a panel overhang its neighbours at all. Both of
+   those conditions are false while a video plays with the pointer elsewhere
+   (focus is inside the iframe, which does not match :focus-within), so the card
+   drops back to auto and the *next section* paints over the panel: the Case
+   Studies cards were landing straight on top of a playing film.
+
+   Above 3, because a neighbouring card that is genuinely hovered still gets
+   styles.css's lift and the latched one has to stay in front of it.
+
+   :has() is already a dependency of this stylesheet's neighbours — styles.css
+   uses it for `.link-pop-shot:has(img[hidden])`. */
+.timeline-item:has(.work-link--college[data-playing]),
+.timeline-item:has(.work-link--college[data-open]) {
+  z-index: 5;
+}
+
+/* ---- 1b. Tile size -------------------------------------------------------
+   Two thirds of the Experience tile, which is what lets three of them share
+   the one cell that card gives to one. The collage inside is four thumbnails
+   in a 2x2 — at 48x36 each they are still readable as four distinct frames,
+   which is the whole point of the mosaic.
+
+   The radius tracks the shorter side the way styles.css's does: Apple's icon
+   grid puts it at just over 22%, which is 24px on a 104px tile and 16px on a
+   72px one. Left at 24 the corners would eat the thumbnails. */
+.work-link--college .work-tile {
+  /* 96x72, back up from the 68x51 [education-even] left them at. At 68 the
+     three read as thumbnails of something rather than as three pieces of work
+     — the 2x2 frames inside were ~34px across and the ArtStation badge, which
+     is a fixed 27px, covered two fifths of the tile. 96 is the largest size
+     that still leaves the description column enough to hold both bullets on
+     one line each: three tiles plus two 10px seams come to 308px of the ~836px
+     the desc and tile columns share, and the bullets keep ~508.
+
+     The card is ~19px taller than the IIT one as a result, since the last grid
+     row takes the taller of its two columns and the bullets beside these come
+     to 53px. That is the price of the tiles being legible, and it is paid once
+     on one card.
+
+     Same 4:3 as before, so the 2x2 collage inside is still four whole frames.
+     16px radius keeps styles.css's ratio: Apple's icon grid puts the corner at
+     just over 22% of the short side, which is 24px on a 104px tile and 16 on a
+     72px one. */
+  width: 96px;
+  height: 72px;
+  border-radius: 16px;
+}
+
+/* The badge does not scale with the tile — styles.css draws it at a flat 27px,
+   which is a fifth of a 140px Experience tile and was covering two fifths of a
+   68px one. Held to the same fifth here, so it reads as a corner mark on all
+   seven tiles rather than as a button stuck on three of them. The 5px offsets
+   are the 6px of the full-size tile scaled the same way. */
+.work-link--college .work-tile-badge {
+  right: 5px;
+  bottom: 5px;
+  width: 19px;
+  height: 19px;
+}
+
+.work-link--college .work-tile-badge svg {
+  width: 9px;
+  height: 9px;
+}
+
+/* Below 720px there is no description column left to compete with — the
+   `tile` area is a full-width row of its own under the bullets — so the
+   tiles take the Experience size back, which is also the touch target the
+   panels open from. Stated after the rule above, not inside the section 1
+   media block: a media query adds no specificity, so an identical selector
+   there would lose to this one on source order. */
+@media (max-width: 720px) {
+  .work-link--college .work-tile {
+    width: 140px;
+    height: 104px;
+    border-radius: 24px;
+  }
+
+  /* Full-size tile, so styles.css's own badge size is the right one again. */
+  .work-link--college .work-tile-badge {
+    right: 6px;
+    bottom: 6px;
+    width: 27px;
+    height: 27px;
+  }
+
+  .work-link--college .work-tile-badge svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* ---- 2. Play cards -------------------------------------------------------
+   A facade, not an iframe: the poster frame and a play glyph, with the real
+   YouTube embed built only when it is clicked. Three panels holding five
+   iframes between them would pull well over a megabyte of YouTube player on
+   a page that already defers its own screenshots to first hover — and most
+   visitors never open a panel at all. */
+.link-pop-play {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-bg-alt);
+  cursor: pointer;
+  /* The strip is a flex column; without this a short poster is stretched. */
+  flex: none;
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow: inset 0 0 0 1px rgba(var(--shadow-rgb), 0.18),
+    0 1px 2px rgba(var(--shadow-rgb), 0.16),
+    0 4px 10px -4px rgba(var(--shadow-rgb), 0.22);
+  transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.link-pop-play img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* The poster is the one image in the strip that is always 16:9; holding the
+     box means the panel does not jump when it lands on first hover. */
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+/* A scrim under the glyph and label. The posters are YouTube maxres frames and
+   several of them are bright at the bottom edge, where the label sits. */
+.link-pop-play::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 58%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.72), transparent);
+  pointer-events: none;
+}
+
+.link-pop-play-icon {
+  position: absolute;
+  /* Above the ::after scrim. A pseudo-element with no z-index paints after all
+     of its originating element's children, so without this the gradient that
+     exists to make the glyph legible is drawn straight over the top of it —
+     the white triangle came out a washed grey. */
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  border-radius: 50%;
+  /* Deliberately not --color-accent: a play button that changes colour with
+     the site theme reads as a site control. This one is a video control, and
+     every viewer already knows what a white-on-dark triangle does. */
+  background: rgba(18, 18, 20, 0.72);
+  color: #ffffff;
+  box-shadow: 0 2px 12px -2px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2),
+    background-color 0.18s ease;
+}
+
+.link-pop-play-icon svg {
+  width: 26px;
+  height: 26px;
+  /* The glyph's own mass sits right of centre; nudging it back centres what
+     the eye sees rather than what the box measures. */
+  margin-left: 3px;
+}
+
+.link-pop-play-label {
+  position: absolute;
+  z-index: 1; /* over the scrim, same reason as the glyph */
+  right: 10px;
+  bottom: 8px;
+  left: 10px;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-align: left;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.link-pop-play:hover .link-pop-play-icon,
+.link-pop-play:focus-visible .link-pop-play-icon {
+  transform: scale(1.08);
+  background: rgba(18, 18, 20, 0.86);
+}
+
+.link-pop-play:active {
+  transform: scale(0.985);
+}
+
+.link-pop-play:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ---- 3. The player -------------------------------------------------------
+   Replaces the facade in place, so the strip keeps its scroll position and the
+   panel keeps its height. */
+.link-pop-player {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  flex: none;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #000000;
+  /* A self-contained stacking context for the iframe's compositing layer,
+     so the player is one object on the panel rather than a hole through it.
+     This is not what stops the rainbow outline — that needed the panel's
+     backdrop-filter to come off entirely, see section 4c. */
+  isolation: isolate;
+  /* The same edge and shadow pop-glass.css gives .link-pop-shot, so a player
+     reads as one more object resting on the glass rather than a hole cut in
+     it. Stated here rather than inherited: the shot rule is scoped to
+     .link-pop-shot, which this is not. */
+  box-shadow: inset 0 0 0 1px rgba(var(--shadow-rgb), 0.18),
+    0 1px 2px rgba(var(--shadow-rgb), 0.16),
+    0 4px 10px -4px rgba(var(--shadow-rgb), 0.22);
+}
+
+.link-pop-player iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* ---- 4. Latched open -----------------------------------------------------
+   Focus inside a cross-origin iframe does not match :focus-within in the
+   parent document — measured, not assumed: document.activeElement becomes the
+   iframe while the group stops matching. So the CSS in styles.css that holds
+   every other panel open cannot hold this one, and the panel would fade out
+   from under a playing video the moment the pointer left. college-projects.js
+   sets this attribute instead. Same end state as the :hover rule, so the panel
+   does not move when the latch takes over from the pointer. */
+.work-link--college[data-playing] .link-pop,
+.work-link--college[data-open] .link-pop {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.14s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+/* ---- 4b. Flipping below the tile -----------------------------------------
+   Every .link-pop opens upward, which is right for the Experience tiles: they
+   sit low in a card in the middle of a long page, so there is always room
+   above. This row is the last thing on the Amity card and the card is short,
+   so with the section scrolled to the top of the viewport the panel's own 412px
+   lands it at -26px — behind the nav and off the screen. That is survivable for
+   a tooltip the pointer dismisses, and not survivable for a panel that latches
+   open with a video playing in it. college-projects.js measures the gap and
+   sets this when the panel would not clear the chrome. */
+.work-link--college[data-flip='down'] .link-pop {
+  top: calc(100% + 12px);
+  bottom: auto;
+  transform-origin: 78% 0;
+}
+
+/* --pop-room is written by college-projects.js on each open: the space that
+   actually exists on the side the panel opened on. The 360px is styles.css's
+   own cap and stays the ceiling — this only ever makes the strip shorter, so a
+   panel with room to spare looks exactly like the other four. */
+.work-link--college .link-pop-strip {
+  max-height: min(360px, var(--pop-room, 360px));
+}
+
+/* The transform the closed state uses has to flip with it, or the panel
+   retracts upward into the tile it is hanging below. */
+.work-link--college[data-flip='down'] .link-pop:not(:hover) {
+  transform: translateY(-10px) scale(0.94);
+}
+
+.work-link--college[data-flip='down']:hover .link-pop,
+.work-link--college[data-flip='down']:focus-within .link-pop,
+.work-link--college[data-flip='down'][data-playing] .link-pop,
+.work-link--college[data-flip='down'][data-open] .link-pop {
+  transform: none;
+}
+
+/* The pointer bridge moves to the other side too — above the panel now, so
+   the pointer can still cross the 12px gap coming down from the tile. */
+.work-link--college[data-flip='down'] .link-pop::before {
+  top: auto;
+  bottom: 100%;
+}
+
+/* ---- 4c. The glass stands down during playback ---------------------------
+   A cross-origin iframe is promoted to its own compositing layer, and that
+   layer does not sit inside the panel's backdrop the way ordinary content
+   does. Chromium resolves the two against each other badly in both
+   directions: the video is composited *under* the panel's surface rather than
+   on it, and the lens's chromatic dispersion catches the layer's edge and
+   traces a hard red-green-blue outline round the whole video — a saturated
+   rainbow, not the soft fringe the panel wears on its own rim.
+
+   An earlier version tried to fix only the second half of that from the
+   script, by driving the lens's displacement to zero for the duration and
+   leaving the surface up (see bend() in college-projects.js). It does not
+   work. Mutating the `scale` on an SVG filter's feDisplacementMap reliably
+   invalidates a `filter`; it does not reliably invalidate a *backdrop-filter*
+   already referencing that filter by url(), so the panel goes on painting the
+   bend it was built with. The rainbow came back, and the video was still
+   behind the glass regardless — the bend was never the cause of that half.
+
+   So the backdrop-filter itself comes off for the duration, which is the only
+   thing that reliably ends both symptoms. The panel takes the same opaque
+   treatment the reduced-transparency block gives it, because a translucent
+   tint with no blur behind it is not glass — it is a smeared card. The four
+   panels with no video in them are untouched, and this one is glass again the
+   moment the film stops.
+
+   !important for the same reason pop-glass.css needs it: glass.js writes
+   backdrop-filter as an inline style, which outranks any selector. */
+.work-link--college[data-playing] .link-pop[data-pg='lit'] {
+  background: var(--color-bg);
+  border-color: var(--color-border-strong);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 22px 46px -18px rgba(var(--shadow-rgb), 0.36),
+    0 4px 12px -6px rgba(var(--shadow-rgb), 0.16);
+}
+
+/* The painted fringe is a positioned pseudo-element with no z-index, so it
+   paints after the player in tree order — a coloured ring over the top edge of
+   the video. It is also the one part of the surface that reads as glass and
+   has nothing to sit on now the material is opaque. */
+.work-link--college[data-playing] .link-pop[data-pg='lit']::after {
+  display: none;
+}
+
+/* The strip's seams were widened to 10px to read as windows onto the material.
+   With the panel opaque there is no window, so they go back to styles.css's
+   6px the way the reduced-transparency block does it. */
+.work-link--college[data-playing] .link-pop[data-pg='lit'] .link-pop-strip {
+  gap: 6px;
+}
+
+/* The close affordance only exists while something is holding the panel open.
+   On hover alone the pointer is the dismissal and a button would be noise. */
+.link-pop-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--glass-hairline);
+  border-radius: 50%;
+  background: var(--glass-chrome);
+  color: var(--color-text);
+  cursor: pointer;
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  transition: transform 0.16s ease, background-color 0.16s ease;
+}
+
+.work-link--college[data-playing] .link-pop-close,
+.work-link--college[data-open] .link-pop-close {
+  display: grid;
+}
+
+.link-pop-close svg {
+  width: 15px;
+  height: 15px;
+}
+
+.link-pop-close:hover {
+  transform: scale(1.07);
+}
+
+.link-pop-close:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ---- 5. Touch ------------------------------------------------------------
+   styles.css hides every .link-pop under (hover: none), because a tap should
+   follow the link rather than trap the user in a tooltip. These three are the
+   exception: the films are the point of the entry, and on a phone there is
+   otherwise no way to reach them without leaving the site. The tap opens the
+   panel instead of navigating; the footer link is still the way out to
+   ArtStation, and the close button is always present in this state. */
+@media (hover: none) {
+  .work-link--college .link-pop {
+    display: block;
+  }
+
+  /* Anchored to the row rather than the tile. A 380px panel hanging off a
+     140px tile runs off a phone screen on one side or the other, and there is
+     no hover gap to preserve here — the latch holds it open, not the pointer. */
+  .work-link--college .link-pop {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+    max-height: 78vh;
+    overflow-y: auto;
+    z-index: 60;
+  }
+
+  .work-link--college .link-pop-strip {
+    max-height: none;
+  }
+
+  /* The bridge exists to let a pointer cross a gap. There is no pointer here,
+     and a 14px invisible strip below a fixed panel is just a dead zone over
+     whatever it lands on. */
+  .work-link--college .link-pop::before {
+    content: none;
+  }
+
+  .work-link--college .link-pop-close {
+    position: sticky;
+    top: 0;
+    margin-left: auto;
+  }
+
+  /* On touch the latch is the ONLY thing that opens a panel.
+
+     styles.css gets this for free by hiding .link-pop outright at this width;
+     un-hiding these three re-exposes what that rule was also suppressing —
+     sticky hover. A tapped element keeps :hover until something else is
+     tapped, so `.work-link:hover .link-pop` held the panel open after the
+     close button had already cleared the latch and stopped the video: closing
+     visibly did nothing. :focus-within does the same, since a tapped <a> keeps
+     focus.
+
+     Both are neutralised here and the latch is re-asserted below them. Same
+     specificity as styles.css's rule (0,3,0), won on source order — this file
+     loads after it. */
+  .work-link--college:hover .link-pop,
+  .work-link--college:focus-within .link-pop {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .work-link--college[data-open] .link-pop,
+  .work-link--college[data-playing] .link-pop {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* ---- 6. Narrow screens ---------------------------------------------------
+   Between the 720px breakpoint and about 900px the `tile` column is squeezed
+   by the description beside it and the row wraps on its own. Nothing to do
+   but let the flex wrap from the left, so a 2 + 1 wrap keeps a straight left
+   edge under the first tile rather than centring the orphan. */
+@media (max-width: 900px) {
+  .work-row-tiles {
+    justify-content: flex-start;
+  }
+}
+
+/* ---- 7. Preferences ------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .link-pop-play,
+  .link-pop-play-icon,
+  .link-pop-close {
+    transition: none;
+  }
+
+  .link-pop-play:active {
+    transform: none;
+  }
+}

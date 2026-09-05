@@ -113,6 +113,12 @@ on the other, and removing either leaves the other working.
 - **The call button and its pop-up.** `call-glass.*` is a separate feature on a
   separate element. The two share `glass.js` and a design vocabulary, nothing
   else.
+- **The three college project panels.** They stand this file's surface down
+  while a YouTube iframe is playing inside them, from their own stylesheet —
+  see REMOVE-COLLEGE-PROJECTS.md. Those rules are scoped to `[data-pg='lit']`,
+  so with pop-glass gone they match nothing. Those panels lose their glass
+  along with the other five and keep everything else. `panel._pgLens` is
+  published here and read by nobody; it can go whenever.
 
 ## If you keep it but want to retune it
 

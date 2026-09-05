@@ -16,8 +16,33 @@
   --color-text: #1a1a1a;
   --color-text-muted: #5c5c5c;
   --color-border: #e7e5e0;
-  --color-accent: #2d6a4f;
-  --color-accent-contrast: #ffffff;
+  /* A warm turquoise: hsl(169 58% 50%). It is the cold cyan that preceded it
+     (#18c9d9, hue 185) rotated toward yellow and desaturated a little — blue
+     drops from 217 to 174 and red rises, which is where the warmth comes
+     from — held at the same lightness so nothing else in the palette had to
+     move with it.
+
+     Chosen for the hue, not measured into place. The two accents before the
+     cyan (#0066cc, and a #2d6a4f forest green before that) were both picked
+     to clear 4.5:1 as *text* on the light ground, and this does not: 1.97:1
+     on --color-bg and 1.72:1 on --color-bg-alt. That matters because the
+     accent is not only a fill here — it colours 0.75rem eyebrow labels,
+     timeline company names and inline links, and those are under the floor in
+     light mode. Rotating the hue did not change that either way; at this
+     lightness every hue on the wheel lands within a tenth of the same ratio,
+     because lightness is what contrast is made of. Dark mode is the opposite
+     case: 8.94:1 on --dark-bg, so it needs no lift and the palette in
+     dark-mode.css maps straight to this value.
+
+     If the light-mode text ever has to be legible again, the fix is a second
+     token — this hue darkened for text only, keeping this value for fills and
+     rules. #207969 (the same hue at 30% lightness) clears both light grounds
+     at 4.99:1 and 4.36:1; #1e7162 clears both outright at 5.55 and 4.85. */
+  --color-accent: #35c9ae;
+  /* Flipped from #ffffff back when the accent became a bright cyan: white on
+     this turquoise is 2.08:1 and unreadable, so text sitting *on* an accent
+     fill has to be dark. 8.38:1. */
+  --color-accent-contrast: #1a1a1a;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   /* Borel is the closest released face to Apple's hand-lettered "hello": a
      true monoline — one uniform stroke width, no thick/thin modulation — with
@@ -172,9 +197,9 @@ body::before {
   z-index: -2;
   pointer-events: none;
   background:
-    radial-gradient(58% 44% at 14% 8%, rgba(45, 106, 79, 0.09), transparent 70%),
+    radial-gradient(58% 44% at 14% 8%, rgba(53, 201, 174, 0.09), transparent 70%),
     radial-gradient(52% 40% at 88% 22%, rgba(120, 148, 190, 0.08), transparent 72%),
-    radial-gradient(60% 46% at 62% 96%, rgba(45, 106, 79, 0.06), transparent 74%);
+    radial-gradient(60% 46% at 62% 96%, rgba(53, 201, 174, 0.06), transparent 74%);
 }
 
 /* Anchor targets must clear the floating nav, or every in-page link lands
@@ -409,6 +434,31 @@ section[id] {
   inset: -12% -6%;
   z-index: -1;
   pointer-events: none;
+  /* Pointer-response tuning, read by script.js. It lives here rather than in
+     the script because the right amount is not the same in both themes: these
+     are the light-mode values, and dark-mode.css restores the smaller ones.
+     Against this near-white ground the orbs are a pale wash, so a shove that
+     reads clearly on black lands below the threshold of noticing here.
+       --orb-push  pixels of displacement at point-blank range
+       --orb-reach how far the influence carries, x the orb's own radius
+       --orb-swell how much the orb grows while disturbed, as a fraction
+     Unitless on purpose — the script parses them as numbers. */
+  --orb-push: 104;
+  --orb-reach: 1.22;
+  --orb-swell: 0.12;
+
+  /* Alpha of the four radial-gradient stops that shape each tint layer, as a
+     share of the layer's own tint. Same reason as above: additive blending
+     runs hot on black and these are dialled back in dark mode. The lift here
+     is weighted toward the middle and outer stops rather than the core — what
+     was missing in light mode was a readable *edge*, and a blob whose only
+     visible part is a soft centre has nothing for the eye to track when it
+     moves. Leaving the core near where it was also keeps the hero text's
+     contrast against the field roughly unchanged. */
+  --orb-a1: 82%;
+  --orb-a2: 74%;
+  --orb-a3: 54%;
+  --orb-a4: 24%;
   /* Dissolve toward the section edges rather than clipping, so the field is
      contained to the hero without a visible cut line where it ends.
      One axis only: a second masking gradient composited with mask-composite
@@ -465,10 +515,10 @@ section[id] {
      gets clipped into a visible hard rim. */
   background: radial-gradient(
     circle closest-side at 50% 50%,
-    color-mix(in srgb, var(--tint) 78%, transparent) 0%,
-    color-mix(in srgb, var(--tint) 68%, transparent) 34%,
-    color-mix(in srgb, var(--tint) 40%, transparent) 58%,
-    color-mix(in srgb, var(--tint) 14%, transparent) 78%,
+    color-mix(in srgb, var(--tint) var(--orb-a1), transparent) 0%,
+    color-mix(in srgb, var(--tint) var(--orb-a2), transparent) 34%,
+    color-mix(in srgb, var(--tint) var(--orb-a3), transparent) 58%,
+    color-mix(in srgb, var(--tint) var(--orb-a4), transparent) 78%,
     transparent 100%
   );
   /* The four opacities sum to exactly 1 at every instant, but stacked alpha
@@ -1025,7 +1075,7 @@ a.timeline-logo:hover {
 
 /* Once a real logo is on the tile the monogram has done its job. It has to go,
    not just sit behind: a logo with transparency (Hitwicket's wordmark) let the
-   accent-green glyph show through its gaps and read as colour artefacts in the
+   accent-coloured glyph show through its gaps and read as colour artefacts in the
    mark. script.js adds this class when an image reports real intrinsic size. */
 .timeline-logo.has-logo::before {
   content: none;
@@ -1145,6 +1195,18 @@ a.timeline-logo:hover {
   font-weight: 500;
   font-size: 0.95rem;
   margin: 0 0 10px;
+}
+
+/* [education-even] The Amity card carries its distinction inside the headline
+   stack, directly under the institution, rather than on the `honour` grid row.
+   Same position on the page and 10px cheaper: the row cost the line plus its
+   own 10px margin, where here the headline's existing 2px gap does the
+   separating and `.timeline-meta`'s margin still holds the whole stack off the
+   bullets. A step down in size from the company above it, so the three lines
+   read as a hierarchy rather than three equal claims. */
+.timeline-headline .timeline-honour {
+  font-size: 0.9rem;
+  margin: 2px 0 0;
 }
 
 .timeline-desc-list {
