@@ -52,11 +52,32 @@
        deforms at the edge. Must load after call-popup.css, whose panel
        material it moves onto the wrapper element. See REMOVE-CALL-GLASS.md. -->
   <link rel="stylesheet" href="call-glass.css">
+  <!-- [pop-glass] Removable feature. Renders the five .link-pop preview
+       panels — the four ArtStation portfolio pop-ups on the Experience tiles
+       and the résumé preview under the hero — as liquid glass: the header's
+       material with backdrop refraction and a chromatic rim, wrapped around
+       an opaque plate that keeps the screenshots sharp. Must load after
+       styles.css, whose opaque panel it replaces, and after dark-mode.css so
+       its tint follows the live theme. See REMOVE-POP-GLASS.md. -->
+  <link rel="stylesheet" href="pop-glass.css">
   <!-- [text-glow] Removable feature. Lights the About paragraph one rendered
        line at a time against scroll position. Loads after dark-mode.css so its
        glow colour follows the live theme; it styles only its own spans and
        overrides nothing. See REMOVE-TEXT-GLOW.md. -->
   <link rel="stylesheet" href="text-glow.css">
+  <!-- [college-projects] Removable feature. The three ArtStation student films
+       on the Amity card: a row of the existing work tiles, plus the video play
+       cards and the two open-states their panels need. Loads after styles.css,
+       whose .work-tile / .link-pop components it extends rather than replaces,
+       and after dark-mode.css so its surfaces follow the live theme.
+       See REMOVE-COLLEGE-PROJECTS.md. -->
+  <link rel="stylesheet" href="college-projects.css">
+  <!-- [certificates] Removable feature. A second labelled cluster in the
+       Amity card's tile cell, left of the College Projects tiles and divided
+       from them by a hairline. Loads after college-projects.css because it
+       hands two of that file's .work-row declarations back — see the header of
+       certificates.css. See REMOVE-CERTIFICATES.md. -->
+  <link rel="stylesheet" href="certificates.css">
 </head>
 <body>
 
@@ -74,6 +95,7 @@
         <ul class="nav-links">
           <li><a href="#about">About</a></li>
           <li><a href="#experience">Experience</a></li>
+          <li><a href="#education">Education</a></li>
           <li><a href="#projects">Projects</a></li>
           <li><a href="#skills">Skills</a></li>
           <li><a href="#testimonials">Testimonials</a></li>
@@ -267,7 +289,7 @@
             <ul class="timeline-desc-list">
               <li>Directed requirements, quality standards, and delivery for a 60+ character initiative.</li>
               <li>Partnered with Art, Design, Engineering, and Animation to ship player-facing features.</li>
-              <li>Optimized pipeline performance; prioritized fidelity, cost, and timeline trade-offs.</li>
+              <li>Optimized the pipeline across fidelity, cost, and timelines.</li>
             </ul>
 
             <!-- Collage tile linking out to the ArtStation project. The panel is a
@@ -404,7 +426,7 @@
             <ul class="timeline-desc-list">
               <li>Built a modular character customization system (shared meshes, reusable textures, blendshapes).</li>
               <li>Partnered with design and engineering to scale customization into reusable systems.</li>
-              <li>Shifted workflow from one-off assets to systemized, reusable components.</li>
+              <li>Shifted from one-off assets to systemized, reusable components.</li>
             </ul>
             <!-- Collage tile linking out to the ArtStation project. The panel is a
                  local gallery, not an embed: ArtStation serves
@@ -523,6 +545,320 @@
             <ul class="timeline-desc-list">
               <li>Produced character animation and motion graphics for a digital learning product.</li>
             </ul>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- EDUCATION -->
+    <section id="education" class="section">
+      <div class="container">
+        <h2 class="section-title">Education</h2>
+        <ul class="timeline">
+          <li class="timeline-item">
+            <!-- [logo] Not a link — unlike the Experience tiles there's no
+                 second route to a destination here, so the mark is inert. The
+                 seal ships as RGBA line art; it's flattened onto white in the
+                 file rather than left transparent, because a square logo skips
+                 the .is-wordmark white plate and dark navy strokes on a
+                 transparent ground disappear into the card in dark mode. -->
+            <span class="timeline-logo" data-monogram="R" aria-hidden="true">
+              <img src="assets/logo-iitr.jpg" alt="" width="104" height="104" loading="lazy" decoding="async">
+            </span>
+            <div class="timeline-meta">
+              <div class="timeline-headline">
+                <span class="timeline-role">Product Management with Applied AI Program</span>
+                <span class="timeline-company">iHUB Divyasampark, IIT Roorkee</span>
+              </div>
+              <div class="timeline-when">
+                <span class="timeline-dates">May 2026 &mdash; Jan 2027</span>
+              </div>
+            </div>
+            <ul class="timeline-desc-list">
+              <li>Focus: Product Strategy · Product Discovery · Product Analytics · AI Product Development · Experimentation</li>
+            </ul>
+          </li>
+          <li class="timeline-item">
+            <span class="timeline-logo" data-monogram="A" aria-hidden="true">
+              <img src="assets/logo-amity.jpg" alt="" width="104" height="104" loading="lazy" decoding="async">
+            </span>
+            <div class="timeline-meta">
+              <div class="timeline-headline">
+                <span class="timeline-role">B.Sc., Animation &amp; Visual Graphics</span>
+                <span class="timeline-company">Amity University Mumbai</span>
+                <!-- [education-even] Third line of the headline stack rather than
+                     the grid row of its own it used to have: same place on the
+                     page, under the institution it belongs to, for 10px less
+                     card. See styles.css. -->
+                <p class="timeline-honour">Graduated with Distinction, First Division</p>
+              </div>
+              <div class="timeline-when">
+                <span class="timeline-dates">2019 &mdash; 2022</span>
+                <!-- [college-projects] The heading for the tiles below, parked
+                     under the dates where the right-hand stack has a spare line
+                     going — it lands directly above them and costs the card no
+                     height. Its twin inside .work-row is the one that shows below
+                     720px, where this column is no longer above the tiles. Only
+                     ever one of the two is in the document's a11y tree — the
+                     other is display:none, not merely hidden. -->
+                <span class="work-row-label work-row-label--meta">College projects</span>
+              </div>
+            </div>
+            <ul class="timeline-desc-list">
+              <li>Received the Best Showreel award at Animation Day</li>
+              <li>Organised the university's design events</li>
+            </ul>
+            <!-- [certificates] Two labelled clusters in the one `tile` cell:
+                 certificates on the left, the college films on the right, a
+                 hairline between them. The college row below is left at its
+                 original indentation on purpose — re-indenting 180 lines to sit
+                 inside this wrapper would print the whole feature as changed in
+                 every diff, and the point of both of these is that either can
+                 be lifted out without disturbing the other.
+                 Remove: see REMOVE-CERTIFICATES.md. -->
+            <div class="work-groups">
+              <div class="cert-group">
+                <!-- One copy at every width, sitting directly over the tile it
+                     names. College Projects duplicates its heading instead —
+                     it has three tiles and no width to spare above 720px, so
+                     that one is parked up in the dates column. certificates.css
+                     lifts this cluster onto the same line, so the two read as a
+                     pair despite living in different boxes. -->
+                <span class="cert-label">Certificates</span>
+
+                <!-- SCAFFOLD — nothing here is real yet. Three things to swap
+                     once the credentials exist:
+                     1. The trigger is a <button> because there is no
+                        verification URL to point at. Give it one and it becomes
+                        <a class="work-tile" href="…" target="_blank"
+                        rel="noopener">, which is what the other six tiles are —
+                        the button reset in certificates.css then stops matching
+                        and can go with it.
+                     2. The four .cert-slot spans are the 2x2 collage. Replace
+                        each with <img src="assets/certificate-tile-N.jpg" alt=""
+                        width="210" height="156" loading="lazy" decoding="async">
+                        — <img> is deliberately not used while the files are
+                        missing, because a 404 inside .work-tile-grid paints
+                        Chrome's broken-image glyph onto the tile.
+                     3. The panel slots below already point at
+                        assets/certificate-0N.jpg via data-src. Those are safe to
+                        leave dangling: script.js hides a shot image that 404s and
+                        the slot keeps its own gradient. Drop the files in and
+                        they light up with no markup change. -->
+                <div class="work-link work-link--cert">
+                  <button class="work-tile" type="button">
+                    <span class="work-tile-grid" aria-hidden="true">
+                      <span class="cert-slot"></span>
+                      <span class="cert-slot"></span>
+                      <span class="cert-slot"></span>
+                      <span class="cert-slot"></span>
+                    </span>
+                    <span class="work-tile-badge" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M12 1.8a6.6 6.6 0 1 0 0 13.2 6.6 6.6 0 0 0 0-13.2zm0 2.2a4.4 4.4 0 1 1 0 8.8 4.4 4.4 0 0 1 0-8.8z"/><path fill="currentColor" d="M8.6 15.9 6.8 22.2l5.2-2.4 5.2 2.4-1.8-6.3-3.4 1.6z"/></svg></span>
+                    <span class="sr-only">Certificates — show the previews</span>
+                  </button>
+
+                  <div class="link-pop" id="certificates" role="group" aria-label="Certificates — preview">
+                    <div class="link-pop-strip">
+                      <div class="link-pop-shot" aria-hidden="true">
+                        <img data-src="assets/certificate-01.jpg" alt="" loading="lazy" decoding="async" width="800" height="533">
+                      </div>
+                      <div class="link-pop-shot" aria-hidden="true">
+                        <img data-src="assets/certificate-02.jpg" alt="" loading="lazy" decoding="async" width="800" height="533">
+                      </div>
+                      <div class="link-pop-shot" aria-hidden="true">
+                        <img data-src="assets/certificate-03.jpg" alt="" loading="lazy" decoding="async" width="800" height="533">
+                      </div>
+                      <div class="link-pop-shot" aria-hidden="true">
+                        <img data-src="assets/certificate-04.jpg" alt="" loading="lazy" decoding="async" width="800" height="533">
+                      </div>
+                    </div>
+                    <div class="link-pop-foot">
+                      <span class="link-pop-title">Certificates</span>
+                      <span class="link-pop-host">[verification link] &#8599;</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <span class="work-groups-rule" aria-hidden="true"></span>
+            <!-- [college-projects] Student films from the Amity years, built on the
+                 same work-tile + link-pop component as the Experience tiles. Three
+                 differences, all forced:
+                 1. They share the one `tile` grid area the Experience cards give
+                    to a single tile, so the row is drawn at two thirds size —
+                    three at 140px would starve the description column.
+                 2. The panels are role="group", not role="tooltip". A tooltip may
+                    not contain interactive content, and these hold play buttons.
+                 3. Playback needs a JS latch — see college-projects.js. Focus inside
+                    a cross-origin iframe does NOT match :focus-within in the parent
+                    document, so the CSS that holds every other panel open would drop
+                    this one mid-video.
+                 Remove: see REMOVE-COLLEGE-PROJECTS.md. -->
+            <div class="work-row">
+              <!-- [college-projects] The heading, above the tiles it names. Its
+                   twin up in the dates column is the one that shows above 720px,
+                   where this row has no width of its own to spare; below that
+                   this one takes over. Only ever one of the two is in the
+                   document's a11y tree — the other is display:none. -->
+              <span class="work-row-label work-row-label--inline">College projects</span>
+              <div class="work-row-tiles">
+                <div class="work-link work-link--college">
+                  <a class="work-tile" href="https://www.artstation.com/artwork/nE0Ar1" target="_blank" rel="noopener">
+                    <span class="work-tile-grid" aria-hidden="true">
+                      <img src="assets/artstation-samat-tile-1.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                      <img src="assets/artstation-samat-tile-2.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                      <img src="assets/artstation-samat-tile-3.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                      <img src="assets/artstation-samat-tile-4.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                    </span>
+                    <span class="work-tile-badge" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M0 17.723l2.027 3.505h.001a2.424 2.424 0 0 0 2.164 1.333h13.457l-2.792-4.838H0zm24 .025c0-.484-.143-.935-.388-1.314L15.728 2.728a2.424 2.424 0 0 0-2.142-1.289H9.419L21.598 22.54l1.92-3.325c.378-.637.482-.919.482-1.467zm-11.129-3.462L7.428 4.858l-5.444 9.428h10.887z"/></svg></span>
+                    <span class="sr-only">View the SAMAT Valorant agent trailer on ArtStation (opens in a new tab)</span>
+                  </a>
+
+                  <div class="link-pop" id="artstation-samat" role="group" aria-label="SAMAT — Valorant Agent Trailer — preview">
+                    <div class="link-pop-strip">
+                      <button class="link-pop-play" type="button" data-yt="PD615EBlf_o">
+                        <img data-src="assets/artstation-samat-video-1.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                        <span class="link-pop-play-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M8 5.14v13.72L19 12z"/></svg></span>
+                        <span class="link-pop-play-label">Watch the trailer</span>
+                      </button>
+                      <button class="link-pop-play" type="button" data-yt="dEYn0Vu316o">
+                        <img data-src="assets/artstation-samat-video-2.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                        <span class="link-pop-play-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M8 5.14v13.72L19 12z"/></svg></span>
+                        <span class="link-pop-play-label">Watch the CGI breakdown</span>
+                      </button>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/nE0Ar1" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-samat-01.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/nE0Ar1" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-samat-02.jpg" alt="" loading="lazy" decoding="async" width="739" height="415">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/nE0Ar1" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-samat-03.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/nE0Ar1" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-samat-04.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                      </a>
+                    </div>
+                    <div class="link-pop-foot">
+                      <span class="link-pop-title">SAMAT — Valorant Agent Trailer</span>
+                      <span class="link-pop-host">artstation.com &#8599;</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="work-link work-link--college">
+                  <a class="work-tile" href="https://www.artstation.com/artwork/G8eo43" target="_blank" rel="noopener">
+                    <span class="work-tile-grid" aria-hidden="true">
+                      <img src="assets/artstation-watchman-tile-1.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                      <img src="assets/artstation-watchman-tile-2.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                      <img src="assets/artstation-watchman-tile-3.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                      <img src="assets/artstation-watchman-tile-4.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                    </span>
+                    <span class="work-tile-badge" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M0 17.723l2.027 3.505h.001a2.424 2.424 0 0 0 2.164 1.333h13.457l-2.792-4.838H0zm24 .025c0-.484-.143-.935-.388-1.314L15.728 2.728a2.424 2.424 0 0 0-2.142-1.289H9.419L21.598 22.54l1.92-3.325c.378-.637.482-.919.482-1.467zm-11.129-3.462L7.428 4.858l-5.444 9.428h10.887z"/></svg></span>
+                    <span class="sr-only">View The Watchman short animated film on ArtStation (opens in a new tab)</span>
+                  </a>
+
+                  <div class="link-pop" id="artstation-watchman" role="group" aria-label="The Watchman — Short Animated Film — preview">
+                    <div class="link-pop-strip">
+                      <button class="link-pop-play" type="button" data-yt="QWlEA4a-g8s">
+                        <img data-src="assets/artstation-watchman-video-1.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                        <span class="link-pop-play-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M8 5.14v13.72L19 12z"/></svg></span>
+                        <span class="link-pop-play-label">Watch the film</span>
+                      </button>
+                      <button class="link-pop-play" type="button" data-yt="xDeEJfyIkNc">
+                        <img data-src="assets/artstation-watchman-video-2.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                        <span class="link-pop-play-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M8 5.14v13.72L19 12z"/></svg></span>
+                        <span class="link-pop-play-label">Watch the CGI/VFX breakdown</span>
+                      </button>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/G8eo43" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-watchman-01.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/G8eo43" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-watchman-02.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/G8eo43" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-watchman-03.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/G8eo43" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-watchman-04.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/G8eo43" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-watchman-05.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/G8eo43" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-watchman-06.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/G8eo43" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-watchman-07.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/G8eo43" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-watchman-08.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/G8eo43" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-watchman-09.jpg" alt="" loading="lazy" decoding="async" width="800" height="448">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/G8eo43" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-watchman-10.jpg" alt="" loading="lazy" decoding="async" width="800" height="454">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/G8eo43" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-watchman-11.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/G8eo43" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-watchman-12.jpg" alt="" loading="lazy" decoding="async" width="800" height="900">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/G8eo43" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-watchman-13.jpg" alt="" loading="lazy" decoding="async" width="800" height="896">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/G8eo43" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-watchman-14.jpg" alt="" loading="lazy" decoding="async" width="800" height="900">
+                      </a>
+                    </div>
+                    <div class="link-pop-foot">
+                      <span class="link-pop-title">The Watchman — Short Animated Film</span>
+                      <span class="link-pop-host">artstation.com &#8599;</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="work-link work-link--college">
+                  <a class="work-tile" href="https://www.artstation.com/artwork/mz8BWe" target="_blank" rel="noopener">
+                    <span class="work-tile-grid" aria-hidden="true">
+                      <img src="assets/artstation-chillbeach-tile-1.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                      <img src="assets/artstation-chillbeach-tile-2.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                      <img src="assets/artstation-chillbeach-tile-3.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                      <img src="assets/artstation-chillbeach-tile-4.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                    </span>
+                    <span class="work-tile-badge" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M0 17.723l2.027 3.505h.001a2.424 2.424 0 0 0 2.164 1.333h13.457l-2.792-4.838H0zm24 .025c0-.484-.143-.935-.388-1.314L15.728 2.728a2.424 2.424 0 0 0-2.142-1.289H9.419L21.598 22.54l1.92-3.325c.378-.637.482-.919.482-1.467zm-11.129-3.462L7.428 4.858l-5.444 9.428h10.887z"/></svg></span>
+                    <span class="sr-only">View the Chill Beach Guy animation on ArtStation (opens in a new tab)</span>
+                  </a>
+
+                  <div class="link-pop" id="artstation-chillbeach" role="group" aria-label="Chill Beach Guy — STAY — preview">
+                    <div class="link-pop-strip">
+                      <button class="link-pop-play" type="button" data-yt="AtkOkJF-OF4">
+                        <img data-src="assets/artstation-chillbeach-video-1.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                        <span class="link-pop-play-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M8 5.14v13.72L19 12z"/></svg></span>
+                        <span class="link-pop-play-label">Watch the animation</span>
+                      </button>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/mz8BWe" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-chillbeach-01.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/mz8BWe" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-chillbeach-02.jpg" alt="" loading="lazy" decoding="async" width="551" height="566">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/mz8BWe" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-chillbeach-03.jpg" alt="" loading="lazy" decoding="async" width="800" height="450">
+                      </a>
+                      <a class="link-pop-shot" href="https://www.artstation.com/artwork/mz8BWe" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+                        <img data-src="assets/artstation-chillbeach-04.jpg" alt="" loading="lazy" decoding="async" width="800" height="916">
+                      </a>
+                    </div>
+                    <div class="link-pop-foot">
+                      <span class="link-pop-title">Chill Beach Guy — STAY</span>
+                      <span class="link-pop-host">artstation.com &#8599;</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- [certificates] closes .work-groups -->
+            </div>
           </li>
         </ul>
       </div>
@@ -757,6 +1093,13 @@
        data-popup hook its own rules are scoped alongside.
        See REMOVE-CALL-GLASS.md. -->
   <script defer src="call-glass.js"></script>
+  <!-- [pop-glass] Removable feature. Attaches the lens to each preview panel
+       on its first hover and flips the data-pg hook its own stylesheet is
+       scoped to. Must load after glass.js, which it reuses for the backdrop
+       refraction. Independent of script.js, which lazy-loads the same panels'
+       images off the same first hover without either binding on the other.
+       See REMOVE-POP-GLASS.md. -->
+  <script defer src="pop-glass.js"></script>
   <!-- [text-glow] Removable feature. Splits the About paragraph into words,
        groups them into rendered lines, and drives the light from scroll
        position. Independent of script.js, whose scroll-reveal fades the same
@@ -764,5 +1107,19 @@
        different elements. See REMOVE-TEXT-GLOW.md. -->
   <script defer src="text-glow.js"></script>
   <script defer src="script.js"></script>
+  <!-- [college-projects] Removable feature. Builds the YouTube iframe on click
+       and latches the panel open while it plays, because focus inside a
+       cross-origin iframe does not match :focus-within and the CSS that holds
+       every other panel open cannot hold this one. Also gives the three tiles
+       tap-to-open on touch, where styles.css hides .link-pop outright. Loads
+       after script.js, which lazy-loads the same panels' gallery images on the
+       same first hover; the two bind separate elements.
+       See REMOVE-COLLEGE-PROJECTS.md. -->
+  <script defer src="college-projects.js"></script>
+  <!-- [certificates] Removable feature. Decides which side the certificates
+       panel opens on, which is the only part of it CSS cannot express. Nothing
+       else depends on this file — drop it and the panel still opens, it just
+       always opens upward. See REMOVE-CERTIFICATES.md. -->
+  <script defer src="certificates.js"></script>
 </body>
 </html>

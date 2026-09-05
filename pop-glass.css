@@ -1,0 +1,438 @@
+/* ==========================================================================
+   [pop-glass] Liquid glass on the link preview panels
+   ==========================================================================
+
+   The five .link-pop panels — the four ArtStation portfolio pop-ups hanging
+   off the Experience work tiles, and the résumé preview under the hero — are
+   re-made in the material .header-inner is made of, at panel scale.
+
+   This is the same move call-glass.css made for the meeting panel, applied to
+   the other floating surface on the page. Deliberately so: the page should
+   have one glass, not three dialects of it. Every value here is either taken
+   straight from .cg-slab or is a stated departure from it.
+
+   What styles.css says about these panels is worth answering directly:
+
+     "It is opaque rather than glass by design. The material rules at the top
+      of this file only ever stack one translucent surface, and the card
+      underneath is already one; a second would take the images with it."
+
+   Both halves of that were true and only the first half still is. The
+   screenshots are the reason the panel could not simply be turned translucent
+   — a photograph seen through frosted glass is a photograph you cannot read.
+   So the images do not become glass. The panel does, and each screenshot
+   stays an opaque object sitting on it (.link-pop-shot below). Glass frame,
+   solid content — which is how a translucent player card can carry sharp
+   album art, and how this panel carries sharp screenshots.
+
+   Which surface is opaque, and where it stops, is the whole of this section.
+
+   The first version of this file gave the opaque ground to .link-pop-strip,
+   the container. That was wrong for a reason worth recording. The strip is a
+   flex column with a gap, so a background on it paints under the images *and*
+   through every seam between them, and through the strip's head and tail. At
+   0.92 white against dark screenshots those seams were hard white bars ruled
+   across the panel — most visible around the two 800x64 banner frames in the
+   Hitwicket strip, each about 29px tall with a white bar above and below it —
+   and the only glass left anywhere was the 8px frame.
+
+   The ground belongs to the shot, and the shot already had one: styles.css
+   gives .link-pop-shot an opaque gradient, so nothing here has to supply it.
+   The strip goes back to being nothing but a scroll box, and the seams open.
+
+   What shows through them is the panel's own material over a real backdrop —
+   these panels sit directly on the timeline card's bullet copy, which is
+   exactly the contrast the lens in pop-glass.js needs and was being sealed
+   off from.
+
+   The stacking objection is answered by [scroll-paint]: .timeline-item no
+   longer carries a backdrop-filter, so this panel's backdrop is the card's
+   flat tint and the section behind it, not a second live filter. Nesting one
+   backdrop-filter inside another is what turns both to grey slabs, and that
+   is no longer what happens here.
+
+   WHERE EACH PART LIVES
+     - the material, the rim, the fringe, the shots' edge and lift: this file
+     - the real refraction (the displacement map): pop-glass.js, via glass.js
+     - where the panel sits, how big it is, how it opens: styles.css, untouched
+
+   THE data-pg GATE
+     Every rule below is scoped to .link-pop[data-pg='lit'], and pop-glass.js
+     writes that attribute onto one panel at a time, on its first hover. This
+     is not decoration. [scroll-paint] took backdrop-filter off .timeline-item
+     because ~33 compositing layers made Chrome drop a card mid-scroll and
+     paint it as a flat fill with its contents missing. Five more permanent
+     layers for panels that are hidden and that most visitors never open is
+     the same mistake at smaller scale, so a panel costs nothing until it is
+     actually asked for. It also means an unlit panel is untouched by this
+     file — which is the correct failure mode if the script never runs.
+
+   Note that there is no backdrop-filter declaration anywhere in here. That
+   property is glass.js's alone: it writes either the lens stack or, off
+   Chromium, a plain frosted blur, and it does so in the same task as the
+   attach — well inside the 0.12s the panel waits before it starts to fade in.
+   Declaring a fallback here as well would only be a second copy of a number
+   to keep in sync, and it would put the layer back at parse time.
+
+   Removing this file and pop-glass.js returns all five panels to the opaque
+   white ones styles.css draws. See REMOVE-POP-GLASS.md.
+   ========================================================================== */
+
+:root {
+  /* The slab's tint, held one step heavier at 0.36 against call-glass's 0.32.
+     Two reasons, both about what is behind it. The meeting panel opens over a
+     flat section; these open over a timeline card that is itself a translucent
+     surface with body copy and a bullet list under it, so there is more to
+     suppress. And the panel's own content is photographs — a strip of
+     screenshots reads as a hard object, and a surface carrying one wants a
+     little more body than a surface carrying six dials.
+
+     Still well under the 0.42 --glass-surface the card behind it uses, which
+     is what keeps the two legible as two panes rather than one thick one.
+     Raise toward 0.44 if the bullets underneath start reading through. */
+  --pg-panel: rgba(255, 255, 255, 0.36);
+
+  /* The hairline around each shot. Warmer and softer than --color-border,
+     because it is not separating two pieces of paper — it is the lit edge of
+     a solid object sitting on glass, and it has to hold against screenshots
+     whose own margins are sometimes near-white. */
+  --pg-shot-edge: rgba(255, 255, 255, 0.62);
+
+  /* The panel's own specular stops, a step above styles.css's 0.22 / 0.10.
+
+     Those defaults were set for surfaces that sit on the page, where there is
+     always something underneath for the blur to find. A preview panel often
+     opens over the flat upper half of a timeline card — white 0.42 over
+     #faf9f7 — and a blur of a near-white ground returns the same near-white,
+     with saturate() a no-op on a neutral. That is the [scroll-paint] finding
+     that took backdrop-filter off .timeline-item, and it applies here.
+
+     Nothing in CSS fixes a backdrop with no detail in it, so the depth on
+     those panels has to be painted rather than refracted. This is that: a
+     brighter top face and a slightly deeper bottom, which is what a sheet of
+     glass does to a light it is under whether or not anything is behind it.
+     Held under 0.34 — past that the panel stops reading as a tinted surface
+     and starts reading as a white gradient. */
+  --pg-specular-top: rgba(255, 255, 255, 0.3);
+  --pg-specular-bottom: rgba(255, 255, 255, 0.14);
+
+  /* The chromatic rim, taken from call-glass.css unchanged.
+
+     The lens in pop-glass.js splits the backdrop into its channels for real,
+     but real dispersion needs contrast behind the glass to split. These panels
+     routinely open over the flat upper half of a timeline card where there is
+     none, so the edge would go plain exactly as often as not. This is the
+     painted floor under that: soft, directional, two hues — cool off the
+     top-left face, warm off the bottom-right — never a rainbow ring.
+
+     Both a step above call-glass's own, for the reason the specular is: the
+     meeting panel opens over a section with structure in it and can let the
+     lens carry more of its edge, while these routinely open over flat pale
+     card where the lens carries none of it. Stop at these — the fringe is
+     meant to be noticed only once the eye is already on the edge, and past
+     about 0.6 it becomes a coloured outline. */
+  --pg-fringe-cool: rgba(96, 205, 255, 0.58);
+  --pg-fringe-warm: rgba(255, 122, 96, 0.5);
+
+  /* Dark mode. A white overlay over a dark backdrop reads as chalk, so the
+     panel inverts to a dark tint. The shots need nothing here — their ground
+     is styles.css's --color-bg-alt gradient, which dark-mode.css already
+     re-points, so they follow the theme on their own. */
+  --dark-pg-panel: rgba(26, 26, 29, 0.46);
+  /* A white hairline on a dark screenshot is a blown edge; the shot's edge in
+     dark mode is barely a lift rather than a highlight. */
+  --dark-pg-shot-edge: rgba(255, 255, 255, 0.14);
+  /* The specular has to come most of the way down in dark mode. The same
+     white that reads as a sheen on a light tint reads as fog on a dark one,
+     and the panel stops looking like glass and starts looking dusty. */
+  --dark-pg-specular-top: rgba(255, 255, 255, 0.1);
+  --dark-pg-specular-bottom: rgba(255, 255, 255, 0.04);
+  --dark-pg-fringe-cool: rgba(120, 214, 255, 0.42);
+  --dark-pg-fringe-warm: rgba(255, 138, 110, 0.34);
+}
+
+/* Both triggers, mirroring dark-mode.css and call-glass.css: the system
+   setting, and the explicit data-theme hook for a toggle that does not exist
+   yet. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --pg-panel: var(--dark-pg-panel);
+    --pg-shot-edge: var(--dark-pg-shot-edge);
+    --pg-specular-top: var(--dark-pg-specular-top);
+    --pg-specular-bottom: var(--dark-pg-specular-bottom);
+    --pg-fringe-cool: var(--dark-pg-fringe-cool);
+    --pg-fringe-warm: var(--dark-pg-fringe-warm);
+  }
+}
+
+:root[data-theme='dark'] {
+  --pg-panel: var(--dark-pg-panel);
+  --pg-shot-edge: var(--dark-pg-shot-edge);
+  --pg-specular-top: var(--dark-pg-specular-top);
+  --pg-specular-bottom: var(--dark-pg-specular-bottom);
+  --pg-fringe-cool: var(--dark-pg-fringe-cool);
+  --pg-fringe-warm: var(--dark-pg-fringe-warm);
+}
+
+/* ==========================================================================
+   The panel
+   ==========================================================================
+
+   Only the two things a surface is made of are touched: what it is filled
+   with, and what its edge does. Position, width, transform-origin, the open
+   and close curves, the invisible hover bridge — all still styles.css's, and
+   all still correct. This re-draws what the panel is made of; it does not
+   move it, resize it, or change how it arrives. */
+
+.link-pop[data-pg='lit'] {
+  /* .header-inner's material at panel scale: the same two-stop specular over
+     the same kind of thin tint. The specular sits in the background rather
+     than in an ::after because it belongs under the content, not over it —
+     which is how the header does it and how .cg-slab does it. */
+  background:
+    linear-gradient(
+      to bottom,
+      var(--pg-specular-top),
+      rgba(255, 255, 255, 0) 42%,
+      rgba(255, 255, 255, 0) 78%,
+      var(--pg-specular-bottom)
+    ),
+    var(--pg-panel);
+
+  /* No border. The header draws no line around itself and neither does the
+     call slab; the edge reads from --glass-rim plus the lens's own fringe.
+     A 1px --color-border on top of a chromatic rim is the one thing that
+     makes glass look like a sticker of glass.
+
+     Transparent rather than removed so the panel keeps the 1px it was laid
+     out with — a border-width change here would move the content by a pixel
+     and could re-wrap the footer on a narrow viewport. */
+  border-color: transparent;
+
+  /* --glass-rim is the bright top face and the faint shade off the bottom,
+     the same pair every other surface on the page carries. The two drop
+     shadows after it are styles.css's own, restated unchanged: the panel
+     already cast correctly for its size, and this is not a resizing. */
+  box-shadow: var(--glass-rim),
+    0 22px 46px -18px rgba(var(--shadow-rgb), 0.36),
+    0 4px 12px -6px rgba(var(--shadow-rgb), 0.16);
+}
+
+/* The chromatic rim.
+
+   Straddling the edge rather than sitting inside it, so the fringe has a
+   little to bleed outward into — a droplet's edge is wet on both sides.
+
+   Blurred box-shadows rather than a masked gradient ring, for the reason
+   call-glass.css sets out: CSS applies a mask *after* a filter, so blurring a
+   masked ring gives soft colour inside a hard cut, which is a crisp line
+   again. A shadow with a blur radius and a negative spread is soft in the
+   direction that counts and follows border-radius exactly.
+
+   Paired with dispersion: 0.34 on the lens in pop-glass.js — the real split,
+   which only shows where the backdrop has contrast to split. These two are
+   meant to be tuned together: this is the floor the edge never falls below,
+   that is the part that lives and moves with the page behind it.
+
+   ::after rather than ::before, and that is not arbitrary: styles.css already
+   owns .link-pop::before, where it is the invisible bridge across the 12px
+   gap that keeps the panel reachable by pointer. Taking it would make every
+   panel close the moment the pointer left the tile. */
+.link-pop[data-pg='lit']::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+
+  box-shadow:
+    /* Inward, hugging the two faces. -1px spread keeps the peak at the rim
+       and lets the falloff do the rest, so this never resolves into a line. */
+    inset 1.5px 1.5px 4px -1px var(--pg-fringe-cool),
+    inset -1.5px -1.5px 4px -1px var(--pg-fringe-warm),
+    /* Outward, half strength: the same split spilling onto the page. This is
+       the half that survives on a backdrop with no contrast for the lens. */
+    2px 2px 5px -3px var(--pg-fringe-warm),
+    -2px -2px 5px -3px var(--pg-fringe-cool);
+}
+
+/* ==========================================================================
+   The content
+   ==========================================================================
+
+   A screenshot seen through a translucent surface is a screenshot with the
+   page behind it mixed into it — and these are dark, dense, high-detail
+   renders whose whole job is to be looked at. So each shot stays opaque and
+   its image sits on it flat: the glass is the frame around them and the
+   channel between them, the way a translucent player card carries sharp
+   album art.
+
+   The strip itself is nothing. It is a scroll container with a gap, and the
+   surfaces it used to draw are gone: the ground was always the shot's, and
+   the shot always had it. What is left in the seams is the panel's own
+   material with the card's body copy behind it, blurred and bent — the one
+   place on this panel where the lens has real contrast to work with.
+
+   It also gives the lens something to be seen against. Refraction is only
+   visible where the material is thin; a panel that was uniformly translucent
+   edge to edge would have its rim bend competing with its own middle. The
+   solid shots make the padding and the seams read unmistakably as glass,
+   because there is an opaque object right beside them for comparison. */
+
+.link-pop[data-pg='lit'] .link-pop-strip {
+  /* The opaque ground lived here and no longer does. Stated rather than
+     omitted: these two declarations are what keep the seams open, and a
+     future edit that gives the strip a background again puts the white bars
+     straight back. */
+  background: none;
+  box-shadow: none;
+
+  /* 6px was sized against an opaque strip, where the gap was a hairline of
+     white between two images and nothing more. It is now a window, and 6px of
+     glass is too thin to register as material — it reads as a seam that was
+     left open by mistake. 10px is enough for the shots' shadows to fall into
+     and for the surface underneath to be seen as a surface.
+
+     Worst affected are the two 800x64 banner frames in the Hitwicket strip
+     (the title card and the closing frame). Each renders about 29px tall, so
+     at 6px the banner was a thin dark bar between two thin light ones. */
+  gap: 10px;
+
+  /* The scrollbar was tuned against an opaque panel, where
+     --color-border-strong is a visible grey on white. Over the tint alone it
+     is neither, and reads as grime on the surface. */
+  scrollbar-color: rgba(var(--shadow-rgb), 0.28) transparent;
+}
+
+/* Each screenshot is now its own object resting on the glass, which needs the
+   two things any object on a surface needs: a ground, and a shadow.
+
+   The shadow is the load-bearing half. A gap between two dark screenshots
+   that is merely transparent is still a light band, because the glass behind
+   it is a white tint over a pale card. What stops it reading as a bar is the
+   shots above and below it casting into it, so the channel is darkest at its
+   two edges and lifts in the middle. That is a gap with depth rather than a
+   line ruled across the panel, and it is the same reason a stack of prints on
+   a glass shelf never looks like a striped rectangle.
+
+   The inset hairline is the shot's own edge. Without it a light screenshot —
+   and several of these have near-white margins — abuts the tint with nothing
+   between, and the shot and the glass merge back into one flat card.
+
+   The ground is not set here, and that is deliberate. styles.css already gives
+   .link-pop-shot an opaque gradient off --color-bg-alt, which is theme-aware
+   and which doubles as the placeholder for two states this panel really has:
+   the slot whose image 404'd, and the several hundred milliseconds after the
+   first hover while script.js is still swapping data-src in. Painting a flat
+   plate over it would win against both and buy nothing, since a loaded shot
+   covers its own ground completely. So the shot keeps the ground it has and
+   gains only an edge and a shadow.
+
+   overflow: hidden on .link-pop-shot clips its children, not its own outer
+   shadow, so the drop shadow survives the crop that gives the shot its
+   rounded corners. */
+.link-pop[data-pg='lit'] .link-pop-shot {
+  box-shadow: inset 0 0 0 1px var(--pg-shot-edge),
+    0 1px 2px rgba(var(--shadow-rgb), 0.16),
+    0 4px 10px -4px rgba(var(--shadow-rgb), 0.22);
+}
+
+/* The footer sits outside the strip, directly on the glass, which is where a
+   caption belongs on a translucent surface — it is chrome, not content. But
+   text on glass needs what the header's nav labels needed for the same
+   reason: the backdrop changes underneath it. This is that halo, at the same
+   strength, lifting the pixels immediately around each glyph where the card
+   or the bullet list behind the panel goes dark. */
+/* [dark-mode] */
+.link-pop[data-pg='lit'] .link-pop-title,
+.link-pop[data-pg='lit'] .link-pop-host {
+  text-shadow: var(--nav-label-halo);
+}
+
+/* ==========================================================================
+   Where the glass stands down
+   ==========================================================================
+
+   pop-glass.js checks both of these queries before it lights anything, so in
+   the ordinary case no panel is ever lit under them and none of this runs.
+   These are the second line: a preference toggled *after* the panel was lit
+   changes the query without re-running the script, and this is what catches
+   that. Each block restates styles.css's own values for the mode rather than
+   inventing new ones. */
+
+/* Reduced transparency: the material system collapses to opaque fills with
+   real borders, and depth is carried by the border and shadow alone. */
+@media (prefers-reduced-transparency: reduce) {
+  .link-pop[data-pg='lit'] {
+    background: var(--color-bg);
+    border-color: var(--color-border-strong);
+    /* !important because glass.js writes backdrop-filter inline, and an
+       inline declaration outranks any selector. This is the one place the
+       stylesheet has to overrule the script. */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: 0 22px 46px -18px rgba(var(--shadow-rgb), 0.36),
+      0 4px 12px -6px rgba(var(--shadow-rgb), 0.16);
+  }
+
+  /* The fringe is the most decorative thing in the file and the first to go. */
+  .link-pop[data-pg='lit']::after {
+    display: none;
+  }
+
+  /* The strip already draws nothing. What has to be stood down is the shot:
+     with the panel opaque there is no glass for a screenshot to float on, so
+     it goes back to being flat content on a flat card. The gap goes back to
+     styles.css's 6px with it — 10px was bought to make a window legible, and
+     there is no window here. */
+  .link-pop[data-pg='lit'] .link-pop-strip {
+    gap: 6px;
+  }
+
+  .link-pop[data-pg='lit'] .link-pop-shot {
+    box-shadow: none;
+  }
+
+  .link-pop[data-pg='lit'] .link-pop-title,
+  .link-pop[data-pg='lit'] .link-pop-host {
+    text-shadow: none;
+  }
+}
+
+/* High contrast: near-solid surfaces with a defined, contrasting border. */
+@media (prefers-contrast: more) {
+  .link-pop[data-pg='lit'] {
+    background: var(--color-bg);
+    border: 1px solid var(--color-text);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: 0 22px 46px -18px rgba(var(--shadow-rgb), 0.36);
+  }
+
+  .link-pop[data-pg='lit']::after {
+    display: none;
+  }
+
+  .link-pop[data-pg='lit'] .link-pop-strip {
+    gap: 6px;
+  }
+
+  /* A soft shadow and a 62%-white hairline are both low-contrast edges, which
+     is what this mode exists to remove. The shot gets a real border instead,
+     so each screenshot is still a bounded object. */
+  .link-pop[data-pg='lit'] .link-pop-shot {
+    box-shadow: inset 0 0 0 1px var(--color-text);
+  }
+
+  /* A halo is a low-contrast glow around a glyph, which is the opposite of
+     what this mode is asking for. */
+  .link-pop[data-pg='lit'] .link-pop-title,
+  .link-pop[data-pg='lit'] .link-pop-host {
+    text-shadow: none;
+  }
+}
+
+/* Print and touch need nothing. styles.css already sets display:none on
+   .link-pop for @media print and for (hover: none) — a panel with no box has
+   no material to argue about — and pop-glass.js does not light a panel on a
+   touch device in the first place. */

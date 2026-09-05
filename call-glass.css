@@ -211,7 +211,7 @@
    header's. */
 
 /* styles.css turns the border accent-coloured on hover, which would draw a
-   flat green line around a surface that is supposed to have no line on it. */
+   flat line around a surface that is supposed to have no line on it. */
 .mp[data-glass='on'] .mp-toggle:hover,
 .mp[data-glass='on'] .mp-toggle:focus-visible {
   --cg-glow-a: 100%;

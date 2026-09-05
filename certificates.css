@@ -1,0 +1,381 @@
+/*
+ * [certificates] A second labelled cluster in the `tile` cell of the Amity
+ * card, to the left of the three College Projects tiles and divided from them
+ * by a hairline.
+ *
+ * Everything here is additive. The tile and its panel are the existing
+ * .work-tile / .link-pop components from styles.css; this file only adds the
+ * two-cluster wrapper, the divider, its own copy of the overline, and the
+ * placeholder collage that stands in until real certificate art lands.
+ *
+ * certificates.js is the one part that is not styling: it picks the side the
+ * panel opens on, which CSS cannot decide. Section 5b holds the rules it
+ * drives; without it the panel just always opens upward.
+ *
+ * It overrides two declarations that college-projects.css sets on .work-row
+ * (grid-area and margin-top) from here rather than editing that file, so the
+ * two features stay independent: delete this stylesheet and the [certificates]
+ * tags in index.html and the college row goes back to owning the cell alone.
+ * The reverse also holds — nothing here inherits a college-projects selector.
+ *
+ * Remove: see REMOVE-CERTIFICATES.md.
+ */
+
+/* ---- 0. Knobs ------------------------------------------------------------
+   All measured at 1600px in Chrome, not estimated.
+
+   The `tile` grid column is content-sized: it takes whatever this row asks for
+   and the description column gets the rest. The two share a fixed 814px on this
+   card, so every pixel spent here comes straight out of the bullets.
+
+     college row  308  (three 96px tiles + two 10px seams)
+     + gaps/rule   21  (10 + 1 + 10)
+     + cert tile   96
+     = tile cell  425  ->  description 389
+
+   The longer bullet, "Received the Best Showreel award at Animation Day", needs
+   413px to stay on one line. It has 389, so it takes a second line and the card
+   grows from 189px to 214. That is the whole cost of this feature, and it is
+   paid on one card.
+
+   96 is shipped because it is the size the three tiles beside it are drawn at,
+   and a certificate tile drawn smaller reads as a lesser kind of object rather
+   than a sibling. If the extra line matters more than the match:
+
+     --cert-tile-w: 80px  (and 60px high) puts the tile cell at 409 and the
+     description at 405 — still short. 76px is the largest that clears 413.
+
+   Below about 76 the tile stops being legible as a 2x2 at all, which is the
+   point at which the honest fix is to shrink all four tiles together — that
+   means editing college-projects.css's own 96, not just this file. */
+:root {
+  --cert-tile-w: 96px;
+  --cert-tile-h: 72px;
+  /* How far the certificates cluster rides up out of the row, so its heading
+     lands on the same line as the College Projects heading in the dates column.
+     Measured: that heading's top is 26px above the top of the tiles. Section 2
+     explains why the two headings live in different boxes at all. */
+  --cert-lift: 26px;
+}
+
+/* ---- 1. The two clusters -------------------------------------------------
+   Takes over the `tile` grid area from .work-row, which now sits inside it as
+   the right-hand cluster. Same area, same align-self: start, same -28px lift,
+   so the college tiles do not move by a pixel — the row above them is simply
+   one box further out.
+
+   The lift is copied rather than inherited because .work-row is no longer the
+   grid item; the reasoning behind the number is in college-projects.css and
+   still applies unchanged.
+
+   The 10px gap is the seam the college tiles already use between themselves, so
+   the four tiles sit on one even rhythm and only the rule marks the break. */
+.work-groups {
+  grid-area: tile;
+  align-self: start;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: -28px;
+}
+
+/* .work-row keeps its own grid-area and lift for the case where this file is
+   deleted; while this file is loaded both have to be handed back, or the row
+   would try to claim a grid cell from a parent that is not the grid and would
+   carry the lift twice. Two classes deep, so it also wins inside
+   college-projects.css's own max-width media block — a media query adds no
+   specificity. */
+.work-groups > .work-row {
+  grid-area: auto;
+  margin-top: 0;
+}
+
+/* The certificates cluster: its heading and the tile under it.
+
+   Lifted clear of the flex line so the heading rises onto the College Projects
+   heading's line. The 10px gap is then what puts the tile back down level with
+   the three beside it — 26 up for the heading, 16 of heading, 10 of gap, and
+   the tile tops are flush again. Both numbers have to move together if either
+   does. */
+.cert-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: calc(-1 * var(--cert-lift));
+}
+
+/* The divider from the annotation, running the full height of what it divides
+   — from the heading line down to the bottom of the tiles, not just past the
+   tiles. Anchored to the top of the flex line and lifted with the cluster, so
+   it starts level with the two headings.
+
+   Not `align-self: stretch`: the line's cross size is the taller of the two
+   clusters, and below 720px that is a wrapped three-tile row. An explicit
+   height always reads as a seam between two groups. */
+.work-groups-rule {
+  align-self: flex-start;
+  flex: 0 0 1px;
+  width: 1px;
+  height: calc(var(--cert-lift) + var(--cert-tile-h));
+  margin-top: calc(-1 * var(--cert-lift));
+  background: var(--color-border);
+}
+
+/* ---- 2. The overline -----------------------------------------------------
+   Its own class rather than college-projects.css's .work-row-label, so this
+   feature does not break if that one is removed. The type is deliberately
+   identical to it — the two headings sit on one line and any difference between
+   them would read as a mistake rather than as a distinction. Keep them in step
+   if either is ever retuned.
+
+   One copy, at every width, directly over the tile it names. College Projects
+   ships two and swaps them at 720px because it has three tiles and no width to
+   spare above that, so its desktop copy is parked up in the dates column; this
+   cluster is narrow enough that its heading fits over its own tile at any
+   width, which is where a heading belongs. The lift in section 1 is what puts
+   the two on one line despite living in different boxes. */
+.cert-label {
+  color: var(--color-text);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  /* 91px against the tile's 96 — it does not widen the cluster today, and this
+     stops a longer word from doing so tomorrow and quietly costing the bullets
+     another line. */
+  max-width: var(--cert-tile-w);
+}
+
+/* ---- 3. The tile ---------------------------------------------------------
+   The same 96x72 the college tiles are drawn at. See the knob block above for
+   why they match and what it costs. */
+.work-link--cert .work-tile {
+  width: var(--cert-tile-w);
+  height: var(--cert-tile-h);
+  border-radius: 16px;
+}
+
+/* The trigger is a <button>, not the <a> the other six tiles use, because
+   there is no verification URL to point at yet — see the note in index.html.
+   A button carries UA chrome an anchor does not, and all of it has to go for
+   the tile to look like its siblings. */
+.work-link--cert button.work-tile {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Held to the same fifth of the tile as the college badge, so the mark reads
+   as a corner stamp across all seven tiles rather than a button stuck on one. */
+.work-link--cert .work-tile-badge {
+  right: 5px;
+  bottom: 5px;
+  width: 19px;
+  height: 19px;
+}
+
+.work-link--cert .work-tile-badge svg {
+  width: 9px;
+  height: 9px;
+}
+
+/* ---- 3b. Placeholder collage ---------------------------------------------
+   Four drawn cells rather than four <img> tags, on purpose. script.js catches a
+   404 on a .link-pop-shot image and hides it so the slot's own gradient stands,
+   but it does not watch .work-tile-grid — a missing file there paints Chrome's
+   broken-image glyph straight onto the tile.
+
+   So the scaffold ships with nothing to fetch. Swap each <span> for the <img>
+   it is standing in for once the art exists and this rule stops matching on its
+   own; the grid, the radius and the hairline are all inherited from
+   styles.css's .work-tile-grid either way. */
+.cert-slot {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Mixed toward --color-text rather than --color-border, so the fill lightens
+     against a dark card and darkens against a light one from the one
+     declaration. Built off --color-border first, it came out within a couple of
+     percent of the card in dark mode and the tile read as a hole punched in it
+     rather than as an object waiting for art. */
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-text) 6%, var(--color-bg-alt)),
+    color-mix(in srgb, var(--color-text) 13%, var(--color-bg-alt))
+  );
+}
+
+/* Alternating the diagonal keeps the 2x2 legible as four frames instead of one
+   flat wash — the same thing the four real thumbnails will do. */
+.cert-slot:nth-child(2n) {
+  background: linear-gradient(
+    315deg,
+    color-mix(in srgb, var(--color-text) 11%, var(--color-bg-alt)),
+    color-mix(in srgb, var(--color-text) 4%, var(--color-bg-alt))
+  );
+}
+
+/* ---- 4. Stacking ---------------------------------------------------------
+   The cluster is the leftmost thing in the cell and its panel has to paint over
+   the divider and all three college tiles to its right, which win on source
+   order without this. 4 matches what college-projects.css lifts its own hovered
+   tile to, and only one of the two can be hovered at a time. */
+.work-link--cert:hover,
+.work-link--cert:focus-within {
+  z-index: 4;
+}
+
+/* ---- 5. Narrow screens ---------------------------------------------------
+   Below 720px the timeline drops to two columns and the `tile` area becomes a
+   full-width row under the bullets, where the college tiles go back to their
+   full 140px. Two clusters side by side there would wrap into each other, so
+   they stack instead: certificates first, then college projects, each under its
+   own heading. The vertical rule has nothing left to divide and goes. */
+@media (max-width: 720px) {
+  .work-groups {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    /* college-projects.css's own value at this width, moved up to the wrapper
+       along with the rest of the row's placement. */
+    margin-top: 4px;
+  }
+
+  .work-groups-rule {
+    display: none;
+  }
+
+  /* The cluster is stacked now, not lifted out of a row beside anything, and
+     its heading sits over its own tile the way it does at every other width.
+     The College Projects heading swaps to its own inline copy at this
+     breakpoint, so the two are still level — as the first two lines of their
+     stacked groups rather than as one shared line. */
+  .cert-group {
+    margin-top: 0;
+    gap: 6px;
+  }
+
+  /* The tile is 140px here, so let the heading follow it. */
+  .cert-label {
+    max-width: none;
+  }
+
+  /* Full width, so the tile takes the touch-sized 140px the college tiles take
+     back at this breakpoint. Stated outside the section 3 block rather than
+     inside it: a media query adds no specificity, so an identical selector
+     would come down to source order. */
+  .work-link--cert .work-tile {
+    width: 140px;
+    height: 104px;
+    border-radius: 24px;
+  }
+
+  /* Full-size tile, so styles.css's own badge size is right again. */
+  .work-link--cert .work-tile-badge {
+    right: 6px;
+    bottom: 6px;
+    width: 27px;
+    height: 27px;
+  }
+
+  .work-link--cert .work-tile-badge svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* ---- 5b. Which side the panel opens on -----------------------------------
+   styles.css opens every .link-pop upward, which is right for the four
+   Experience tiles — low on tall cards in the middle of a long page, always
+   room above. This tile is the last thing on the last Education card and the
+   panel is ~400px, so upward was clipped by the nav in every position a reader
+   is actually in: 120px lost with the card centred in a 1000px window, the
+   whole panel gone with the section scrolled to the top.
+
+   certificates.js measures the room on each side and sets data-flip; these are
+   the rules it drives. Without the script none of this matches and the panel
+   simply always opens upward, which is the old behaviour rather than a broken
+   one. Same attribute and same values college-projects.css uses, kept separate
+   only so neither feature depends on the other. */
+.work-link--cert[data-flip='down'] .link-pop {
+  top: calc(100% + 12px);
+  bottom: auto;
+  transform-origin: 78% 0;
+}
+
+/* --pop-room is written by certificates.js on each open: the space that
+   actually exists on the side the panel chose. 360px is styles.css's own cap
+   and stays the ceiling — this only ever makes the strip shorter, so a panel
+   with room to spare looks exactly like the other five. */
+.work-link--cert .link-pop-strip {
+  max-height: min(360px, var(--pop-room, 360px));
+}
+
+/* The closed state's transform has to flip with it, or the panel retracts
+   upward into a tile it is hanging below. */
+.work-link--cert[data-flip='down'] .link-pop:not(:hover) {
+  transform: translateY(-10px) scale(0.94);
+}
+
+.work-link--cert[data-flip='down']:hover .link-pop,
+.work-link--cert[data-flip='down']:focus-within .link-pop {
+  transform: none;
+}
+
+/* The pointer bridge moves to the other side too — above the panel now, so the
+   pointer can still cross the 12px gap coming down from the tile. */
+.work-link--cert[data-flip='down'] .link-pop::before {
+  top: auto;
+  bottom: 100%;
+}
+
+/* ---- 6. Touch ------------------------------------------------------------
+   styles.css hides every .link-pop under (hover: none), because a tap on a
+   tile should follow its link rather than trap the user in a tooltip. That is
+   the right default for the six tiles that are anchors, and it would leave this
+   one — a <button> with nowhere to go — doing nothing at all when tapped.
+
+   So the panel is un-hidden here and driven by :focus-within alone. A tapped
+   button keeps focus until something else is tapped, which opens the panel and
+   closes it again on the next tap outside; college-projects.js needs a
+   scripted latch instead only because focus moves into a cross-origin iframe
+   during playback and stops matching. Nothing here has an iframe in it.
+
+   Revisit this if the tile ever becomes an <a href> (see index.html): an anchor
+   has somewhere to go, and following the link on tap would then be the better
+   behaviour — at which point this whole block should come out. */
+@media (hover: none) {
+  .work-link--cert .link-pop {
+    display: block;
+    /* Anchored to the viewport, not the tile. A 380px panel hanging off a
+       140px tile runs off a phone screen on one side or the other, and there
+       is no pointer gap to preserve — focus holds it open, not hover. */
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+    max-height: 78vh;
+    overflow-y: auto;
+    z-index: 60;
+  }
+
+  .work-link--cert .link-pop-strip {
+    max-height: none;
+  }
+
+  /* The bridge exists to let a pointer cross the 12px gap to the panel. There
+     is no pointer here, and an invisible strip under a fixed panel is just a
+     dead zone over whatever it lands on. */
+  .work-link--cert .link-pop::before {
+    content: none;
+  }
+}

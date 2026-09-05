@@ -47,10 +47,39 @@ if (typeof liquidGlass === 'function') {
   // carries as a multiple of that orb's own radius, and how much the orb
   // swells while disturbed. REACH sits above 1 so the push begins just before
   // the cursor reaches the visible edge of the blob rather than at its middle.
-  const PUSH = 68;
-  const REACH = 1.15;
-  const SWELL = 0.07;
+  //
+  // These three are read from CSS rather than fixed here, because the right
+  // amount of movement is not the same in both themes. On a near-black ground
+  // the orbs are high-contrast and a small shove reads clearly; on the light
+  // ground they are a pale wash, and the same shove is below the threshold of
+  // noticing. styles.css sets a larger push for light mode. The numbers below
+  // are the dark-mode tuning and the fallback — delete the CSS custom
+  // properties and the field behaves exactly as it did before they existed.
+  const PUSH_FALLBACK = 68;
+  const REACH_FALLBACK = 1.15;
+  const SWELL_FALLBACK = 0.07;
   const EASE = 0.08;
+
+  let PUSH = PUSH_FALLBACK;
+  let REACH = REACH_FALLBACK;
+  let SWELL = SWELL_FALLBACK;
+
+  // A custom property that is unset resolves to '', and parseFloat('') is NaN
+  // — so an absent or malformed value falls back rather than writing NaN into
+  // a transform, which would blank the whole field.
+  function readVar(styles, name, fallback) {
+    const n = parseFloat(styles.getPropertyValue(name));
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function readTuning() {
+    const styles = getComputedStyle(field);
+    PUSH = readVar(styles, '--orb-push', PUSH_FALLBACK);
+    REACH = readVar(styles, '--orb-reach', REACH_FALLBACK);
+    SWELL = readVar(styles, '--orb-swell', SWELL_FALLBACK);
+  }
+
+  readTuning();
 
   const orbs = [...field.querySelectorAll('.orb')].map((el) => ({
     el,
@@ -193,6 +222,25 @@ if (typeof liquidGlass === 'function') {
     },
     { passive: true }
   );
+
+  // The theme is not toggled by any script on this page — it follows the OS —
+  // so the tuning can be read once at load and only has to be re-read if the
+  // OS flips underneath us. measure() as well as readTuning(), because each
+  // orb's reach is cached in pixels from REACH at measure time.
+  const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  const onThemeChange = () => {
+    readTuning();
+    measure();
+    aim();
+    wake();
+  };
+  // addListener is the deprecated spelling, kept as a fallback for Safari
+  // before 14 — where the modern addEventListener on a MediaQueryList throws.
+  if (darkQuery.addEventListener) {
+    darkQuery.addEventListener('change', onThemeChange);
+  } else if (darkQuery.addListener) {
+    darkQuery.addListener(onThemeChange);
+  }
 
   // Nothing to react to once the hero has scrolled away.
   new IntersectionObserver(

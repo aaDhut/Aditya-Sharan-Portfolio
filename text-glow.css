@@ -24,28 +24,77 @@
 
 :root {
   /* The halo colour needs raw channels for the rgb(... / alpha) below, so it
-     cannot be read off --color-accent. */
-  --tg-glow-rgb: 45 106 79;
+     cannot be read off --color-accent.
+
+     White on the light theme, because a halo only reads as light if it is
+     lighter than the ground under it — and that ground is --color-bg,
+     #faf9f7. The dark accent this used to be was darker than the page, so it
+     never glowed; it smeared a sooty ring around the letters and made the lit
+     line look grubbier than the grey around it rather than brighter. That is
+     a property of any dark accent, not of the green it happened to be, so it
+     still holds now that the accent is a turquoise.
+     White bleaches the paper immediately around a lit word instead, which is
+     the only direction "lit" can go on a light ground. */
+  --tg-glow-rgb: 255 255 255;
+
+  /* Halo alphas are per-theme because the two halos do opposite jobs: on dark
+     the colour bleeds outward from the letters, on light the paper is
+     bleached out from under them. Bleaching an off-white that is already 97%
+     of the way to white has far less room to work in, so it has to be laid on
+     harder to register at all. */
+  --tg-glow-a1: 0.9;
+  --tg-glow-a2: 0.55;
 
   /* The lit end of the ramp. Deliberately past --color-text rather than equal
      to it: a lit line should read as brighter than the body copy around it,
-     not merely as un-dimmed. Together with the halo alphas below, this is
-     what "intensity" means here — raise or lower both together. */
+     not merely as un-dimmed. Together with the halo alphas above, this is
+     what "intensity" means here — raise or lower both together.
+
+     Pure black on the light theme. This started at #0a0a0a on the reasoning
+     that #000 against a warm off-white reads as a hole rather than a
+     highlight — true in the abstract, but the lit line was still landing too
+     close to the grey around it to read comfortably, and the last 4% of ink
+     is free contrast. Legibility of the lit line wins over the subtler
+     highlight. */
   --tg-lit: #000000;
+
+  /* Extra ink laid on a lit word, in px of outline, at --tg 1.
+
+     The light theme needs this and the dark theme does not. On dark, a lit
+     word travels from grey to pure white *and* the blue halo bleeds into a
+     ground that is far away from it, so the line announces itself twice. On
+     light, --tg-lit is already a hair off black — there is nowhere darker to
+     travel — and the white halo is bleaching an off-white that is already 97%
+     of the way to white, so it barely registers. That left the whole effect
+     resting on one #5c5c5c -> #0a0a0a colour step, which is easy to miss in a
+     paragraph of body copy.
+
+     Weight is the axis with room left. Stroking the glyph outline in its own
+     colour thickens the letterform without touching layout, which font-weight
+     could not do: the script reads offsetTop off these spans to group words
+     into rendered lines, so a lit line that re-wrapped would move the very
+     boundaries the light is stepping through. */
+  --tg-ink: 0.62px;
 }
 
 /* Wired the same three ways dark-mode.css wires its own tokens, so the two
    stay in step. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --tg-glow-rgb: 147 216 179;
+    --tg-glow-rgb: 41 151 255;
+    --tg-glow-a1: 0.6;
+    --tg-glow-a2: 0.32;
     --tg-lit: #ffffff;
+    --tg-ink: 0px;
   }
 }
 
 :root[data-theme="dark"] {
-  --tg-glow-rgb: 147 216 179;
+  --tg-glow-rgb: 41 151 255;
+  --tg-glow-a1: 0.6;
+  --tg-glow-a2: 0.32;
   --tg-lit: #ffffff;
+  --tg-ink: 0px;
 }
 
 /* The split paragraph. Its words are plain text inside plain spans, so this is
@@ -77,10 +126,22 @@
   color: color-mix(in oklab, var(--tg-lit) calc(var(--tg) * 100%), var(--color-text-muted));
 
   /* Blur and alpha both ride --tg, so a line blooms outward as it warms
-     rather than snapping a fixed halo on at some threshold. */
+     rather than snapping a fixed halo on at some threshold. The peak alphas
+     come from tokens so each theme can set its own without a second rule and
+     without changing the layer count — two layers is what this paints per
+     word, on every word of the paragraph, in both themes. */
   text-shadow:
-    0 0 calc(var(--tg) * 12px) rgb(var(--tg-glow-rgb) / calc(var(--tg) * 0.6)),
-    0 0 calc(var(--tg) * 26px) rgb(var(--tg-glow-rgb) / calc(var(--tg) * 0.32));
+    0 0 calc(var(--tg) * 12px) rgb(var(--tg-glow-rgb) / calc(var(--tg) * var(--tg-glow-a1))),
+    0 0 calc(var(--tg) * 26px) rgb(var(--tg-glow-rgb) / calc(var(--tg) * var(--tg-glow-a2)));
+
+  /* Rides --tg like everything else, so the line thickens as it warms instead
+     of switching to a bold state at some threshold, and unwinds the same way
+     on the way back out. The stroke colour is left at its initial
+     currentcolor, which is the color-mix above — one ramp, not two, so the
+     ink can never disagree with the fill.
+
+     At --tg 0 this is a 0px stroke, i.e. exactly the paragraph as it was. */
+  -webkit-text-stroke: calc(var(--tg) * var(--tg-ink, 0px)) currentcolor;
 }
 
 /* color-mix has shipped everywhere this site's backdrop-filter work already
@@ -92,6 +153,7 @@
   .tg-word {
     color: var(--color-text-muted);
     text-shadow: none;
+    -webkit-text-stroke: 0;
   }
 }
 
@@ -103,6 +165,7 @@
   .tg-word {
     color: var(--color-text-muted);
     text-shadow: none;
+    -webkit-text-stroke: 0;
   }
 }
 
@@ -113,6 +176,7 @@
   .tg-word {
     color: CanvasText;
     text-shadow: none;
+    -webkit-text-stroke: 0;
   }
 }
 
@@ -124,5 +188,6 @@
   .tg-word {
     color: #000;
     text-shadow: none;
+    -webkit-text-stroke: 0;
   }
 }
