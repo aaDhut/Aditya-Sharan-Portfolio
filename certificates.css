@@ -29,12 +29,12 @@
    card, so every pixel spent here comes straight out of the bullets.
 
      college row  308  (three 96px tiles + two 10px seams)
-     + gaps/rule   21  (10 + 1 + 10)
+     + gaps/rule   22  (10 + 2 + 10)
      + cert tile   96
-     = tile cell  425  ->  description 389
+     = tile cell  426  ->  description 388
 
    The longer bullet, "Received the Best Showreel award at Animation Day", needs
-   413px to stay on one line. It has 389, so it takes a second line and the card
+   413px to stay on one line. It has 388, so it takes a second line and the card
    grows from 189px to 214. That is the whole cost of this feature, and it is
    paid on one card.
 
@@ -42,10 +42,10 @@
    and a certificate tile drawn smaller reads as a lesser kind of object rather
    than a sibling. If the extra line matters more than the match:
 
-     --cert-tile-w: 80px  (and 60px high) puts the tile cell at 409 and the
-     description at 405 — still short. 76px is the largest that clears 413.
+     --cert-tile-w: 80px  (and 60px high) puts the tile cell at 410 and the
+     description at 404 — still short. 75px is the largest that clears 413.
 
-   Below about 76 the tile stops being legible as a 2x2 at all, which is the
+   Below about 75 the tile stops being legible as a 2x2 at all, which is the
    point at which the honest fix is to shrink all four tiles together — that
    means editing college-projects.css's own 96, not just this file. */
 :root {
@@ -112,14 +112,27 @@
 
    Not `align-self: stretch`: the line's cross size is the taller of the two
    clusters, and below 720px that is a wrapped three-tile row. An explicit
-   height always reads as a seam between two groups. */
+   height always reads as a seam between two groups.
+
+   2px of --color-border-strong, not the 1px hairline the rest of the page uses
+   between stacked rows. Those separate two things the eye already reads as
+   separate; this one has to hold apart four tiles drawn at the same size on the
+   same 10px rhythm, against the card's own --color-bg-alt, where a 1px
+   --color-border (#2e2e30 on #1d1d1f in dark mode) simply does not survive. The
+   seam is the only thing saying the first tile is a different kind of object
+   from the three after it, so it is drawn to be seen.
+
+   The extra pixel comes out of the description column via the tile cell — one
+   px against the 413/389 budget in section 0, which does not change any
+   wrapping. */
 .work-groups-rule {
   align-self: flex-start;
-  flex: 0 0 1px;
-  width: 1px;
+  flex: 0 0 2px;
+  width: 2px;
   height: calc(var(--cert-lift) + var(--cert-tile-h));
   margin-top: calc(-1 * var(--cert-lift));
-  background: var(--color-border);
+  border-radius: 1px;
+  background: var(--color-border-strong);
 }
 
 /* ---- 2. The overline -----------------------------------------------------
@@ -172,18 +185,20 @@
   appearance: none;
 }
 
-/* Held to the same fifth of the tile as the college badge, so the mark reads
-   as a corner stamp across all seven tiles rather than a button stuck on one. */
+/* Close to the same fifth of the tile as the college badge, so the mark still
+   reads as a corner stamp across all seven tiles rather than a button stuck on
+   one — a little over it, because the medal is a finer glyph than the college
+   and ArtStation marks and goes muddy at their exact scale. */
 .work-link--cert .work-tile-badge {
   right: 5px;
   bottom: 5px;
-  width: 19px;
-  height: 19px;
+  width: 22px;
+  height: 22px;
 }
 
 .work-link--cert .work-tile-badge svg {
-  width: 9px;
-  height: 9px;
+  width: 11px;
+  height: 11px;
 }
 
 /* ---- 3b. The collage ------------------------------------------------------
@@ -344,11 +359,20 @@
     max-width: none;
     max-height: 78vh;
     overflow-y: auto;
+    /* The sheet must not hand the scroll back to the page when it bottoms out;
+       that was the strip's job while the strip was the scroller. */
+    overscroll-behavior: contain;
     z-index: 60;
   }
 
+  /* Same reason as the panel above being the scroller: an uncapped strip is
+     still an `overflow-y: auto` container, just one with nothing to scroll, and
+     a drag landing on it never reaches the panel — it chains past to the page,
+     which slides while the sheet stands still. */
   .work-link--cert .link-pop-strip {
     max-height: none;
+    overflow: visible;
+    overscroll-behavior: auto;
   }
 
   /* The bridge exists to let a pointer cross the 12px gap to the panel. There

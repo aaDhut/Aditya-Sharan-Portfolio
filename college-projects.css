@@ -572,11 +572,21 @@
     max-width: none;
     max-height: 78vh;
     overflow-y: auto;
+    /* Inherited from the strip's old job: don't scroll the page behind when
+       the sheet bottoms out. */
+    overscroll-behavior: contain;
     z-index: 60;
   }
 
+  /* The panel is the scroller in this state, so the strip has to stop being
+     one. Releasing the cap alone leaves it an `overflow-y: auto` container with
+     nothing to scroll, and a drag landing on it is consumed there and chained
+     past the panel to the document — the sheet sits still while the page moves
+     underneath it. `overflow: visible` puts the drag back on the panel. */
   .work-link--college .link-pop-strip {
     max-height: none;
+    overflow: visible;
+    overscroll-behavior: auto;
   }
 
   /* The bridge exists to let a pointer cross a gap. There is no pointer here,
