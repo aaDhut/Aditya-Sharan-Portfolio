@@ -100,6 +100,13 @@
        See REMOVE-LIQUID-BUTTONS.md. -->
   <link rel="stylesheet" href="liquid-buttons.css">
   <link rel="stylesheet" href="ios-press.css">
+  <!-- [hero-type] Removable feature. Types the hero headline and tagline in on
+       arrival, flashes each character as it lands, sweeps a shimmer across the
+       headline, and throws emoji at two phrases in the tagline. Every rule is
+       scoped to classes hero-type.js creates at runtime, so with the script
+       gone this file matches nothing. Loads after dark-mode.css so the glow
+       takes the live theme's accent. See REMOVE-HERO-TYPE.md. -->
+  <link rel="stylesheet" href="hero-type.css">
 </head>
 <body>
 
@@ -1248,5 +1255,11 @@
        or popup renders as a flat grey pill, which is measured and explained in
        REMOVE-LIQUID-BUTTONS.md. Needs glass.js, which already loads first. -->
   <script defer src="liquid-buttons.js"></script>
+  <!-- [hero-type] Removable feature. Rewrites the hero headline and tagline
+       into per-character spans and types them in. It finds its own elements
+       and injects its own effects layer, so index.html carries no markup for
+       it — deleting this line, the stylesheet link, and the three hero-type
+       files removes the feature outright. See REMOVE-HERO-TYPE.md. -->
+  <script defer src="hero-type.js"></script>
 </body>
 </html>

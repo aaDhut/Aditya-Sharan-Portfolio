@@ -1,0 +1,486 @@
+/* [hero-type] Removable feature.
+
+   Types the hero headline and tagline in on arrival, lights each character as
+   it lands, sweeps a shimmer across the headline once it is whole, and throws
+   a small burst of emoji at two moments in the tagline.
+
+   Everything here is scoped to .hero h1, .hero-tagline and this feature's own
+   injected classes, all of which are created by hero-type.js at runtime. With
+   the script gone these rules match nothing, so the hero renders exactly as
+   styles.css leaves it. Loads after dark-mode.css so the glow reads the live
+   theme's accent rather than a baked-in colour. See REMOVE-HERO-TYPE.md. */
+
+/* ---- Theme ------------------------------------------------------------- */
+
+:root {
+  /* The colour the glow is made of. Accent rather than the text colour: a
+     white glow behind white text just reads as blur, while a tinted one reads
+     as light. Both themes define --color-accent, so this follows the toggle
+     without this file knowing which theme is live. */
+  --ht-glow: var(--color-accent);
+
+  /* Resting glow strength, as an alpha. This sits under the text for the whole
+     session, so it has to survive being looked at — but the first pass erred so
+     far toward restraint (0.22) that on the hero's dark, already-mottled orb
+     field it was not visible at all. Against a busy background a glow needs
+     real strength before it reads as light rather than as compression noise. */
+  --ht-glow-rest: 0.45;
+
+  /* The flash a character lands with, as an alpha. Full strength: this is the
+     moment the effect exists for, it lasts under a second, and anything less
+     simply loses to the orbs behind it. */
+  --ht-glow-flash: 1;
+
+  /* The bright band in the shimmer sweep.
+
+     Tinted rather than white. White was the first instinct — a sweep should
+     read as light crossing the letters — but dark mode's text is #f5f5f7, so a
+     white band crossing it is a white band on white and nothing happens at
+     all. The accent is the one colour with real distance from the text.
+
+     Dark mode sweeps DARKER, which is the opposite of the instinct and the
+     only thing that actually works here.
+
+     A sheen is a luminance event. Light mode gets one for free: near-black
+     text at L≈17 with a mid-teal band at L≈60 is a swing of more than forty
+     points and reads instantly. Dark mode has no room in that direction — the
+     text is #f5f5f7 at L≈96, already at the ceiling, so there is no brighter
+     colour to sweep toward. The accent at L≈72 is the best a bright tint can
+     do, and a 24-point drop across a moving band, over a mottled orb field,
+     genuinely reads as nothing happening. Two rounds of tuning the tint up and
+     down could not fix that, because the problem was never saturation.
+
+     Going down instead gives the swing back: the accent darkened toward black
+     lands near L≈40, so the band is a ~55-point drop from the text — more
+     contrast than light mode has, in the one direction dark mode has room to
+     move. It reads as light raking across the letters and briefly shading
+     them, rather than as a colour being substituted into them. */
+  --ht-shine: color-mix(in srgb, var(--color-accent) 58%, #04110e);
+
+  /* The shadow a character settles to, defined once and used in two places
+     that must agree exactly: the end of the per-character ht-spark animation,
+     and the resting text-shadow on the line itself.
+
+     They must agree because the script cancels every character's animation at
+     the same instant, the moment a line finishes. Whatever the animation was
+     holding is dropped in one frame and the inherited line shadow takes over,
+     across every letter simultaneously. If the two values differ at all, that
+     hand-off is a synchronised flash across the whole headline — which is
+     exactly what it was: the animation ended on 0.28em/0.75em radii while the
+     line painted 0.32em/0.9em, and the switch between them read as a green
+     flicker just before the sweep began.
+
+     Three shadows here and three in the flash keyframe, deliberately. A
+     text-shadow list only interpolates against a list of the same length;
+     mismatched lengths fall back to a discrete swap, which is another way to
+     get the flicker back.
+
+     This default is the one for text with no resting glow — the tagline. It is
+     fully transparent rather than `none` for the same interpolation reason. */
+  --ht-rest-shadow:
+    0 0 0.28em transparent,
+    0 0 0.75em transparent,
+    0 0 1.7em transparent;
+}
+
+/* Light mode wants a quieter glow: a tinted halo around dark text on a pale
+   ground muddies the letter edges much faster than the same halo does around
+   light text on a dark one. The shine needs no override — the accent already
+   carries against both grounds. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --ht-glow-rest: 0.3;
+    --ht-glow-flash: 0.72;
+    --ht-shine: color-mix(in srgb, var(--color-accent) 70%, var(--color-text));
+  }
+}
+
+:root[data-theme="light"] {
+  --ht-glow-rest: 0.3;
+  --ht-glow-flash: 0.72;
+  --ht-shine: color-mix(in srgb, var(--color-accent) 85%, var(--color-text));
+}
+
+/* ---- Split text -------------------------------------------------------- */
+
+/* One word. Plain inline, deliberately not inline-block: the characters inside
+   are separate elements and would otherwise be free to break mid-word, but
+   inline-block would also make each word an atomic box, which disables kerning
+   across the word boundary and changes how `text-wrap: balance` on the h1
+   distributes lines. nowrap buys the no-mid-word-break guarantee on its own and
+   leaves the inline layout model — and therefore the rendered line breaks —
+   byte-identical to the unsplit text. */
+.ht-w {
+  white-space: nowrap;
+}
+
+/* One character, before it has been typed.
+
+   Hidden with opacity, never display:none or visibility — the glyph has to
+   keep occupying its final box from the first frame. That is what makes this
+   effect free of layout shift: the browser wraps the complete sentence once,
+   at load, and typing only changes what is painted inside boxes that never
+   move. Reveal a hidden character and nothing around it reflows. */
+.ht-c {
+  opacity: 0;
+}
+
+/* A character that has landed. The animation carries it from unresolved to lit
+   to resting; these are the values it holds afterwards.
+
+   easeOutExpo — the long, hard deceleration Apple uses for almost everything
+   that arrives on screen. Nearly all the distance is covered immediately and
+   the tail is a slow settle, which is what makes an entrance read as confident
+   rather than as a linear slide. */
+.ht-c.is-on {
+  opacity: 1;
+  animation: ht-spark 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* A character resolves out of blur rather than simply fading up.
+
+   This is the "materialize, don't fade" idea behind Apple's product-launch
+   text: a thing that sharpens as it arrives reads as physically coming into
+   being, where the same move done on opacity alone reads as a stylesheet
+   changing a number. Blur plus the glow decay is most of what separates the
+   two, and it costs no layout — filter applies to inline boxes without
+   affecting how they are measured or where they break.
+
+   The radius is in em, and that is load-bearing rather than tidiness. Costing
+   no layout is not the same as painting inside the glyph box: a blurred
+   character throws ink well past its own advance width, so the leading edge of
+   the typing is a halo that appears ahead of the letter and then retracts as
+   the blur resolves. That retraction is a real left-right movement of ink, and
+   its size is set by the radius alone — which is why a fixed px value could
+   not work for both lines. At 7px it was 14% of the headline's 3.2rem type and
+   a third of the tagline's 1.2rem, and the tagline types twice as fast, so the
+   same declaration that read as a soft arrival on the headline read as a 9.5px
+   smear jittering back and forth twenty times a second on the line below it.
+   Tying the radius to font-size makes the blur the same fraction of a letter
+   on both lines, which is what "the same effect" actually means here.
+
+   Scale is the other half of that recipe and is deliberately absent. Transform
+   does not apply to non-replaced inline elements, and the fix — making every
+   character inline-block — would break kerning across each word at the
+   headline's display size and change how `text-wrap: balance` distributes the
+   lines. The letters are anchored to a baseline in a line of type; the
+   emoji, which are free-floating and can take a transform, carry the scale. */
+@keyframes ht-spark {
+  from {
+    opacity: 0;
+    filter: blur(0.1em);
+    text-shadow:
+      0 0 0.28em color-mix(in srgb, var(--ht-glow) calc(var(--ht-glow-flash) * 100%), transparent),
+      0 0 0.75em color-mix(in srgb, var(--ht-glow) calc(var(--ht-glow-flash) * 80%), transparent),
+      0 0 1.7em color-mix(in srgb, var(--ht-glow) calc(var(--ht-glow-flash) * 45%), transparent);
+  }
+
+  /* The character is sharp and fully opaque less than a third of the way in,
+     and spends the remaining two thirds only cooling. Two reasons to resolve
+     the blur this early rather than spreading it across the whole animation:
+     the letter becomes readable at the moment it arrives instead of trailing a
+     soft ghost behind the caret, and at 34ms between characters only about
+     eight are blurring at any instant instead of twenty-six — the difference
+     between a filter that composites comfortably and one that does not.
+
+     The glow decay keeps running long after that, which is what makes the
+     flash something you watch happen rather than something you notice has
+     happened. */
+  30% {
+    opacity: 1;
+    filter: blur(0);
+  }
+
+  /* Ends on exactly the value the line itself paints, so that cancelling this
+     animation changes nothing on screen. See --ht-rest-shadow. */
+  to {
+    opacity: 1;
+    filter: blur(0);
+    text-shadow: var(--ht-rest-shadow);
+  }
+}
+
+/* Once a line has finished typing and its last character has finished
+   flashing, the script marks the line done and every per-character animation
+   is dropped. This matters for more than tidiness: an animation with
+   `fill: both` keeps writing text-shadow at animation priority, which no
+   ordinary declaration can override — so the shimmer sweep below could not
+   turn the per-character glow off while it ran. Ending the animations hands
+   control of the line's appearance back to the line. */
+.ht-line.is-done .ht-c {
+  opacity: 1;
+  animation: none;
+}
+
+/* ---- Resting glow ------------------------------------------------------ */
+
+/* Carried by the headline itself rather than the character spans, so it is one
+   shadow over the whole line instead of one per glyph — cheaper, and it does
+   not double up under the per-character flash. Only applied once the script
+   has taken the element over, so a page without the script gets no glow. */
+.ht-line--title {
+  /* Multiple radii rather than one: a tight halo that defines the letter edges
+     and wider, weaker blooms that separate the headline from the orb field
+     behind it. A single mid-radius shadow reads as a blur at this strength.
+
+     Set as the shared custom property, not as text-shadow directly, so that
+     the per-character animation ends on precisely this value. */
+  --ht-rest-shadow:
+    0 0 0.28em color-mix(in srgb, var(--ht-glow) calc(var(--ht-glow-rest) * 100%), transparent),
+    0 0 0.75em color-mix(in srgb, var(--ht-glow) calc(var(--ht-glow-rest) * 45%), transparent),
+    0 0 1.7em transparent;
+  text-shadow: var(--ht-rest-shadow);
+}
+
+/* The tagline gets no resting glow at all. It is body copy at 1.2rem; a halo
+   at that size stops reading as atmosphere and starts reading as a rendering
+   fault. Its characters still flash on landing — that is enough. */
+
+/* ---- Caret ------------------------------------------------------------- */
+
+/* Hung off whichever character is currently the last one typed, so it follows
+   the text through line wraps for free — no measuring, no positioning, and it
+   lands in the right place on a phone and a desktop without either being a
+   special case. */
+.ht-c.is-caret::after {
+  content: "";
+  position: absolute;
+  /* Sits just past the character's own advance width. -0.06em pulls it back
+     over the negative tracking so it does not drift away from the text. */
+  margin-left: -0.06em;
+  /* An em alone is not enough. At the tagline's 1.2rem, 0.06em is barely one
+     device pixel — thin enough to land on a fractional boundary and half
+     vanish, which is why the caret kept disappearing on the second line while
+     looking fine on the headline. The floor keeps it a solid bar at any size;
+     the em keeps it proportionate on the headline, where 2px would look mean. */
+  width: max(2.5px, 0.075em);
+  /* Cap height rather than the full line box: a caret as tall as the leading
+     reads as a border, not a cursor. */
+  height: 0.78em;
+  transform: translateY(0.1em);
+  background: var(--ht-glow);
+  border-radius: 1px;
+  box-shadow: 0 0 0.7em var(--ht-glow);
+  /* No blink.
+
+     A blinking caret is the convention for a cursor sitting still in a text
+     field, where the blink is the only thing telling you it is live. This one
+     is never still — it advances every few frames, and that movement already
+     says everything the blink would. All the blink added was a 45% chance of
+     being invisible in any given glance, which is precisely how it read. */
+}
+
+/* The caret's positioning context. inline-block would change the layout of the
+   character it is on, so the anchor is relative instead — an inline box can
+   still position a child absolutely against itself. */
+.ht-c.is-caret {
+  position: relative;
+}
+
+/* ---- Shimmer sweep ----------------------------------------------------- */
+
+/* Runs once, after the headline is fully typed.
+
+   Painting the headline with a gradient means its glyphs take their colour
+   from the background rather than from `color`, which is why this can only run
+   at the end: while characters are still being revealed the effect depends on
+   per-character opacity, and opacity over a transparent colour would show
+   nothing. By the time this class lands every character is at opacity 1 and
+   the per-character state no longer matters.
+
+   The alternative — a duplicate copy of the text overlaid as a pseudo-element
+   — was rejected because the copy has to re-wrap independently, and any
+   disagreement with the real text about where the lines break is glaring. */
+.ht-line--sweep {
+  /* The band's width is the whole difference between a sheen and a stripe, and
+     it is narrow either side of right.
+
+     These stops are fractions of the image, which is 3x the width of the box,
+     so a 10% ramp is 30% of a headline of falloff on each side of the bright
+     point and the lit zone is roughly 60% of the line — narrow enough that
+     something visibly travels, soft enough that it has no edge.
+
+     Both directions were wrong first. At 42%-58% the ramp was a quarter of a
+     headline and the hard edge read as a coloured object dragged across the
+     type rather than as light falling on it. Opening it to 20%-80%
+     overcorrected: the falloff then spanned more than the whole line, so at
+     the midpoint every letter sat inside the bright zone at once and the
+     headline simply turned green for a moment instead of being crossed by
+     anything.
+
+     Width alone does not fix it, though — the tint has to be low as well. A
+     saturated band reads as an object at any width; at 35% mixed into the text
+     colour it reads as the letters catching light as it goes by.
+
+     The base stops are var(--color-text) exactly: the same colour the headline
+     paints with when this class is absent. That equality is load-bearing —
+     see below. */
+  background-image: linear-gradient(
+    100deg,
+    var(--color-text) 40%,
+    var(--ht-shine) 50%,
+    var(--color-text) 60%
+  );
+  background-size: 300% 100%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* Linear, deliberately.
+
+     This ran on an ease-in-out, which is wrong for a light pass in a way that
+     is easy to miss: an ease-in-out spends its speed in the middle, and the
+     middle is exactly when the band is over the letters. The travel therefore
+     looked far quicker than its duration suggested, because the only part
+     anyone sees was the fastest part of it. The slow head and tail were spent
+     off the edges of the element where there is nothing to look at.
+
+     A light source crossing a surface moves at a constant rate, and the band
+     enters and leaves beyond the element's edges, so there are no starts or
+     stops to soften. Linear both looks right and makes the duration below mean
+     what it says. */
+  animation: ht-sweep 6000ms linear both;
+}
+
+/* Note what this rule does NOT do: it does not touch text-shadow.
+
+   It used to set `text-shadow: none`, on the reasoning that a shadow under
+   transparent glyphs would be a shadow of nothing. That reasoning is simply
+   wrong — text-shadow is painted from the glyph outlines and is completely
+   independent of the fill, so it renders exactly the same under a transparent
+   or gradient-clipped colour as under a solid one.
+
+   The cost of that mistake was the jolt at the end of the sweep. The resting
+   glow switched off when the class landed and snapped back on when it was
+   removed, so the sweep ended with the glow abruptly reappearing. With the
+   shadow left alone the glow burns continuously underneath and the sweep is
+   only ever light moving across it.
+
+   With that fixed, both edges of the sweep are now visually seamless. Entering
+   gradient mode changes nothing, because the gradient's base colour is
+   var(--color-text) — what the glyphs were already painted with. Leaving it
+   changes nothing either, because the animation ends with the bright band
+   parked off the right-hand edge, so the element is showing pure base colour
+   at the moment the class comes off. The headline is never seen to change
+   paint mode in either direction. */
+
+/* The percentages are not arbitrary and are easy to get wrong. With
+   background-size 300%, percentage positioning aligns the same relative point
+   of image and box, so the offset is (box - image) * p = -2p box-widths: only
+   p between 0% and 100% keeps the 3x-wide image covering the box at all.
+   Outside that range the image sits entirely off the element and no-repeat
+   paints nothing — which, with the glyphs relying on it for their colour,
+   renders the headline invisible rather than unswept.
+
+   Within that range the bright band — the middle of the image — sits at
+   1.5 - 2p box-widths, so 100% puts it just off the left edge and 0% just off
+   the right. Running from 100% to 0% therefore carries it left to right, with
+   the text the base colour before and after it passes. */
+@keyframes ht-sweep {
+  from { background-position: 100% 0; }
+  to   { background-position: 0% 0; }
+}
+
+/* ---- Supporting elements ----------------------------------------------- */
+
+/* The eyebrow and the button row. They do not type — they materialise, the
+   same way everything else here arrives: out of blur, up a little, and just
+   under full size.
+
+   Without these the hero was two lines performing in front of two lines that
+   were simply already there, which is the thing an Apple product-launch title
+   sequence never does. Every element in the frame is placed by the same
+   sequence, so the section reads as one composition assembling rather than as
+   an effect applied to some of it. */
+.ht-fx {
+  opacity: 0;
+}
+
+.ht-fx.is-on {
+  opacity: 1;
+  /* `backwards`, deliberately not `both`. Backwards fill shows the from-state
+     during the delay and then, once the animation ends, stops applying
+     entirely — so the finished element carries no animated transform or
+     filter, only its own styles.
+
+     That matters for the button row specifically: a lingering transform or
+     filter would make .hero-actions a containing block for absolutely
+     positioned descendants. The résumé preview panel is positioned against
+     .resume-link, which sets position: relative itself, so it is unaffected
+     either way — but leaving no trace is the version that stays true if that
+     ever changes. */
+  animation: ht-enter 900ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes ht-enter {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    /* Small numbers. The element is arriving, not flying in — past about 20px
+       of travel this stops reading as settling into place and starts reading
+       as a slide. */
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+/* ---- Emoji burst layer ------------------------------------------------- */
+
+/* Covers the hero and nothing else. .hero is already position:relative with
+   its own stacking context (styles.css), so this needs no z-index of its own
+   to sit above the orb field: source order puts it over .hero-orbs, which is
+   explicitly z-index:-1. */
+.hero-fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Purely decorative and marked aria-hidden by the script; this keeps it out
+     of the way of anything that would otherwise be clickable under it. */
+  overflow: visible;
+}
+
+.ht-emoji {
+  position: absolute;
+  /* Positioned by its centre — the script hands over the centre point of the
+     word it is celebrating, and this is what makes that land correctly. */
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+  line-height: 1;
+  /* Colour emoji fonts ignore text-shadow on most platforms, so the lift comes
+     from a filter instead. Cheap here because there are never more than three
+     of these alive at once. */
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.28));
+  user-select: none;
+  will-change: transform, opacity, filter;
+}
+
+/* ---- Reduced motion ---------------------------------------------------- */
+
+/* Nothing types, nothing flashes, nothing sweeps, and hero-type.js spawns no
+   emoji at all. The text is simply there, which is what it would have been
+   without this feature. The resting glow stays: it does not move, so it is not
+   motion, and losing it would mean the two settings render meaningfully
+   different pages rather than the same page at different intensities. */
+@media (prefers-reduced-motion: reduce) {
+  .ht-c,
+  .ht-c.is-on,
+  .ht-fx,
+  .ht-fx.is-on {
+    opacity: 1;
+    animation: none;
+  }
+
+  .ht-c.is-caret::after {
+    display: none;
+  }
+
+  .ht-line--sweep {
+    animation: none;
+    background-image: none;
+    color: var(--color-text);
+  }
+}

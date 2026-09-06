@@ -27,9 +27,25 @@ it to the whole page and adds the third beat it never had.
 
 | tier | squash | who |
 | --- | --- | --- |
-| capsule | `scale(1.05, 0.93)` | buttons, nav pills, burger, play and close |
+| capsule | `scale(1.05, 0.93)` | buttons, nav pills, timeline company names, burger, play and close |
 | surface | `scale(1.018, 0.974)` | gallery tiles, certificate scans, timeline logos |
 | text | `opacity: 0.6` | back links, the wordmark, the skip link |
+
+`.timeline-company a` — the company name beside each timeline logo — was added
+after the fact. It was the last tappable thing on the page with no press at
+all, and the miss was easy to see once pointed at: the logo tile immediately to
+its left is in the surface tier and goes to the *same* LinkedIn page, so
+pressing the mark did something and pressing the name did nothing. It is the
+same capsule as a nav pill (bare until pointed at, then a chip materialises),
+so it takes the capsule depth, and it is declared at (0,1,1) for exactly the
+reason `.nav-links a` is — see section 1 of the CSS.
+
+An audit is cheap and worth re-running after adding any control: walk
+`a[href], button, [role=button], summary, input[type=submit]` and check each
+against the `SELECTOR` in `ios-press.js` (read it out of the file rather than
+retyping it — a stale copy in the audit reports a covered element as missing,
+which cost a round trip here). At the time of writing that returns 29 kinds
+covered and zero uncovered.
 
 ## The files
 

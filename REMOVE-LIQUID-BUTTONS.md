@@ -90,9 +90,19 @@ the glint stays defined in exactly one place; their JS keeps writing `--gx` to
 a transparent gradient, which is left alone because deleting this file has to
 restore that feature working.
 
-Nav links and the burger get the material but **no glint**. A highlight chasing
-the pointer inside a 36px nav pill is noise rather than light, and the burger
-only exists at a width where there is no pointer to chase.
+Nav links, the timeline company names and the burger get the material but **no
+glint**. A highlight chasing the pointer inside a chip that small is noise
+rather than light, and the burger only exists at a width where there is no
+pointer to chase.
+
+`.timeline-company a` — "Battlebucks", "Hitwicket" — was added after the fact.
+`styles.css` dressed it in `--glass-chip` over `--glass-edge` with
+`--glass-rim`: the old recipe, and the one this feature exists to replace. It
+sits a few centimetres from the timeline logo tile, which is real glass, and
+lost that comparison the same way the contact buttons did. It is written at
+(0,3,1) — `.timeline-headline .timeline-company a:hover` — one step past the
+`styles.css` rule, so it wins on weight like everything else here. Its *press*
+is a separate feature and lives in `ios-press`, not here.
 
 ## The call button's caret
 
