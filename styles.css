@@ -10,7 +10,8 @@
      indistinguishable from the page. #ebeae5 steps 1.145 instead, which is
      visible, and it is hue-matched to the ground (red-to-blue spread held at
      6) so the extra darkness does not arrive as a yellow cast. It carries
-     Experience, Skills & Tools and Get in touch. */
+     Education, Case Studies, Testimonials and the footer — see the
+     alternation note at .section. */
   --color-bg: #faf9f7;
   --color-bg-alt: #ebeae5;
   --color-text: #1a1a1a;
@@ -826,12 +827,27 @@ section[id] {
 }
 
 /* Sections */
+
+/* The bands alternate down the page: About plain, Education alt, Experience
+   plain, Case Studies alt, Skills plain, Testimonials alt, Contact plain, and
+   the footer closes on alt. A section added anywhere takes the band opposite
+   the one above it, and everything below it flips to keep the alternation —
+   the class is written out per section rather than derived with :nth-of-type
+   so the band is visible in the markup and inserting a section never silently
+   reflows the ones under it.
+
+   --section-bg names whichever ground the section actually sits on, so
+   anything that has to punch through it (the timeline dot) can read the
+   ground instead of hardcoding one of the two tokens. Set on .section rather
+   than :root so it is correct inside both variants. */
 .section {
   padding: 80px 0;
+  --section-bg: var(--color-bg);
 }
 
 .section-alt {
-  background: var(--color-bg-alt);
+  --section-bg: var(--color-bg-alt);
+  background: var(--section-bg);
 }
 
 .section-title {
@@ -985,7 +1001,9 @@ section[id] {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: var(--color-bg-alt);
+  /* Reads the ground rather than naming it: .timeline is used by both
+     Experience (plain) and Education (alt), which sit on different bands. */
+  background: var(--section-bg);
   border: 2px solid var(--color-accent);
 }
 
@@ -1735,6 +1753,9 @@ a.timeline-logo:hover {
 
 /* Footer */
 .site-footer {
+  /* Closes the alternation started in .section — Contact is plain, so the
+     footer carries the band. */
+  background: var(--color-bg-alt);
   padding: 32px 0;
   text-align: center;
   color: var(--color-text-muted);
@@ -1884,9 +1905,23 @@ a.timeline-logo:hover {
   transition: opacity 0.5s ease-out, transform 0.5s ease-out;
 }
 
+/* `none`, not `translateY(0)`. They paint identically, but an identity
+   transform is still a transform: it makes the element a containing block for
+   every `position: fixed` descendant, which silently re-anchors them to this
+   list item instead of the viewport.
+
+   Three features hang a fixed sheet inside a .timeline-item on touch — the
+   certificates panel, the three college film panels and the Experience
+   galleries — and all three were being framed by the card rather than the
+   screen: measured at 390px, a sheet asking for left/right:12px came out
+   294px wide at x=59, with its top 187px above the viewport and unreachable.
+
+   The reveal itself is unchanged. A transition from translateY(8px) to `none`
+   interpolates against the identity the same way, so the entrance still
+   animates. */
 .reveal.is-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: none;
 }
 
 /* `transition` is a shorthand, so a later declaration replaces the whole list.

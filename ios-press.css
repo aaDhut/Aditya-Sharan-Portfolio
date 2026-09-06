@@ -1,0 +1,416 @@
+/* =============================================================================
+   [ios-press] Removable feature. One press behaviour for every tappable thing.
+   =============================================================================
+
+   Before this file the site pressed in five different ways. styles.css gave
+   .btn a scale(0.97) on a 0.15s ease — the same curve in both directions, so
+   the button left and returned at the same speed. droplet-buttons.css and
+   call-glass.css did something much better on three buttons: a squash on the
+   way in against a slow overshooting release. .work-tile and .link-pop-play
+   had their own depths on their own curves. And roughly half the tappable
+   surfaces on the page — the nav, the burger, the close buttons, the gallery
+   thumbnails, the certificate scans, the timeline logos, the back links —
+   pressed nothing at all.
+
+   What every control does now, in three beats:
+
+     squash          the press flattens it — wider and shorter, not smaller.
+                     A body pushed against a surface spreads; it does not
+                     shrink. This is the droplet press droplet-buttons.css
+                     already had on two buttons, now on all of them.
+
+     release         it springs back through round and past it, into a
+                     stretch — taller and narrower than it started.
+
+     follow through  it settles: a smaller squash, a smaller stretch, rest.
+                     The secondary motion after the primary action, which is
+                     what sells the thing as having mass rather than as having
+                     been scaled by a stylesheet.
+
+   The first two beats are transform states. The third cannot be: a transition
+   goes from one value to another and can overshoot the end exactly once, so a
+   transition alone gives a single bounce and stops. A settle is a decaying
+   oscillation, which needs the keyframes in section 4 — fired by the latch in
+   ios-press.js at the moment of release, because CSS has no way to react to a
+   state being *left*.
+
+   Three depths, because iOS does not move a photo as far as it moves a capsule
+   and does not distort text at all:
+
+     capsule   scale(1.05, 0.93)    buttons, nav pills, burger, play, close
+     surface   scale(1.018, 0.974)  gallery tiles, certificate scans, logos
+     text      opacity 0.6          plain text buttons, the wordmark, skip link
+
+   The squash is deliberately not symmetric — X grows by less than Y loses, so
+   the control reads as pressed down into the page rather than as inflating.
+   Both halves come off the two tokens in section 1, so the whole effect dials
+   from one place: raise --press-dy for a deeper press, raise --press-dx for a
+   wider spread, set them equal for a volume-preserving squash.
+
+   Text is the exception on purpose. A run of text that squashes does not read
+   as a button being pressed, it reads as a font failing to load, so those keep
+   the dim they had.
+
+   Two deliberate omissions. Nothing here touches box-shadow: three files build
+   careful shadow stacks on these buttons and re-declaring one to fake a
+   contact shadow would flatten them. And nothing uses filter: brightness() to
+   gel the glass, because a filter makes an element a containing block for
+   every position: fixed descendant, which is the exact trap REMOVE-TAP-POP.md
+   documents at length. The press is transform and opacity only.
+
+   Not in scope: .mp-item, the meeting picker's wheel rows. It is a scrolling
+   wheel and iOS wheel rows do not press-highlight — the whole gesture there is
+   a drag, so a press state would flash on every spin.
+
+   Must load LAST of the stylesheets. Six rules here re-point an existing
+   :active that ties them on specificity, and they win on source order alone —
+   see section 2.
+
+   Remove: see REMOVE-IOS-PRESS.md.
+   ========================================================================== */
+
+:root {
+  /* In fast, out slow. The asymmetry is the whole effect: matching the two
+     durations is what made the old .btn press read as a hover rather than a
+     push. */
+  --press-in: 0.12s cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* The release, for anything not running the settle — the :active fallback
+     when the script is gone, and any interrupted state. It ends on 1.25, so it
+     overshoots once and stops: a single bounce rather than a settle. */
+  --press-out: 0.4s cubic-bezier(0.2, 0.9, 0.28, 1.25);
+
+  /* The same release, for opacity. It cannot use --press-out: that curve ends
+     on 1.25, and an overshoot on opacity has nowhere to go — the value clamps
+     at 1 and the last of the fade is spent sitting still. A body can overshoot
+     its size; a fade cannot overshoot being fully opaque. */
+  --press-out-fade: 0.34s cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* How long the follow-through takes to die out. Long enough to read as three
+     distinct beats, short enough that a double-tap is never waiting on it. */
+  --press-settle: 0.54s;
+
+  --press-text: 0.6;
+}
+
+/* ---- 1. Depth, and the curve a press returns on --------------------------
+   --press-dx and --press-dy are how far the control spreads and how far it
+   flattens. Everything downstream — the pressed state, all five stops of the
+   settle — is written in terms of these two, so a tier is retuned by editing
+   one pair and nothing else.
+
+   The transitions are the other half of this section. A transition is read
+   from the state being LEFT, so the curve a press returns on has to live in
+   the resting rule, not in the pressed one. Only the elements that need one
+   are listed: the three droplet buttons already carry this exact 0.4s/1.25
+   and .work-tile and .link-pop-play already return on overshooting curves of
+   their own, so this adds a release curve where there was none and changes
+   one that was wrong.
+
+   Every non-transform part of each declaration is carried over verbatim from
+   the rule being replaced. Losing one would silently kill a colour or shadow
+   fade that has nothing to do with pressing. */
+
+/* -- capsule -- */
+.btn,
+.nav-toggle,
+.link-pop-close,
+.link-pop-play {
+  --press-dx: 0.05;
+  --press-dy: 0.07;
+}
+
+/* -- surface --
+   A photograph distorts far more visibly than a capsule does: the same numbers
+   that read as a squashy button on a pill read as a warped image on a scan.
+   About a third of the depth, and it lands the same because the eye is reading
+   the timing more than the distance. */
+.work-tile,
+.link-pop-shot,
+.cert-shot-link,
+a.timeline-logo {
+  --press-dx: 0.018;
+  --press-dy: 0.026;
+}
+
+/* Was `transform 0.15s ease`. This is the generic capsule, so it lands on the
+   résumé download and the popup's own buttons; the hero pair and the call pill
+   re-declare their transitions at higher specificity in droplet-buttons.css
+   and call-glass.css and keep them. */
+.btn {
+  transition: color 0.2s ease, background-color 0.2s ease,
+    border-color 0.2s ease, transform var(--press-out);
+}
+
+/* (0,1,1) to match the rule in styles.css this replaces — a bare .nav-cta
+   would lose to it and the press would snap back with no curve at all. The
+   depth tokens have to come along at the same weight for the same reason. */
+.nav-links a {
+  --press-dx: 0.05;
+  --press-dy: 0.07;
+  transition: color 0.18s ease, background-color 0.18s ease,
+    border-color 0.18s ease, box-shadow 0.18s ease,
+    transform var(--press-out);
+}
+
+/* The company name beside each timeline logo — "Battlebucks", "Hitwicket".
+   (0,1,1), for exactly the reason .nav-links a above is: styles.css declares
+   `.timeline-company a` at that weight and this file loads last, so it wins on
+   source order. Written any shorter it would lose, the transform entry would
+   never reach the element, and the press would snap back with no curve.
+
+   It is the same capsule as a nav pill — bare until pointed at, then the chip
+   materialises — so it takes the capsule depth rather than the surface one.
+
+   It was the last tappable thing on the page with no press at all: the logo
+   tile immediately to its left has had one, and the two go to the same
+   LinkedIn page, so pressing the mark did something and pressing the name did
+   nothing. */
+.timeline-company a {
+  --press-dx: 0.05;
+  --press-dy: 0.07;
+  transition: color 0.18s ease, background-color 0.18s ease,
+    border-color 0.18s ease, box-shadow 0.18s ease,
+    transform var(--press-out);
+}
+
+/* Was `transform 160ms ease`. The swell on hover picks up the overshoot too,
+   which is the same swell the hero buttons have had all along. */
+a.timeline-logo {
+  transition: transform var(--press-out), border-color 160ms ease;
+}
+
+/* Declared unscoped in college-projects.css and used by both close buttons —
+   tap-pop.css re-styles it at higher specificity but never re-declares the
+   transition, so this one rule reaches every close button on the page. */
+.link-pop-close {
+  transition: transform var(--press-out), background-color 0.16s ease;
+}
+
+/* The burger's own bars animate on .nav-toggle span and are untouched; this is
+   the 44px target around them. */
+.nav-toggle,
+.link-pop-shot,
+.cert-shot-link,
+.work-tile {
+  transition: transform var(--press-out);
+}
+
+/* .skip-link slides in on `top` when focused, which has to survive. */
+.skip-link {
+  transition: top 0.18s ease-out, opacity var(--press-out-fade);
+}
+
+.mp-back,
+.logo {
+  transition: opacity var(--press-out-fade), color 0.2s ease;
+}
+
+/* ---- 2. Squashed ---------------------------------------------------------
+   Each tier lists :active beside [data-pressed] and gives them identical
+   declarations.
+
+   [data-pressed] is the latch in ios-press.js and is what actually delivers
+   the behaviour — immediate on finger-down, drag-tracking, scroll-cancelling,
+   and the only thing that can fire the settle in section 3. :active is the
+   floor under it: with the script gone every button still squashes and still
+   springs back, it just bounces once instead of settling, and a keyboard
+   activation is styled without the script having to model it. The two never
+   disagree, because they set the same values.
+
+   Six of these selectors are written out in a shape they would not otherwise
+   need — `.hero-actions .btn`, the two `.mp[data-glass='on']` forms, and
+   `.work-link .work-tile`. Those are the exact selectors that already carry an
+   :active in droplet-buttons.css, call-glass.css and styles.css, repeated here
+   so this file ties them on specificity and takes them over on source order.
+   Written shorter they would lose and the old presses would still be running.
+   This is what the load-order note in the header is protecting.
+
+   `transition` is re-declared in the pressed state so the squash goes in on
+   the fast curve while the release keeps the slow one from section 1. It
+   replaces the whole list rather than extending it, which is what
+   droplet-buttons.css has always done here — a colour fade suspended for the
+   0.12s of a press is not perceptible. */
+
+/* -- capsule -- */
+.btn:active,
+.btn[data-pressed],
+.hero-actions .btn:active,
+.hero-actions .btn[data-pressed],
+.mp[data-glass='on'] .mp-toggle:active,
+.mp[data-glass='on'] .mp-toggle[data-pressed],
+.mp[data-glass='on'][data-popup='on'] .mp-actions .btn:active:not([disabled]),
+.mp[data-glass='on'][data-popup='on'] .mp-actions .btn[data-pressed]:not([disabled]),
+.nav-links a:active,
+.nav-links a[data-pressed],
+.timeline-company a:active,
+.timeline-company a[data-pressed],
+.nav-toggle:active,
+.nav-toggle[data-pressed],
+.link-pop-close:active,
+.link-pop-close[data-pressed],
+.link-pop-play:active,
+.link-pop-play[data-pressed],
+/* -- surface -- */
+.work-link .work-tile:active,
+.work-link .work-tile[data-pressed],
+.link-pop-shot:active,
+.link-pop-shot[data-pressed],
+.cert-shot-link:active,
+.cert-shot-link[data-pressed],
+a.timeline-logo:active,
+a.timeline-logo[data-pressed] {
+  transform: scale(calc(1 + var(--press-dx)), calc(1 - var(--press-dy)));
+  transition: transform var(--press-in);
+}
+
+/* -- text --
+   No squash. A text button has no body to flatten, and a run of type that
+   changes width mid-press reads as a font glitch rather than as a push, so
+   iOS dims these instead. */
+.mp-back:active,
+.mp-back[data-pressed],
+.skip-link:active,
+.skip-link[data-pressed],
+.logo:active,
+.logo[data-pressed] {
+  opacity: var(--press-text);
+  transition: opacity var(--press-in);
+}
+
+/* ---- 3. The follow-through ----------------------------------------------
+   ios-press.js sets data-released for exactly as long as the settle runs, then
+   takes it off again.
+
+   It has to be an attribute set on the way out, because the settle is a
+   reaction to a state ENDING and CSS has no selector for that. :not([pressed])
+   matches every button on the page that has never been touched, so the
+   animation would run on all of them at load.
+
+   No specificity work needed here, unlike section 2: a running animation
+   outranks every normal declaration in the cascade, so this beats the :active
+   rules above it however they are written. That is also why the latch has to
+   clear data-released the moment a new press starts — left on, the settle
+   would keep animating straight through the squash the new press is asking
+   for. */
+.btn[data-released],
+.nav-links a[data-released],
+.timeline-company a[data-released],
+.nav-toggle[data-released],
+.link-pop-close[data-released],
+.link-pop-play[data-released],
+.work-tile[data-released],
+.link-pop-shot[data-released],
+.cert-shot-link[data-released],
+a.timeline-logo[data-released] {
+  animation: press-settle var(--press-settle) ease-in-out;
+}
+
+/* ---- 4. The settle -------------------------------------------------------
+   A decaying oscillation around rest, written off the same two tokens as the
+   squash so it stays in proportion to whatever depth a tier is tuned to.
+
+   The amplitudes — 1, then 0.6, 0.28, 0.12, 0.05 — are each a bit under half
+   the last, which is roughly what a real damped spring does and is the part
+   the eye actually reads as weight. An even decay reads as a wobble; too steep
+   and the follow-through is gone by the second beat.
+
+   `ease-in-out` on the animation applies between each PAIR of stops rather
+   than across the whole thing, so every swing eases out of one extreme and
+   into the next — which is what makes this read as a sine rather than as the
+   triangle wave that linear interpolation between the same stops would give.
+   The first stop overrides it: leaving the squash is a release, and a release
+   is fastest at the instant it happens. */
+@keyframes press-settle {
+  0% {
+    transform: scale(calc(1 + var(--press-dx)), calc(1 - var(--press-dy)));
+    animation-timing-function: cubic-bezier(0.3, 0, 0.25, 1);
+  }
+  /* Through round and out the other side: the stretch. */
+  30% {
+    transform: scale(
+      calc(1 - var(--press-dx) * 0.6),
+      calc(1 + var(--press-dy) * 0.6)
+    );
+  }
+  52% {
+    transform: scale(
+      calc(1 + var(--press-dx) * 0.28),
+      calc(1 - var(--press-dy) * 0.28)
+    );
+  }
+  71% {
+    transform: scale(
+      calc(1 - var(--press-dx) * 0.12),
+      calc(1 + var(--press-dy) * 0.12)
+    );
+  }
+  87% {
+    transform: scale(
+      calc(1 + var(--press-dx) * 0.05),
+      calc(1 - var(--press-dy) * 0.05)
+    );
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* ---- 5. Preferences ------------------------------------------------------
+   The movement goes, the feedback stays. A press is a confirmation that the
+   tap landed, and removing it outright is worse for someone who has asked for
+   less motion than the dimming that replaces it — Reduce Motion on iOS keeps
+   its button highlights for the same reason.
+
+   The settle goes entirely: a decaying oscillation is the single most motion
+   in the feature and there is no gentle version of it worth keeping. The latch
+   still sets and clears data-released either way, on a timer that does not
+   depend on an animation it may never have started — see ios-press.js.
+
+   The pressed rules are re-listed rather than reached through a shared class,
+   since each one has to out-specify the tiers it is overriding. */
+@media (prefers-reduced-motion: reduce) {
+  .btn:active,
+  .btn[data-pressed],
+  .hero-actions .btn:active,
+  .hero-actions .btn[data-pressed],
+  .mp[data-glass='on'] .mp-toggle:active,
+  .mp[data-glass='on'] .mp-toggle[data-pressed],
+  .mp[data-glass='on'][data-popup='on'] .mp-actions .btn:active:not([disabled]),
+  .mp[data-glass='on'][data-popup='on'] .mp-actions .btn[data-pressed]:not([disabled]),
+  .nav-links a:active,
+  .nav-links a[data-pressed],
+  .timeline-company a:active,
+  .timeline-company a[data-pressed],
+  .nav-toggle:active,
+  .nav-toggle[data-pressed],
+  .link-pop-close:active,
+  .link-pop-close[data-pressed],
+  .link-pop-play:active,
+  .link-pop-play[data-pressed],
+  .work-link .work-tile:active,
+  .work-link .work-tile[data-pressed],
+  .link-pop-shot:active,
+  .link-pop-shot[data-pressed],
+  .cert-shot-link:active,
+  .cert-shot-link[data-pressed],
+  a.timeline-logo:active,
+  a.timeline-logo[data-pressed] {
+    transform: none;
+    opacity: var(--press-text);
+    transition: opacity 0.1s linear;
+  }
+
+  .btn[data-released],
+  .nav-links a[data-released],
+  .timeline-company a[data-released],
+  .nav-toggle[data-released],
+  .link-pop-close[data-released],
+  .link-pop-play[data-released],
+  .work-tile[data-released],
+  .link-pop-shot[data-released],
+  .cert-shot-link[data-released],
+  a.timeline-logo[data-released] {
+    animation: none;
+  }
+}

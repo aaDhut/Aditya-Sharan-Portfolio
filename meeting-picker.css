@@ -29,9 +29,12 @@
 
   /* The band behind the centre row. Deliberately fainter than a .btn: it is
      a marker for where the value lands, not a control in its own right. */
-  /* On the off-white .section-alt a white-on-white band all but disappears,
-     so light mode defines the edge with a dark hairline and lets the fill do
-     the lifting. Dark mode does the reverse. */
+  /* Contact is a plain .section, so the band is white-on-white and the fill
+     alone would disappear — light mode defines the edge with a dark hairline
+     and lets the fill only lift. Dark mode does the reverse. These values
+     were tuned when Contact carried the off-white alt band; on the lighter
+     ground the hairline does proportionally more of the work, which is why it
+     survived the move. */
   --mp-band: rgba(255, 255, 255, 0.58);
   --mp-band-edge: rgba(0, 0, 0, 0.07);
   /* The panel is a glass surface, one step heavier than the chips inside it

@@ -156,7 +156,14 @@
     close.className = 'link-pop-close';
     close.innerHTML = CLOSE_SVG;
     close.setAttribute('aria-label', 'Close preview');
-    panel.appendChild(close);
+    /* First child, not appended. Section 5 of the stylesheet makes this
+       `position: sticky; top: 0` on touch so it survives the scroll of a long
+       panel, and sticky can never carry an element above its own place in the
+       flow. Appended after the footer it stuck to the BOTTOM of the content
+       instead: measured at 390px, the button sat at y=1421 while the sheet
+       occupied 174–832, so the only way to reach the close button was to
+       scroll to the end of a 1285px panel with the video still playing. */
+    panel.insertBefore(close, panel.firstChild);
 
     /* Decide which side the panel opens on, before it is visible.
 

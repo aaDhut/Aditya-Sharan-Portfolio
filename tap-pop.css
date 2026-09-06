@@ -1,0 +1,273 @@
+/* =============================================================================
+   [tap-pop] Removable feature. Tap-to-open for the preview panels on touch.
+   =============================================================================
+
+   styles.css hides every .link-pop outright under (hover: none):
+
+     @media (hover: none) { .link-pop { display: none } }
+
+   That was the right default when a tap on a tile could only ever follow its
+   link — a panel with no way to dismiss it is a trap, and the tile's href is
+   the more useful of the two things a tap could do. The cost is that on a
+   phone the galleries, the résumé page and the certificate scans are simply
+   not reachable without leaving the site.
+
+   This file un-hides them and re-points them at a latch instead. Same idea
+   college-projects.css section 5 already uses for the three film panels, which
+   needed it first because their content is the entry rather than a preview of
+   somewhere else. Those three keep their own copy — they own a video and a
+   playing-state their latch has to coordinate with — so everything here is
+   scoped :not(.work-link--college) and the two never meet.
+
+   In scope: the four Experience gallery panels, the résumé preview under the
+   hero, and the certificates panel. Certificates already opened on a tap, but
+   through sticky :focus-within alone: no close affordance, and it let go only
+   when something else was tapped. It joins the latch here so all six dismiss
+   the same way.
+
+   Desktop is untouched. Every rule in this file is inside @media (hover: none).
+
+   Must load LAST of the stylesheets — after certificates.css and
+   college-projects.css — so the neutralising rules in section 2 win their ties
+   on source order.
+
+   Remove: see REMOVE-TAP-POP.md.
+   ========================================================================== */
+
+@media (hover: none) {
+  /* ---- 1. The panel becomes a sheet ---------------------------------------
+     Un-hidden, and anchored to the viewport rather than to the tile. A 380px
+     panel hanging off a 140px tile runs off a phone screen on one side or the
+     other, and there is no pointer gap left to preserve — the latch holds the
+     panel open, not the pointer. This is the geometry certificates.css and
+     college-projects.css already arrived at separately; stated once here for
+     the groups that had none.
+
+     `top: auto` and the transform reset matter for the résumé panel only: it
+     is the one panel that opens downward and centres itself with
+     translateX(-50%), and both have to come off before left/right can place
+     it. Its rule in styles.css is (0,2,0) — the same weight as the selector
+     below — so this wins on source order, which is why the load order in the
+     file header is not optional. */
+  .work-link:not(.work-link--college) .link-pop,
+  .resume-link .link-pop {
+    display: block;
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+    max-height: 78vh;
+    overflow-y: auto;
+    /* Above the sticky header, below the meeting popup. */
+    z-index: 60;
+    /* The sheet is the scroller now, so it must not hand the scroll back to
+       the page when it bottoms out — that is the job styles.css gave the strip
+       when the strip was the scroller. */
+    overscroll-behavior: contain;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(12px) scale(0.98);
+    transition: opacity 0.14s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.24s cubic-bezier(0.2, 0.9, 0.3, 1.2),
+      visibility 0s linear 0.14s;
+  }
+
+  /* The sheet scrolls as a whole now, so the strip must stop being a scroller.
+
+     Releasing its max-height is not enough, and getting this wrong is what made
+     the sheet feel frozen. styles.css gives the strip `overflow-y: auto` and
+     `overscroll-behavior: contain`, which were right when the strip was capped
+     at 360px and held the overflow. Uncapped it still counts as a scroll
+     container, but one with nothing to scroll: scrollHeight and clientHeight
+     both 2879. A drag landing on it — which is most of the sheet — was
+     therefore consumed by a container with no room to move, and instead of
+     chaining up to the panel that does hold the overflow (2959 against a 744
+     viewport) it chained past it to the document. Measured: the sheet stayed at
+     scrollTop 0 while the page behind it moved 2506 -> 2932. The sheet looked
+     stuck and the page slid around underneath it.
+
+     `overflow: visible` takes the strip out of the scrolling path entirely, so
+     the drag reaches the panel. */
+  .work-link:not(.work-link--college) .link-pop-strip,
+  .resume-link .link-pop-strip {
+    max-height: none;
+    overflow: visible;
+    overscroll-behavior: auto;
+  }
+
+  /* The bridge exists so a pointer can cross the 12px gap from tile to panel
+     without dropping :hover. There is no pointer here, and an invisible strip
+     under a fixed sheet is just a dead zone over whatever it lands on. */
+  .work-link:not(.work-link--college) .link-pop::before,
+  .resume-link .link-pop::before {
+    content: none;
+  }
+
+  /* ---- 2. Sticky hover and focus, neutralised -----------------------------
+     The trap college-projects.css documents at length, and the whole reason
+     un-hiding .link-pop is not a one-line change.
+
+     A tapped element keeps :hover until something else is tapped, and a tapped
+     <a> or <button> keeps focus. So styles.css's
+
+       .work-link:hover .link-pop, .work-link:focus-within .link-pop
+
+     holds the panel open after the close button has already cleared the latch:
+     the panel stays on screen and closing it visibly does nothing.
+
+     Both are cancelled here. (0,4,0) against styles.css's (0,3,0), so these
+     win on weight; the open state below wins over these on source order.
+
+     This is also what takes certificates off :focus-within — that was the only
+     thing opening it, and section 6 of certificates.css says so. With this in
+     place the latch in section 3 is the only way in for all six panels. */
+  .work-link:not(.work-link--college):hover .link-pop,
+  .work-link:not(.work-link--college):focus-within .link-pop,
+  .resume-link:hover .link-pop,
+  .resume-link:focus-within .link-pop {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  /* ---- 3. Latched open ----------------------------------------------------
+     tap-pop.js sets data-open on the group. Same attribute name
+     college-projects.js uses, on a disjoint set of elements — the two never
+     read each other's. */
+  .work-link:not(.work-link--college)[data-open] .link-pop,
+  .resume-link[data-open] .link-pop {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2),
+      visibility 0s linear 0s;
+  }
+
+  /* ---- 3b. Clearing the containing block ----------------------------------
+     `position: fixed` is only fixed to the viewport if no ancestor has a
+     transform, filter or backdrop-filter. Every one of these panels except the
+     résumé sits inside a .timeline-item, and .reveal puts translateY(8px) on
+     that item until it scrolls into view — so a sheet opened from a card that
+     is still revealing gets framed by the card instead of the screen. Measured
+     at 390px: 294px wide at x=59, with its top 187px above the viewport.
+
+     styles.css now ends the reveal on `transform: none` rather than
+     `translateY(0)`, which fixes the settled state. This covers the 500ms while
+     the reveal is still animating, and any future transform on the item — the
+     sheet must not depend on an ancestor's animation having finished.
+
+     Scoped by :has() to an item that actually holds an open panel, so a
+     revealing card that nobody has tapped still animates normally. Includes
+     the college panels: they run their own latch but hit the identical wall,
+     and the attribute they set is the one matched here. */
+  .timeline-item:has(.work-link[data-open]),
+  .timeline-item:has(.work-link--college[data-playing]) {
+    transform: none;
+
+    /* And the card has to be raised while it holds a sheet.
+
+       .timeline-item carries `isolation: isolate` (styles.css), which is
+       deliberate — the note there says it replaces the stacking context
+       backdrop-filter used to provide, "which the hover panel's z-index
+       depends on". So a panel's z-index is scoped INSIDE its card by design,
+       and what actually lifts it clear of the next card on a pointer is
+       `.timeline-item:hover, :focus-within { z-index: 3 }`.
+
+       Nothing lifts it on touch. The sheet asks for z-index 60, that 60 is
+       trapped in the card's own context, and two sibling cards at `z-index:
+       auto` then paint in DOM order — so the card BELOW paints over the sheet.
+       Measured: with the Experience sheet open, elementsFromPoint at the
+       middle of the sheet returned the next card's .timeline-headline on top,
+       and a drag there scrolled the page instead of the sheet.
+
+       4, not 3: above a sibling that is simultaneously :hover-ed, and well
+       under the sticky header at 100, which the sheet is never tall enough to
+       reach anyway. */
+    z-index: 4;
+  }
+
+  /* ---- 4. The close button ------------------------------------------------
+     Built by tap-pop.js, and only reachable in this state — on a pointer the
+     pointer is the dismissal and a button would be noise.
+
+     college-projects.css declares an identical unscoped .link-pop-close, so
+     when both features are present these properties simply land on the same
+     values twice. Repeated rather than shared on purpose: either file has to
+     survive the other being deleted, which is the rule the whole REMOVE-*.md
+     set is built on. */
+  .work-link:not(.work-link--college) .link-pop-close,
+  .resume-link .link-pop-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 2;
+    display: none;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--glass-hairline);
+    border-radius: 50%;
+    background: var(--glass-chrome);
+    color: var(--color-text);
+    cursor: pointer;
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+  }
+
+  /* The sheet scrolls, and an absolutely positioned button scrolls off the top
+     of a long gallery with it — leaving no way out but a tap on the page
+     behind. Sticky keeps it in view for the whole scroll.
+
+     Sticky only works from the button's own place in the flow: it can never
+     travel above where it would otherwise sit. That is why tap-pop.js inserts
+     it as the panel's FIRST child rather than appending it — appended after the
+     footer, `top: 0` would pin it to the bottom of a long strip, which is
+     exactly the position it was moved out of. It costs one 30px row above the
+     strip, which the sheet has room for. */
+  .work-link:not(.work-link--college)[data-open] .link-pop-close,
+  .resume-link[data-open] .link-pop-close {
+    display: grid;
+    position: sticky;
+    top: 0;
+    margin-left: auto;
+  }
+
+  .work-link:not(.work-link--college) .link-pop-close svg,
+  .resume-link .link-pop-close svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .work-link:not(.work-link--college) .link-pop-close:focus-visible,
+  .resume-link .link-pop-close:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* ---- 5. Preferences -----------------------------------------------------
+     The sheet appears rather than rising into place. Opacity alone still marks
+     the change of state, which is how styles.css handles the same preference
+     for these panels on a pointer.
+
+     The two states keep separate visibility delays and cannot be merged: on
+     the way in it has to flip at 0s or the sheet spends the whole fade
+     invisible, and on the way out it has to wait out the fade or the sheet
+     disappears instead of dissolving. */
+  @media (prefers-reduced-motion: reduce) {
+    .work-link:not(.work-link--college) .link-pop,
+    .resume-link .link-pop {
+      transform: none;
+      transition: opacity 0.1s linear, visibility 0s linear 0.1s;
+    }
+
+    .work-link:not(.work-link--college)[data-open] .link-pop,
+    .resume-link[data-open] .link-pop {
+      transform: none;
+      transition: opacity 0.1s linear, visibility 0s linear 0s;
+    }
+  }
+}

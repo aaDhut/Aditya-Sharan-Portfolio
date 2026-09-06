@@ -36,7 +36,7 @@
   --cp-margin: 16px;
 
   /* The band and field fills. meeting-picker.css tuned its own values against
-     a *glass* panel on the off-white .section-alt; this panel is opaque white,
+     a *glass* panel over the Contact section; this panel is opaque white,
      where a white-on-white fill is nothing at all. These are the same two
      surfaces re-mixed for the ground they now sit on. */
   --cp-band: #f0efec;

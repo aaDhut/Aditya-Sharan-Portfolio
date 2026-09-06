@@ -1,0 +1,606 @@
+/* =============================================================================
+   [liquid-buttons] Removable feature. One iOS 26 glass capsule for every button.
+   =============================================================================
+
+   The page already had liquid glass, on four surfaces: the header
+   (script.js), the hero pair (droplet-buttons), the call pill and the booking
+   panel (call-glass). Every other button was a flat translucent chip —
+   `--glass-chip` over a 7px frost — sitting next to real refracting glass and
+   losing the comparison badly. The three contact buttons are the clearest
+   case: they sit directly above the lensed call pill, on the same flat
+   section, and read as cardboard beside it.
+
+   This file gives every button the same iOS 26 material — capsule, thin
+   translucent body, a rim that is bright along the top and returns softly
+   along the bottom, a two-part shadow, and one travelling glint that follows
+   the pointer — and hands the three that can take one a real lens, in
+   liquid-buttons.js.
+
+   That reaches the hero pair, the call button and the panel's action button
+   too, which each owned their own capsule and are taken over in section 4a.
+   The page carried three different materials before that; the call button was
+   the one that showed, because it drew no rim line at all and stood 6px
+   shorter than everything around it. Section 4a has the measurements.
+
+   ---- Why only three get a lens --------------------------------------------
+
+   Because a lens inside a lens does not work, and it does not fail subtly.
+
+   A backdrop-filter samples what is behind the element. Put one inside an
+   element that already has one and it samples the parent's *filtered* output,
+   which Chromium captures clipped to the child — and for a small child inside
+   a filtered parent that capture degenerates. Measured, with a lens on each of
+   the seven nav links inside the already-lensed header: every link rendered as
+   a flat opaque grey pill. Not muddy refraction — grey paint. (Cost was not
+   the problem: median frame was unchanged at 16.6ms, so this is a correctness
+   limit, not a performance one.)
+
+   styles.css states the rule outright at .link-pop: "The material rules at the
+   top of this file only ever stack one translucent surface." This is what that
+   sentence is protecting.
+
+   So the buttons divide by what is actually behind them:
+
+     hero pair, call pill        already lensed, by their own features
+     contact trio                flat section behind them   -> lens here
+     nav links, CTA, burger      inside the lensed header   -> no second lens
+     the popup's two buttons     inside the lensed slab     -> no second lens
+
+   The ones that do not get a lens are not missing anything: they are sitting
+   *on* a pane of real refracting glass, which is exactly how iOS 26 treats a
+   control in a glass toolbar — a facet of one pane, not a pane of its own.
+
+   Chromatic aberration is real wherever a lens exists — three displacement
+   passes, one per channel, from glass.js. It is deliberately NOT faked
+   anywhere else: call-glass.css tried a painted conic rim standing in for
+   dispersion and pulled it out again, because it "read as exactly that: a
+   rainbow line drawn around the button".
+
+   ---- Every rule here wins on weight, never on position -------------------
+
+   Load order does not matter for this file, which is deliberate: three files
+   on this page already claim to load last. Every rule that has to beat another
+   file is written exactly one step more specific than the rule it takes over,
+   so it wins on weight instead of on position.
+
+     section 2   `.btn.btn-primary`, `.nav-links li a`   over ios-press.css
+     section 4a  `.hero-actions .btn.btn-primary`        over droplet-buttons
+                 `.mp[data-glass='on'] .btn.mp-toggle`   over call-glass
+                 `... .mp-actions .btn.btn-primary`      over call-glass
+     section 4b  `.btn.mp-toggle::after`                 over meeting-picker
+
+   Sections 7 and 8 pay that back: an accessibility rule written shorter than
+   the rule it is meant to switch off would lose to it. Both list the
+   overridden selectors at the weight they were overridden at.
+
+   ---- What is left different, on purpose ----------------------------------
+
+   The hero pair keep their painted conic chromatic rim (::after in
+   droplet-buttons.css). It is tuned to a backdrop rather than to a material —
+   those two sit over the orb field, which has real colour to disperse — and
+   removing it makes the hero worse without making anything else match better.
+   Their material is now identical to every other capsule; only that rim is
+   extra.
+
+   Remove: see REMOVE-LIQUID-BUTTONS.md.
+   ========================================================================== */
+
+:root {
+  /* Body tint. Thin on purpose: glass is mostly the thing behind it, and a
+     filled capsule has nothing left to refract. Not zero — the label still has
+     to hold contrast over whatever passes underneath. */
+  --lb-tint: rgba(255, 255, 255, 0.30);
+  /* The lensed three go thinner still: they have real refraction underneath
+     to show, and the tint is the only thing that can hide it. */
+  --lb-tint-lens: rgba(255, 255, 255, 0.16);
+
+  /* The rim. Bright along the top where a curved surface catches the light,
+     a soft return along the bottom where it bounces back off the page. This
+     is the whole specular — nothing is painted across the body, because on a
+     capsule this small a broad wash reads as haze on the glass rather than as
+     light on a curve. */
+  --lb-rim: inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.30);
+  --lb-edge: rgba(255, 255, 255, 0.55);
+
+  /* The travelling glint — the highlight that follows the pointer across the
+     surface. Two buttons on this page already had one, at these exact values:
+     --droplet-glow (the hero pair) and --cg-glow (the call pill). This is the
+     same number, named once, so the whole set now shares it rather than three
+     files each keeping their own copy of 0.5.
+
+     It is the ONLY specular painted across the body. A broad overhead wash was
+     tried on both of those features and pulled from both: on a capsule this
+     small it does not read as a curved highlight, it reads as a milky patch
+     sitting on top of the glass. The rim does that job. */
+  --lb-glow: rgba(255, 255, 255, 0.5);
+
+  /* SF Symbols' chevron.down, as a mask. Stroked with round caps and a round
+     join, which is the half of the glyph a CSS-border chevron cannot draw; the
+     colour is irrelevant inside a mask, where only alpha is read. Kept as a
+     token so the shape is stated once and section 4b reads as geometry. */
+  --lb-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.75 4.5 6 7.75 9.25 4.5' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* Two shadows, which is the iOS 26 part. A tight contact shadow says the
+     control is resting ON the page; a wide, very soft ambient one gives it
+     somewhere to rest. One blurred drop shadow doing both jobs is what reads
+     as a 2012 button floating in space. */
+  --lb-shadow: 0 1px 2px rgba(var(--shadow-rgb), 0.10),
+    0 8px 20px -12px rgba(var(--shadow-rgb), 0.24);
+  --lb-shadow-hover: 0 1px 2px rgba(var(--shadow-rgb), 0.10),
+    0 14px 30px -14px rgba(var(--shadow-rgb), 0.30);
+
+  /* Dark mode wants a much quieter surface: the same specular over a dark
+     backdrop reads as chalk rather than as light. */
+  --dark-lb-tint: rgba(255, 255, 255, 0.10);
+  --dark-lb-tint-lens: rgba(255, 255, 255, 0.06);
+  --dark-lb-rim: inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.10);
+  --dark-lb-edge: rgba(255, 255, 255, 0.22);
+  --dark-lb-glow: rgba(255, 255, 255, 0.34);
+}
+
+/* Both triggers mirror dark-mode.css: the system setting, and the explicit
+   data-theme hook. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --lb-tint: var(--dark-lb-tint);
+    --lb-tint-lens: var(--dark-lb-tint-lens);
+    --lb-rim: var(--dark-lb-rim);
+    --lb-edge: var(--dark-lb-edge);
+    --lb-glow: var(--dark-lb-glow);
+  }
+}
+
+:root[data-theme='dark'] {
+  --lb-tint: var(--dark-lb-tint);
+  --lb-tint-lens: var(--dark-lb-tint-lens);
+  --lb-rim: var(--dark-lb-rim);
+  --lb-edge: var(--dark-lb-edge);
+  --lb-glow: var(--dark-lb-glow);
+}
+
+/* ---- 0. The glint's registered properties --------------------------------
+   Registered so they can be transitioned. An unregistered custom property is
+   an untyped token and animates as a step change: the glint would snap home
+   when the pointer leaves instead of easing, and --lb-glow-a would pop on and
+   off inside color-mix() instead of fading.
+
+   --gx/--gy are declared identically in droplet-buttons.css and
+   call-glass.css, which is why they keep those names here rather than taking
+   an --lb- prefix: all three features write the same pointer position in the
+   same units, so one driver can feed any of them and no button needs to know
+   which file is painting it. Three identical @property blocks is not a
+   conflict — same syntax, same initial value, so whichever the cascade takes
+   is the same registration — and it is what lets any one of the three files be
+   deleted without the other two losing their easing.
+
+   The home position is the top centre, which is where a light source sits if
+   you are not told otherwise. */
+@property --gx {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0.5;
+}
+
+@property --gy {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0.12;
+}
+
+/* The glint's opacity — the whole fade in and out. Registered because it is
+   consumed inside color-mix(), where an untyped custom property is a step
+   change. Prefixed, unlike --gx/--gy, because the two files that came first
+   each named this one differently (--cg-glow-a, and a plain opacity on a
+   pseudo-element) and there is no shared spelling to inherit. */
+@property --lb-glow-a {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+/* ---- 1. The capsule ------------------------------------------------------
+   Shape was already right: styles.css has had border-radius 999px on .btn all
+   along, which is the iOS 26 shape. What changes is the material on it.
+
+   The hero pair and the call pill do not match this selector — both re-declare
+   these properties at higher specificity in their own files — so section 4a
+   below reaches them deliberately, one step more specific again. Everything
+   there sets the same tokens as here; nothing is re-tuned per group.
+
+   The glint is a background layer rather than a pseudo-element. ::after is the
+   call button's caret and ::before is spent on the hero pair's chromatic rim,
+   so there is no pseudo free on every button — and a layer in the background
+   stack is the one place that exists on all of them. It is transparent at rest
+   (--lb-glow-a is 0%), so at rest this is exactly the flat tint it was. */
+.btn {
+  /* Height. Every <a class="btn"> inherits the body's 1.6 and stands 54.3px
+     tall; every <button class="btn"> stood at 48px on identical padding and
+     identical font-size. The cause is that Chromium's UA sheet sets `font` on
+     form controls as a shorthand, and a shorthand resets line-height to
+     `normal` — so the label sat in an 18px line box where an anchor gets
+     24.3px, and the call button and the panel's action button were both 6px
+     shorter than everything around them.
+
+     Stated as the body's own number rather than `inherit`, because these
+     buttons do not all share an ancestor: the panel's button would inherit
+     from the panel. Nothing is padded or min-heighted to a magic value, so the
+     capsule stays correct if the type scale moves. */
+  line-height: 1.6;
+  background: radial-gradient(
+      34% 95% at calc(var(--gx) * 100%) calc(var(--gy) * 100%),
+      color-mix(in srgb, var(--lb-glow) var(--lb-glow-a), transparent),
+      transparent 55%
+    ),
+    linear-gradient(var(--lb-tint), var(--lb-tint));
+  /* Keeps the tint and the glint inside the rim rather than under it: without
+     this the background paints through the 1px border box and the edge
+     highlight sits on a lighter ground than the page, which reads as a halo. */
+  background-clip: padding-box;
+  border-color: var(--lb-edge);
+  box-shadow: var(--lb-rim), var(--lb-shadow);
+  backdrop-filter: blur(7px) saturate(180%);
+  -webkit-backdrop-filter: blur(7px) saturate(180%);
+}
+
+/* ---- 2. Transitions ------------------------------------------------------
+   One step more specific than ios-press.css's `.btn` and `.nav-links a`, so
+   these win on weight and this file needs no position in the load order. The
+   `transform` entry is ios-press's release curve, read through its own token
+   with the value inlined as a fallback — so removing ios-press leaves a button
+   that still springs back rather than snapping. */
+.btn.btn-primary,
+.btn.btn-secondary {
+  transition: background-color 0.24s ease, border-color 0.24s ease,
+    color 0.2s ease, box-shadow 0.28s ease,
+    transform var(--press-out, 0.4s cubic-bezier(0.2, 0.9, 0.28, 1.25)),
+    /* The glint. Its opacity is quicker than its travel, so it arrives where
+       the pointer already is instead of sliding in from the last position. */
+      --lb-glow-a 0.28s ease, --gx 0.45s ease-out, --gy 0.45s ease-out;
+}
+
+.nav-links li a {
+  transition: color 0.18s ease, background-color 0.18s ease,
+    border-color 0.18s ease, box-shadow 0.24s ease,
+    transform var(--press-out, 0.4s cubic-bezier(0.2, 0.9, 0.28, 1.25));
+}
+
+/* ---- 3. Hover ------------------------------------------------------------
+   The shadow lifts and the rim brightens. The border deliberately does NOT go
+   accent-coloured, which is what styles.css does: a flat coloured line drawn
+   around a refracting surface is the one thing that most reliably kills the
+   illusion. droplet-buttons.css reached the same conclusion on the hero pair
+   and says so; this generalises it. The label still takes the accent, so the
+   hover is not silent. */
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible {
+  --lb-glow-a: 100%;
+  border-color: var(--lb-edge);
+  box-shadow: var(--lb-rim), var(--lb-shadow-hover);
+  /* The body swells with the lens under it. The hero pair and the call pill
+     have always done this at exactly 1.025; it is generalised here rather than
+     invented, so every capsule answers the pointer the same way. It rides the
+     0.4s overshoot curve from section 2, which is what makes it read as a
+     surface rising rather than a box scaling. */
+  transform: scale(1.025);
+}
+
+/* ---- 4. The lensed three -------------------------------------------------
+   liquid-buttons.js sets data-lens once the lens is actually attached, so
+   nothing here fires on a browser that fell back to a plain frost — Chromium
+   is currently the only engine that runs an SVG filter inside backdrop-filter.
+
+   backdrop-filter is not set here at all: glass.js writes it inline, which
+   outranks any stylesheet. What this rule does is get the tint out of the
+   way, which is the thing that would otherwise hide the refraction it just
+   turned on. */
+.btn[data-lens] {
+  background: var(--lb-tint-lens);
+}
+
+/* ---- 4a. The three groups that owned their own material ------------------
+
+   Section 1 cannot reach the hero pair, the call button or the panel's action
+   button: each re-declares tint, border, rim and shadow at higher specificity
+   in droplet-buttons.css and call-glass.css, and the page therefore carried
+   three different capsules. Measured, in dark mode:
+
+     contact trio  body .06  border white .22  rim  .34 / white .10  h 54.3
+     hero pair     body .07  border white .24  rim  .13 / black .35  h 54.3
+     call pill     body .08  border TRANSPARENT rim .13 / black .35  h 48
+
+   The call pill was the one that showed. A capsule that draws no rim line at
+   all, sitting directly under three that do, does not read as the same
+   material dimmed — it reads as a flat grey lozenge, because the rim is the
+   entire cue that a thin translucent surface is curved. The 6px was the second
+   half of it; see section 4b.
+
+   These rules hand all three the tokens at the top of this file. Nothing here
+   is tuned per group and nothing new is invented — every value is the one
+   section 1 already uses. Each selector is written exactly one step more
+   specific than the rule it takes over, so this works from any position in the
+   load order, which is the same trick section 2 uses and for the same reason.
+
+   Deleting this file hands all three features their own tuning back, intact:
+   nothing in droplet-buttons.css or call-glass.css is edited. */
+
+/* -- the lensed two -------------------------------------------------------
+   The hero pair and the call button both carry a real backdrop lens, from
+   droplet-buttons.js and call-glass.js. They therefore take the thin tint, for
+   the same reason the contact trio does under [data-lens]: the tint is the one
+   thing that can hide the refraction underneath it.
+
+   backdrop-filter is deliberately not touched. Both features write theirs
+   inline from JS, which outranks any stylesheet, and each is tuned to what is
+   actually behind that button — the orb field for the hero, a flat section for
+   the pill. The material is what is being unified here, not the lens. */
+.hero-actions .btn.btn-primary,
+.hero-actions .btn.btn-secondary,
+.mp[data-glass='on'] .btn.mp-toggle {
+  background: radial-gradient(
+      34% 95% at calc(var(--gx) * 100%) calc(var(--gy) * 100%),
+      color-mix(in srgb, var(--lb-glow) var(--lb-glow-a), transparent),
+      transparent 55%
+    ),
+    linear-gradient(var(--lb-tint-lens), var(--lb-tint-lens));
+  background-clip: padding-box;
+  border-color: var(--lb-edge);
+  box-shadow: var(--lb-rim), var(--lb-shadow);
+}
+
+/* The hero pair paint their glint on ::before, not in the background stack —
+   they need the pseudo because ::after is their chromatic rim, and the layer
+   above would be a second glint stacked on the first at double strength. The
+   pseudo is emptied rather than the layer above being split into a separate
+   rule, so there is exactly one place the glint is defined.
+
+   droplet-buttons.js keeps writing --gx/--gy and the pseudo keeps toggling its
+   opacity; both are now driving a transparent gradient. Left alone on purpose:
+   deleting this file has to restore that feature working, and re-pointing its
+   JS would break that. */
+.hero-actions .btn.btn-primary::before,
+.hero-actions .btn.btn-secondary::before {
+  background: none;
+}
+
+/* -- the panel's action button --------------------------------------------
+   Inside the lensed slab, so no lens of its own — a backdrop-filter inside a
+   backdrop-filter degenerates to flat grey paint, which is the finding this
+   file's header documents. It takes the full-strength tint accordingly.
+
+   Its blur stays at call-glass.css's 1.5px rather than section 1's 7px: it
+   sits on the panel, and a button frostier than the slab behind it reads as
+   the nearer surface being the murkier one. That is the one number in this
+   section that is not section 1's, and it is a fit to its backdrop rather than
+   a difference in material. */
+.mp[data-glass='on'][data-popup='on'] .mp-actions .btn.btn-primary {
+  background: radial-gradient(
+      34% 95% at calc(var(--gx) * 100%) calc(var(--gy) * 100%),
+      color-mix(in srgb, var(--lb-glow) var(--lb-glow-a), transparent),
+      transparent 55%
+    ),
+    linear-gradient(var(--lb-tint), var(--lb-tint));
+  background-clip: padding-box;
+  border-color: var(--lb-edge);
+  box-shadow: var(--lb-rim), var(--lb-shadow);
+}
+
+/* -- transitions ----------------------------------------------------------
+   Both files transition transform, colour and box-shadow already; this adds
+   the three glint properties to those lists. Re-declared in full rather than
+   extended, because `transition` is not an additive property — naming only the
+   new entries would drop the transform curve and the press would snap. */
+.hero-actions .btn.btn-primary,
+.hero-actions .btn.btn-secondary,
+.mp[data-glass='on'] .btn.mp-toggle,
+.mp[data-glass='on'][data-popup='on'] .mp-actions .btn.btn-primary {
+  transition: transform var(--press-out, 0.4s cubic-bezier(0.2, 0.9, 0.28, 1.25)),
+    color 0.2s ease, border-color 0.24s ease, box-shadow 0.3s ease,
+    --lb-glow-a 0.28s ease, --gx 0.45s ease-out, --gy 0.45s ease-out;
+}
+
+/* -- hover ----------------------------------------------------------------
+   The same three things section 3 does: the glint comes up, the shadow lifts,
+   the body swells 1.025. The two features were already at 1.025 and the
+   panel's button at 1.03; the odd one is brought into line.
+
+   The rim stays neutral and does not go accent-coloured. All three files had
+   already reached that conclusion independently — a flat coloured line drawn
+   around a refracting surface is the single most reliable way to kill the
+   illusion — so this only keeps it true through the override. */
+.hero-actions .btn.btn-primary:hover,
+.hero-actions .btn.btn-secondary:hover,
+.hero-actions .btn.btn-primary:focus-visible,
+.hero-actions .btn.btn-secondary:focus-visible,
+.mp[data-glass='on'] .btn.mp-toggle:hover,
+.mp[data-glass='on'] .btn.mp-toggle:focus-visible,
+.mp[data-glass='on'][data-popup='on']
+  .mp-actions
+  .btn.btn-primary:hover:not([disabled]),
+.mp[data-glass='on'][data-popup='on']
+  .mp-actions
+  .btn.btn-primary:focus-visible {
+  --lb-glow-a: 100%;
+  border-color: var(--lb-edge);
+  box-shadow: var(--lb-rim), var(--lb-shadow-hover);
+  transform: scale(1.025);
+}
+
+/* ---- 4b. The call button as an iOS 26 control ----------------------------
+
+   Two things beyond the material, both of which made it read as a different
+   kind of object rather than a differently-painted one.
+
+   **Height.** It measured 48px against 54.3px for every other button on the
+   page, on identical padding and identical font-size, because it is a <button>
+   rather than an <a>. That is not specific to this control — the panel's
+   action button had it too — so the fix lives on .btn in section 1, which is
+   where the reason is written down.
+
+   **The caret.** A 7px square with two 1.5px borders rotated 45deg draws a
+   chevron with mitred corners and square ends. SF Symbols' chevron.down —
+   which is what sits in this exact position in an iOS control — is a stroked
+   path with round caps and a round join, and at 7px the difference between the
+   two is most of what the glyph is. It is drawn as a mask so it stays
+   currentColor and still inherits the label's accent on hover.
+
+   Dimmed to 0.6, which is the other iOS convention here: the chevron is a
+   disclosure hint, not part of the label, and at full strength it competes
+   with the words for the same attention. */
+.btn.mp-toggle::after {
+  width: 12px;
+  height: 12px;
+  /* The old glyph was drawn *with* these; both have to go or the mask below
+     paints inside a leftover corner. */
+  border: 0;
+  opacity: 0.6;
+  background: currentColor;
+  -webkit-mask: var(--lb-chevron) center / 12px 12px no-repeat;
+  mask: var(--lb-chevron) center / 12px 12px no-repeat;
+  /* Was translateY(-2px) rotate(45deg) — the translate existed to re-centre a
+     square that had been rotated about its own middle. A mask needs neither. */
+  transform: rotate(0deg);
+  /* Slight overshoot, so the chevron settles rather than stopping dead. Same
+     curve as the button's own release. */
+  transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.28, 1.25),
+    opacity 0.2s ease;
+}
+
+.btn.mp-toggle[aria-expanded='true']::after {
+  /* 180deg exactly, so it turns through the same arc whichever way it goes.
+     The old pair (45deg to -135deg) was also 180deg, and that is worth
+     keeping: a chevron that returns by a different route reads as two
+     animations rather than one control. */
+  transform: rotate(180deg);
+}
+
+.btn.mp-toggle:hover::after,
+.btn.mp-toggle:focus-visible::after {
+  opacity: 0.85;
+}
+
+/* ---- 5. The small capsules ----------------------------------------------
+   The nav pills, and the company name in each timeline entry. Both are the
+   same kind of control: bare until pointed at, then a chip materialises under
+   the pointer. That behaviour is styles.css's and is left alone — all that
+   changes here is what the chip is made of when it does appear.
+
+   Neither gets a lens. The nav pills sit on the header's own glass, and a
+   backdrop-filter inside a backdrop-filter degenerates to flat grey paint —
+   the finding this file's header documents. The company links sit on a flat
+   card with nothing behind them to bend.
+
+   Neither gets the glint either, and that is a judgement rather than a
+   limit: a highlight chasing the pointer inside a chip this small reads as
+   noise rather than as light. They get the rim and the shadow, which is what
+   makes them the same material as the capsules around them. */
+.nav-links a:hover,
+.nav-links a.is-active {
+  border-color: var(--lb-edge);
+  box-shadow: var(--lb-rim), 0 1px 2px rgba(var(--shadow-rgb), 0.08);
+}
+
+/* (0,3,1), one step past styles.css's `.timeline-company a:hover`, so this
+   wins on weight rather than on load order like everything else in this file.
+
+   styles.css dresses this chip in --glass-chip over --glass-edge with
+   --glass-rim: the old recipe, and the one this feature exists to replace. It
+   sits a few centimetres from the timeline logo tile, which is real glass, and
+   lost that comparison the same way the contact buttons did. */
+.timeline-headline .timeline-company a:hover,
+.timeline-headline .timeline-company a:focus-visible {
+  background-color: var(--lb-tint);
+  border-color: var(--lb-edge);
+  box-shadow: var(--lb-rim), 0 1px 2px rgba(var(--shadow-rgb), 0.08);
+}
+
+/* ---- 6. The burger -------------------------------------------------------
+   The only control on the page that had no surface at all: three bars on bare
+   background. iOS 26 puts a control like this in its own glass, and at 44px it
+   is already the right size for one. The bars themselves are untouched. */
+.nav-toggle {
+  border-radius: 999px;
+  background: var(--lb-tint);
+  box-shadow: var(--lb-rim), 0 1px 2px rgba(var(--shadow-rgb), 0.08);
+}
+
+/* ---- 7. Reduce Transparency ----------------------------------------------
+   The system accessibility setting, which iOS has had for years and which this
+   material should honour: glass becomes an opaque surface rather than
+   disappearing. The rim goes with it — a specular highlight on something that
+   is no longer translucent is just a white line. */
+@media (prefers-reduced-transparency: reduce) {
+  /* The three overridden groups are listed at the same weight they were
+     overridden at. Written shorter they would lose to section 4a and stay
+     translucent under a setting that asks them not to be — this is the one
+     place where being one step more specific there has to be paid back. */
+  .btn,
+  .btn[data-lens],
+  .nav-toggle,
+  .hero-actions .btn.btn-primary,
+  .hero-actions .btn.btn-secondary,
+  .mp[data-glass='on'] .btn.mp-toggle,
+  .mp[data-glass='on'][data-popup='on'] .mp-actions .btn.btn-primary {
+    background: var(--color-bg);
+    border-color: var(--color-border-strong);
+    box-shadow: var(--lb-shadow);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .nav-links a:hover,
+  .nav-links a.is-active,
+  .timeline-headline .timeline-company a:hover,
+  .timeline-headline .timeline-company a:focus-visible {
+    box-shadow: none;
+  }
+}
+
+/* ---- 8. Reduce Motion ----------------------------------------------------
+   What goes is the travel, not the light. The glint still fades in under the
+   pointer and the rim still brightens — those are what the control looks like
+   in a given state, not motion between states. What is dropped is the swell,
+   the glint sliding across the surface, and the caret's turn.
+
+   Both need writing out here. The swell is added by this file at three
+   different weights, and meeting-picker.css's own reduced-motion rule for the
+   caret is `.mp-toggle::after` at (0,1,0), which section 4b now outranks — so
+   without this the caret would keep animating under a setting that had already
+   correctly switched it off. */
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary:hover,
+  .btn-secondary:hover,
+  .btn-primary:focus-visible,
+  .btn-secondary:focus-visible,
+  .hero-actions .btn.btn-primary:hover,
+  .hero-actions .btn.btn-secondary:hover,
+  .hero-actions .btn.btn-primary:focus-visible,
+  .hero-actions .btn.btn-secondary:focus-visible,
+  .mp[data-glass='on'] .btn.mp-toggle:hover,
+  .mp[data-glass='on'] .btn.mp-toggle:focus-visible,
+  .mp[data-glass='on'][data-popup='on']
+    .mp-actions
+    .btn.btn-primary:hover:not([disabled]),
+  .mp[data-glass='on'][data-popup='on']
+    .mp-actions
+    .btn.btn-primary:focus-visible {
+    transform: none;
+  }
+
+  .btn.btn-primary,
+  .btn.btn-secondary,
+  .hero-actions .btn.btn-primary,
+  .hero-actions .btn.btn-secondary,
+  .mp[data-glass='on'] .btn.mp-toggle,
+  .mp[data-glass='on'][data-popup='on'] .mp-actions .btn.btn-primary {
+    transition: background-color 0.24s ease, border-color 0.24s ease,
+      color 0.2s ease, box-shadow 0.28s ease, --lb-glow-a 0.28s ease;
+  }
+
+  .btn.mp-toggle::after {
+    transition: none;
+  }
+}

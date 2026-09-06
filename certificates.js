@@ -1,11 +1,12 @@
 /*
- * [certificates] Which side the certificates panel opens on.
+ * [certificates] Which side the certificates panel opens on, and Escape.
  *
- * The one thing about this feature that CSS cannot decide. Everything else —
- * the cluster, the divider, the overline, the placeholder collage, the panel
- * itself and the tap behaviour on touch — is in certificates.css and works
- * without this file. Drop it and the panel still opens; it just always opens
- * upward, which is wrong most of the time on this particular card.
+ * The two things about this feature that CSS cannot decide. Everything else —
+ * the cluster, the divider, the overline, the collage, the panel itself, the
+ * links to the PDFs and the tap behaviour on touch — is in certificates.css
+ * and works without this file. Drop it and the panel still opens; it just
+ * always opens upward, which is wrong most of the time on this particular
+ * card, and Escape stops closing it.
  *
  * Why it is wrong: every .link-pop opens upward, which is right for the four
  * Experience tiles that sit low on tall cards in the middle of a long page.
@@ -76,5 +77,28 @@
 
     group.addEventListener('pointerenter', flip);
     group.addEventListener('focusin', flip);
+
+    /* Escape, which script.js can no longer close this panel with.
+
+       Its handler blurs `group.querySelector('a')` — the group's trigger, for
+       the six tiles that are anchors. This trigger is a <button>, so that
+       selector used to find nothing and Escape simply did nothing here; there
+       was also nothing inside the panel to focus, so there was nothing to
+       escape from. Now each scan is a link to its PDF, so the selector matches
+       the *first scan* instead, and blurring slot 1 while the reader is on slot
+       3 leaves the panel open on a key that promises to close it.
+
+       Blurring whatever actually holds focus is what closes it: the panel is
+       held open by :focus-within, so surrendering focus is the close. Kept here
+       rather than fixed in script.js so neither file needs to know about the
+       other — script.js's handler still runs first and its blur is a harmless
+       no-op on an element that is not focused. */
+    group.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      var active = document.activeElement;
+      if (!active || !group.contains(active)) return;
+      e.stopPropagation();
+      active.blur();
+    });
   });
 })();
