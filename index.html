@@ -626,55 +626,129 @@
                      pair despite living in different boxes. -->
                 <span class="cert-label">Certificates</span>
 
-                <!-- SCAFFOLD — nothing here is real yet. Three things to swap
-                     once the credentials exist:
-                     1. The trigger is a <button> because there is no
-                        verification URL to point at. Give it one and it becomes
+                <!-- The panel is real now — five scans out of the degree PDF,
+                     captioned. Two pieces of the original scaffold are still
+                     scaffold:
+                     1. The trigger is still a <button>, because it has
+                        nowhere of its own to go: the five documents are five
+                        different PDFs and the tile is one target. Give it a
+                        verification URL — or a combined PDF — and it becomes
                         <a class="work-tile" href="…" target="_blank"
-                        rel="noopener">, which is what the other six tiles are —
+                        rel="noopener">, which is what the other six tiles are;
                         the button reset in certificates.css then stops matching
-                        and can go with it.
-                     2. The four .cert-slot spans are the 2x2 collage. Replace
-                        each with <img src="assets/certificate-tile-N.jpg" alt=""
-                        width="210" height="156" loading="lazy" decoding="async">
-                        — <img> is deliberately not used while the files are
-                        missing, because a 404 inside .work-tile-grid paints
-                        Chrome's broken-image glyph onto the tile.
-                     3. The panel slots below already point at
-                        assets/certificate-0N.jpg via data-src. Those are safe to
-                        leave dangling: script.js hides a shot image that 404s and
-                        the slot keeps its own gradient. Drop the files in and
-                        they light up with no markup change. -->
+                        and can go with it. Note what that costs on touch,
+                        though: section 6 of that file un-hides the panel for
+                        tap because a button has nowhere to go, and an anchor
+                        would follow its link instead, so phones would lose the
+                        previews. The scans themselves are links now either
+                        way — see the panel below.
+                     2. The 2x2 collage is real now. Four crops out of four
+                        of the five scans rather than four whole pages shrunk to
+                        fit: a cell is 48x36 CSS px, and a full certificate at
+                        that size is a grey smudge inside letterbox gutters.
+                        Cropped to the head of each document the blue wordmark
+                        survives, and the wax seal off the minor gives the 2x2
+                        its one warm cell so it reads as four frames rather than
+                        one wash. Regenerating them: REMOVE-CERTIFICATES.md. -->
                 <div class="work-link work-link--cert">
                   <button class="work-tile" type="button">
                     <span class="work-tile-grid" aria-hidden="true">
-                      <span class="cert-slot"></span>
-                      <span class="cert-slot"></span>
-                      <span class="cert-slot"></span>
-                      <span class="cert-slot"></span>
+                      <img src="assets/certificate-tile-1.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                      <img src="assets/certificate-tile-2.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                      <img src="assets/certificate-tile-3.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
+                      <img src="assets/certificate-tile-4.jpg" alt="" width="210" height="156" loading="lazy" decoding="async">
                     </span>
                     <span class="work-tile-badge" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M12 1.8a6.6 6.6 0 1 0 0 13.2 6.6 6.6 0 0 0 0-13.2zm0 2.2a4.4 4.4 0 1 1 0 8.8 4.4 4.4 0 0 1 0-8.8z"/><path fill="currentColor" d="M8.6 15.9 6.8 22.2l5.2-2.4 5.2 2.4-1.8-6.3-3.4 1.6z"/></svg></span>
                     <span class="sr-only">Certificates — show the previews</span>
                   </button>
 
                   <div class="link-pop" id="certificates" role="group" aria-label="Certificates — preview">
+                    <!-- [certificates] Five slots, not the component's usual
+                         four. The strip scrolls and certificates.js caps it to
+                         the room that exists, so the count costs nothing but
+                         the reader's scroll.
+
+                         Each carries its real width/height, so the strip holds
+                         the two portrait degrees and the three landscape course
+                         certificates at their own proportions instead of
+                         cropping them to one ratio — see the note above
+                         .link-pop-shot in styles.css. That is also why they are
+                         not all 800x533: the number has to match the file.
+
+                         Each scan is a link to its own PDF. The other five
+                         panels make .link-pop-shot itself the anchor and then
+                         hide it from the tab order, because their four slots
+                         all point at the one URL the tile already points at.
+                         These five are five different documents behind a
+                         trigger that goes nowhere, so they are real focusable
+                         links — the anchor sits inside the <figure> rather than
+                         around it because <figcaption> has to be a direct child
+                         of one. See section 7b of certificates.css. -->
                     <div class="link-pop-strip">
-                      <div class="link-pop-shot" aria-hidden="true">
-                        <img data-src="assets/certificate-01.jpg" alt="" loading="lazy" decoding="async" width="800" height="533">
-                      </div>
-                      <div class="link-pop-shot" aria-hidden="true">
-                        <img data-src="assets/certificate-02.jpg" alt="" loading="lazy" decoding="async" width="800" height="533">
-                      </div>
-                      <div class="link-pop-shot" aria-hidden="true">
-                        <img data-src="assets/certificate-03.jpg" alt="" loading="lazy" decoding="async" width="800" height="533">
-                      </div>
-                      <div class="link-pop-shot" aria-hidden="true">
-                        <img data-src="assets/certificate-04.jpg" alt="" loading="lazy" decoding="async" width="800" height="533">
-                      </div>
+                      <figure class="link-pop-shot cert-shot">
+                        <figcaption class="cert-shot-cap">
+                          <span class="cert-shot-names">
+                            <span class="cert-shot-name">Bachelor of Science</span>
+                            <span class="cert-shot-meta">Animation &amp; Visual Graphics &middot; First Division with Distinction</span>
+                          </span>
+                          <span class="cert-shot-open" aria-hidden="true">PDF &#8599;</span>
+                        </figcaption>
+                        <a class="cert-shot-link" href="assets/certificate-01.pdf" target="_blank" rel="noopener" aria-label="Bachelor of Science &ndash; open the certificate as a PDF in a new tab">
+                          <img data-src="assets/certificate-01.jpg" alt="" loading="lazy" decoding="async" width="800" height="1125">
+                        </a>
+                      </figure>
+                      <figure class="link-pop-shot cert-shot">
+                        <figcaption class="cert-shot-cap">
+                          <span class="cert-shot-names">
+                            <span class="cert-shot-name">Film Appreciation</span>
+                            <span class="cert-shot-meta">Minor &middot; Batch 2019&ndash;2022</span>
+                          </span>
+                          <span class="cert-shot-open" aria-hidden="true">PDF &#8599;</span>
+                        </figcaption>
+                        <a class="cert-shot-link" href="assets/certificate-02.pdf" target="_blank" rel="noopener" aria-label="Film Appreciation &ndash; open the certificate as a PDF in a new tab">
+                          <img data-src="assets/certificate-02.jpg" alt="" loading="lazy" decoding="async" width="800" height="1158">
+                        </a>
+                      </figure>
+                      <figure class="link-pop-shot cert-shot">
+                        <figcaption class="cert-shot-cap">
+                          <span class="cert-shot-names">
+                            <span class="cert-shot-name">English &amp; Communication Skills</span>
+                            <span class="cert-shot-meta">Amity School of Languages</span>
+                          </span>
+                          <span class="cert-shot-open" aria-hidden="true">PDF &#8599;</span>
+                        </figcaption>
+                        <a class="cert-shot-link" href="assets/certificate-03.pdf" target="_blank" rel="noopener" aria-label="English &amp; Communication Skills &ndash; open the certificate as a PDF in a new tab">
+                          <img data-src="assets/certificate-03.jpg" alt="" loading="lazy" decoding="async" width="800" height="567">
+                        </a>
+                      </figure>
+                      <figure class="link-pop-shot cert-shot">
+                        <figcaption class="cert-shot-cap">
+                          <span class="cert-shot-names">
+                            <span class="cert-shot-name">Behavioral Science</span>
+                            <span class="cert-shot-meta">Amity Institute of Behavioral &amp; Allied Sciences</span>
+                          </span>
+                          <span class="cert-shot-open" aria-hidden="true">PDF &#8599;</span>
+                        </figcaption>
+                        <a class="cert-shot-link" href="assets/certificate-04.pdf" target="_blank" rel="noopener" aria-label="Behavioral Science &ndash; open the certificate as a PDF in a new tab">
+                          <img data-src="assets/certificate-04.jpg" alt="" loading="lazy" decoding="async" width="800" height="567">
+                        </a>
+                      </figure>
+                      <figure class="link-pop-shot cert-shot">
+                        <figcaption class="cert-shot-cap">
+                          <span class="cert-shot-names">
+                            <span class="cert-shot-name">Spanish</span>
+                            <span class="cert-shot-meta">Foreign Language Course &middot; Amity School of Languages</span>
+                          </span>
+                          <span class="cert-shot-open" aria-hidden="true">PDF &#8599;</span>
+                        </figcaption>
+                        <a class="cert-shot-link" href="assets/certificate-05.pdf" target="_blank" rel="noopener" aria-label="Spanish &ndash; open the certificate as a PDF in a new tab">
+                          <img data-src="assets/certificate-05.jpg" alt="" loading="lazy" decoding="async" width="800" height="568">
+                        </a>
+                      </figure>
                     </div>
                     <div class="link-pop-foot">
                       <span class="link-pop-title">Certificates</span>
-                      <span class="link-pop-host">[verification link] &#8599;</span>
+                      <span class="link-pop-host">Open any as PDF &#8599;</span>
                     </div>
                   </div>
                 </div>

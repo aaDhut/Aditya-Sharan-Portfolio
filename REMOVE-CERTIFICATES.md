@@ -12,30 +12,85 @@ Removing it returns the `tile` cell to the college row alone, at exactly the
 size and position it had before — no other card, section or breakpoint is
 touched.
 
-## It is a scaffold, not finished content
+## What is in the panel, and what the tile face is made of
 
-Nothing in the tile or the panel is real yet. Three swaps turn it into the
-finished thing, all of them inside the one `[certificates]` block in
-`index.html`, all of them described in a comment there:
+The panel holds five captioned scans, rendered out of the six-page graduation
+PDF (page 2 is the verification stamp on the reverse of page 1 and is not one
+of them). Each one links to its own single-page PDF:
 
-1. **The trigger is a `<button>`, not an `<a>`** — there is no verification URL
-   to point at yet. Give it one and it becomes an `<a class="work-tile"
-   href="…" target="_blank" rel="noopener">` like the other six tiles, at which
-   point the `button.work-tile` reset in `certificates.css` stops matching and
-   can be deleted with it. Section 6 of that file (touch) should come out at the
-   same time: it exists only because a button with nowhere to go would otherwise
-   do nothing when tapped, and an anchor has somewhere to go.
-2. **The 2×2 collage is four drawn `<span class="cert-slot">` cells.** Replace
-   each with `<img src="assets/certificate-tile-N.jpg" alt="" width="210"
-   height="156" loading="lazy" decoding="async">`. They are deliberately not
-   `<img>` while the files are missing: `script.js` catches a 404 on a
-   `.link-pop-shot` image and hides it, but it does not watch
-   `.work-tile-grid`, so a missing file there paints Chrome's broken-image
-   glyph straight onto the tile.
-3. **The four panel slots already point at `assets/certificate-0N.jpg`** via
-   `data-src`. Those are safe to leave dangling — `script.js` hides a shot that
-   404s and the slot keeps its own gradient. Drop the files in and they light up
-   with no markup change.
+| scan | PDF | what it is |
+| --- | --- | --- |
+| `assets/certificate-01.jpg` | `assets/certificate-01.pdf` | BSc, Animation & Visual Graphics — the degree |
+| `assets/certificate-02.jpg` | `assets/certificate-02.pdf` | Minor, Film Appreciation |
+| `assets/certificate-03.jpg` | `assets/certificate-03.pdf` | English & Communication Skills |
+| `assets/certificate-04.jpg` | `assets/certificate-04.pdf` | Behavioral Science |
+| `assets/certificate-05.jpg` | `assets/certificate-05.pdf` | Spanish, Foreign Language Course |
+
+Five slots where the component ships four. That costs nothing: the strip
+already scrolls and `certificates.js` caps it to the room on the side the panel
+opened. Two of the five are portrait, and they keep their proportions rather
+than being cropped to the other three's — `styles.css` sizes each slot from its
+own image and treats the 3∶2 in the markup as a fallback for a missing file
+only, which is why each `<img>` carries its true `width`/`height` and they are
+not all the same number.
+
+Each slot is a `<figure class="link-pop-shot cert-shot">` with a
+`<figcaption>`; section 7 of `certificates.css` styles it and explains why the
+caption sits inside the shot rather than in the seam between slots. Deleting
+that section leaves five uncaptioned scans — the component's own behaviour —
+not a broken panel.
+
+The 2×2 collage on the tile face is four crops out of four of the same five
+scans: `assets/certificate-tile-1…4.jpg`, drawn by `styles.css`'s
+`.work-tile-grid img` with no rules of its own.
+
+### The scans are links; the tile is still a button
+
+Each `<figure>` holds an `<a class="cert-shot-link">` around its scan, pointing
+at that certificate's PDF with `target="_blank" rel="noopener"`. Section 7b of
+`certificates.css` covers the three decisions worth knowing:
+
+- **The anchor is inside the figure, not around it.** `<figcaption>` has to be a
+  direct child of its `<figure>`, so the anchor can only take the scan. It
+  stretches an `::after` back over the whole slot to get the caption into the
+  hit target.
+- **They are focusable and named.** The site's other five panels make
+  `.link-pop-shot` itself the anchor and then hide it (`tabindex="-1"`,
+  `aria-hidden`), because all four of their slots point at the one URL the tile
+  already points at. These five are five different documents behind a trigger
+  that goes nowhere, so hiding them would leave the PDFs unreachable.
+- **No `download` attribute.** It would suppress the new tab; the browser's own
+  PDF viewer carries a download button, so a tab gets you both.
+
+The trigger is still a `<button>` rather than an `<a>`, because it has nowhere
+of its own to go — five documents, one tile. Give it a verification URL, or a
+combined PDF, and it becomes `<a class="work-tile" href="…" target="_blank"
+rel="noopener">` like the other six tiles, at which point the `button.work-tile`
+reset in `certificates.css` stops matching and can be deleted with it. Weigh
+section 6 of that file before you do: it un-hides the panel on touch precisely
+because a button has nowhere to go, and an anchor would follow its link on tap
+instead — phones would get the PDF and lose the previews.
+
+## Regenerating the assets
+
+Neither the PDFs nor the tile crops are checked in as sources — they are
+derived from the five JPEGs, which are. Both recipes need only what ships with
+macOS.
+
+**The PDFs** wrap each JPEG's bytes verbatim in a one-page PDF as a `DCTDecode`
+image XObject — no re-encode, so the PDF is the scan at its original quality
+plus about 700 bytes of structure. The page is A4 in the scan's own orientation
+with an 18pt margin, so it prints full-page instead of at whatever DPI the
+scanner recorded. `sips -s format pdf` also works and is one line, but it sizes
+the page from that DPI: the landscape scans come out on a 400×283pt page, which
+prints at a third of a sheet.
+
+**The tile crops** are 210×156 (the size the other six tiles use), cut to keep
+the blue AMITY wordmark, because a cell is 48×36 CSS px and a whole certificate
+scaled into that is a grey smudge between two letterbox gutters. The four are
+the degree head, the wax seal and signatures off the minor, and the heads of
+the two language certificates — the seal is the one warm cell, which is what
+stops the 2×2 reading as a single wash.
 
 ## Why it overrides college-projects.css instead of editing it
 
@@ -72,8 +127,8 @@ a different kind of object rather than a sibling — if you shrink, shrink both.
 
 ## What the JS is for
 
-`certificates.js` decides which side the panel opens on, and that is all it
-does. Everything else works without it.
+`certificates.js` does two things: it decides which side the panel opens on,
+and it closes the panel on Escape. Everything else works without it.
 
 It is not optional in practice. Every `.link-pop` opens upward, which is right
 for the four Experience tiles — low on tall cards in the middle of a long page.
@@ -88,6 +143,20 @@ latch around it: these panels hold no video, so nothing needs to hold them open
 and there is nothing to close. With it, the panel fits inside the viewport in
 all nine combinations of {700, 900, 1100}px tall × {card centred, section top,
 card at bottom}.
+
+Escape is the smaller half, and it is there because the scans became links.
+`script.js` closes any of these panels by blurring `group.querySelector('a')` —
+the group's trigger, for the six tiles that are anchors. This trigger is a
+`<button>`, so that selector used to match nothing and Escape did nothing here;
+there was also nothing inside the panel to focus, so there was nothing to
+escape from. Five scan links later the selector matches the *first scan*, and
+blurring slot 1 while the reader is on slot 3 leaves the panel open on a key
+that promises to close it. So this file blurs whatever actually holds focus,
+which is what closes a panel held open by `:focus-within`.
+
+It is fixed here rather than in `script.js` so neither file has to know about
+the other. `script.js`'s handler still runs first; its blur lands on an element
+that is not focused and does nothing.
 
 ## The fast way
 
@@ -108,6 +177,11 @@ Four files, three edits.
 - `certificates.css`
 - `certificates.js`
 - `REMOVE-CERTIFICATES.md` (this file)
+- `assets/certificate-01…05.jpg` — the five scans
+- `assets/certificate-01…05.pdf` — the five PDFs behind them
+- `assets/certificate-tile-1…4.jpg` — the four collage crops
+
+Nothing else on the page references any of those eleven files.
 
 ### 2. `index.html` — the two tags
 
@@ -139,7 +213,7 @@ re-indent when you take the wrapper away.
 ### Check afterwards
 
 ```sh
-grep -rn "certificates\|cert-group\|cert-label\|cert-slot\|work-groups\|work-labels" \
+grep -rn "certificates\|certificate-\|cert-group\|cert-label\|cert-shot\|work-groups\|work-labels" \
   --include='*.html' --include='*.css' --include='*.js' .
 ```
 

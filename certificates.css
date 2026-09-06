@@ -186,41 +186,20 @@
   height: 9px;
 }
 
-/* ---- 3b. Placeholder collage ---------------------------------------------
-   Four drawn cells rather than four <img> tags, on purpose. script.js catches a
-   404 on a .link-pop-shot image and hides it so the slot's own gradient stands,
-   but it does not watch .work-tile-grid — a missing file there paints Chrome's
-   broken-image glyph straight onto the tile.
+/* ---- 3b. The collage ------------------------------------------------------
+   Four real crops now, so the placeholder gradients that used to live here are
+   gone and nothing replaces them: styles.css's .work-tile-grid img already
+   draws them, flush and cover-fit, exactly as it does for the six ArtStation
+   tiles.
 
-   So the scaffold ships with nothing to fetch. Swap each <span> for the <img>
-   it is standing in for once the art exists and this rule stops matching on its
-   own; the grid, the radius and the hairline are all inherited from
-   styles.css's .work-tile-grid either way. */
-.cert-slot {
-  display: block;
-  width: 100%;
-  height: 100%;
-  /* Mixed toward --color-text rather than --color-border, so the fill lightens
-     against a dark card and darkens against a light one from the one
-     declaration. Built off --color-border first, it came out within a couple of
-     percent of the card in dark mode and the tile read as a hole punched in it
-     rather than as an object waiting for art. */
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--color-text) 6%, var(--color-bg-alt)),
-    color-mix(in srgb, var(--color-text) 13%, var(--color-bg-alt))
-  );
-}
+   They are crops rather than whole pages because a cell is 48x36 CSS px. A
+   full certificate scaled into that is a grey smudge inside two letterbox
+   gutters — measured against the alternative, the blue AMITY wordmark is the
+   only thing that survives the reduction, so each crop is cut to keep it. The
+   wax seal off the minor is the one warm cell, which is what stops the 2x2
+   reading as one wash; the alternating gradients used to do that job.
 
-/* Alternating the diagonal keeps the 2x2 legible as four frames instead of one
-   flat wash — the same thing the four real thumbnails will do. */
-.cert-slot:nth-child(2n) {
-  background: linear-gradient(
-    315deg,
-    color-mix(in srgb, var(--color-text) 11%, var(--color-bg-alt)),
-    color-mix(in srgb, var(--color-text) 4%, var(--color-bg-alt))
-  );
-}
+   Regenerating them: REMOVE-CERTIFICATES.md. */
 
 /* ---- 4. Stacking ---------------------------------------------------------
    The cluster is the leftmost thing in the cell and its panel has to paint over
@@ -379,3 +358,160 @@
     content: none;
   }
 }
+
+/* ---- 7. Captions ---------------------------------------------------------
+   The five scans out of the degree PDF are not self-describing at 364px wide:
+   the Amity wordmark is the largest thing on all five, and the line that
+   actually separates them — "Bachelor of Science", "Film Appreciation",
+   "Spanish" — is small, centred, and in the same navy as everything else. Read
+   as a strip they look like five copies of one document. So each slot names
+   itself.
+
+   The label lives *inside* .link-pop-shot rather than between the slots. The
+   strip is a flex column with a gap and no ground of its own (see the long
+   note at the top of pop-glass.css about why the seams are deliberately open),
+   so a caption in a seam would be text floating on the panel's live backdrop —
+   the timeline card's bullet copy — with nothing behind it. Inside the shot it
+   sits on the opaque gradient that is already there for the loading and 404
+   states, and the shot stays the single opaque object that file describes.
+
+   The other five panels in the site are screenshots of things whose names are
+   already in the foot, so nothing here touches the shared component. */
+.cert-shot {
+  /* <figure> for the caption's sake; the UA margin is not wanted. */
+  margin: 0;
+}
+
+/* Above the scan, not under it. The strip is capped at 360px and the two
+   degree certificates are portrait — 800x1125 drawn into a 364px column is
+   512px tall, so a slot is taller than the window it is read through. A label
+   under the image is a label the reader reaches only after scrolling past the
+   whole thing it names; above it, every slot announces itself as it arrives.
+   The three landscape ones fit either way and follow the same rule so the
+   strip stays one pattern.
+
+   <figcaption> is valid as the first child of <figure> as well as the last, so
+   this is a DOM order rather than a flex reversal — screen readers get the
+   name before the image either way, and nothing depends on a stylesheet. */
+.cert-shot-cap {
+  display: flex;
+  /* A row, because the "PDF" badge shares this line — see section 7b for why
+     it could not stay on the scan itself. The two names keep their own column
+     inside it. */
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 9px 7px;
+  /* The scans are near-white and the shot's ground is --color-bg-alt. Without
+     a rule the caption reads as floating on the top edge of the paper. */
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cert-shot-names {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  /* Lets the meta line wrap instead of pushing the badge off the end. */
+  min-width: 0;
+}
+
+.cert-shot-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.cert-shot-meta {
+  font-size: 0.7rem;
+  line-height: 1.3;
+  color: var(--color-text-muted);
+}
+
+/* styles.css pins a slot with a missing image to 3/2 so it doesn't collapse to
+   nothing. That was written for a slot that is only an image; here it would
+   crop the caption off the bottom of the very placeholder whose job is to say
+   what is missing. A captioned slot has the caption to give it height, so it
+   can size itself. */
+.cert-shot:has(img[hidden]) {
+  aspect-ratio: auto;
+  min-height: 96px;
+}
+
+/* ---- 7b. Opening a certificate -------------------------------------------
+   Each scan links to its own PDF — assets/certificate-0N.pdf, the same scan
+   wrapped in an A4 page, generated from the JPEG the panel already shows (see
+   REMOVE-CERTIFICATES.md for the recipe). New tab rather than `download`,
+   because the browser's PDF viewer carries its own download button and the
+   attribute would take the tab away to get to it.
+
+   The other five panels on the site make .link-pop-shot itself the anchor and
+   then hide it — tabindex="-1", aria-hidden — because all four of their slots
+   point at the one URL the tile already points at, so they would be four
+   duplicate tab stops. These five are the opposite case: five different
+   destinations behind a trigger that is a <button> going nowhere, so they are
+   real, named, focusable links and the only way to reach the documents.
+
+   The anchor wraps the scan alone. It cannot also wrap the caption: HTML wants
+   <figcaption> as a direct child of its <figure>, and the caption is what makes
+   these slots readable at 364px (section 7). So the hit target is stretched
+   back over the whole slot below instead. */
+.cert-shot {
+  position: relative;
+}
+
+.cert-shot-link {
+  display: block;
+}
+
+/* Takes the caption into the hit target — the name of the thing should open
+   the thing. Sits over the slot, under nothing: the badge below is inside the
+   anchor and paints after it. */
+.cert-shot-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+/* The global :focus-visible ring is drawn 2px *outside* the anchor, and
+   .link-pop-shot clips its overflow — so on this one element the ring would be
+   cropped to nothing. Drawn inside instead, where there is room for it. */
+.cert-shot-link:focus-visible {
+  outline-offset: -3px;
+}
+
+/* Says the slot opens something, on the caption line rather than on the scan.
+
+   It was a corner chip on the image first, and that is the wrong place here for
+   a reason the other panels never hit: the strip is capped at 360px and the two
+   degree scans are 512px tall inside it, so a badge pinned to the bottom of a
+   slot sat below the window in the position the reader arrives at. Bottom of
+   the slot is not bottom of the screen. On the caption line it is on top of
+   every slot the moment that slot scrolls into view.
+
+   It also stops needing to appear on hover. A chip that fades in over an image
+   is telling you something you could not otherwise know; a label sitting beside
+   the document's name is just part of the row, and five of them read as a
+   pattern — every one of these opens — rather than five things blinking. That
+   is one transition, one (hover: none) branch and one reduced-motion branch
+   this file no longer carries. */
+.cert-shot-open {
+  flex-shrink: 0;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  /* Pulled toward the body colour rather than left on the raw accent. The foot
+     beside it wears the same green at 0.78rem and reads fine; at 0.6rem
+     uppercase on a near-white card it does not. Mixing toward --color-text
+     darkens it against the light card and lightens it against the dark one
+     from the one declaration, and keeps the hue the rest of the site uses. */
+  /* [dark-mode] */
+  color: color-mix(in srgb, var(--color-accent) 72%, var(--color-text));
+  /* [dark-mode] */
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
