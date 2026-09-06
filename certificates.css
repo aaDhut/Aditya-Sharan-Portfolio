@@ -380,6 +380,37 @@
 .cert-shot {
   /* <figure> for the caption's sake; the UA margin is not wanted. */
   margin: 0;
+
+  /* Each slot is one object — caption and scan together — and it has to be
+     bounded like one. The reason is the strip's height: at 360px it showed one
+     caption and part of one scan and nothing else, which puts that caption in
+     the exact position a panel *title bar* would be, 8px below the panel's own
+     top edge, with no second slot in view to teach the reader otherwise. It
+     read as chrome belonging to the panel rather than as the name of the
+     document under it. The cap on .cert-shot-link img below is the other half
+     of that fix and the load-bearing one.
+
+     A border rather than the inset box-shadow the other shots wear, because
+     the shadow is not there in every state this slot has to hold up in.
+     pop-glass.css draws that hairline only under `.link-pop[data-pg='lit']`,
+     and pop-glass.js writes `lit` on first hover — so an unlit panel has no
+     edge, and its own reduced-transparency block nulls the shadow outright
+     ("What has to be stood down is the shot"). In both of those the panel is
+     opaque --color-bg — which, since the caption rule below, is exactly the
+     caption's colour too: white band on white panel, and with the shadow gone
+     nothing at all saying where the slot begins. A border is a different
+     property, so no state of that file can take it away.
+
+     --pg-shot-edge is then stood down to keep the lit panel honest. It is
+     pop-glass's warm near-white at 0.62, sized to read as the lit edge of a
+     screenshot resting on glass; left alone it would draw a second hairline
+     just inside this one. Redefining the property rather than overriding the
+     shadow is what keeps the rest of that declaration — the drop shadow that
+     lifts the slot off the glass — intact and un-restated here, and it is set
+     on :root and inherits, so the other five panels keep the edge they were
+     tuned for. */
+  border: 1px solid var(--color-border);
+  --pg-shot-edge: transparent;
 }
 
 /* Above the scan, not under it. The strip is capped at 360px and the two
@@ -402,8 +433,19 @@
   justify-content: space-between;
   gap: 10px;
   padding: 8px 9px 7px;
-  /* The scans are near-white and the shot's ground is --color-bg-alt. Without
-     a rule the caption reads as floating on the top edge of the paper. */
+  /* The band takes the paper's own tone rather than the shot's ground.
+
+     .link-pop-shot's ground is a gradient off --color-bg-alt — #ebeae5, a
+     clear grey — and it is there for the loading and 404 states, where a slot
+     has no image and needs something to be. A loaded scan covers it completely,
+     so on every slot that works the grey survives in exactly one place: behind
+     this caption. That is what made the band read as a strip of panel laid over
+     the certificate instead of the head of the sheet. --color-bg is #faf9f7,
+     which is the paper, so the band and the scan under it are one surface.
+
+     The hairline stays and now does the job it was written for: separating two
+     parts of the same sheet, rather than hiding the join between two tones. */
+  background: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -463,6 +505,45 @@
 
 .cert-shot-link {
   display: block;
+}
+
+/* The scan is a thumbnail of the document, not the document. The badge beside
+   its name is where the whole thing lives, and capping the preview is what
+   makes that badge — and the caption it sits on — legible as a per-slot label.
+
+   Measured: the strip is 364px wide inside the panel's 8px padding, and
+   certificate-01 is 800x1125, so uncapped it draws 506px tall. The strip's
+   window is 360px at its tallest, so one slot filled it: caption, part of a
+   scan, cut. At 220 the same window holds slot 1 whole and slot 2's caption
+   at 295–343, which is the whole point — caption, scan, caption. Seeing the
+   pattern twice is what says the caption belongs to the scan under it, and no
+   amount of styling one slot can say that on its own.
+
+   220 rather than the 200 this started at, for one reason worth keeping: at
+   200 the crop landed halfway through "Aditya Sharan", and a cut through a
+   line of type reads as a rendering accident rather than as a thumbnail. 220
+   clears that line, so slot 1 shows a whole thought — letterhead, "has
+   conferred upon", the name — and stops.
+
+   The ceiling is what slot 2's caption can afford. It ends at 343 of 360, so
+   there are about 17px of slack: anything much over 220 pushes that caption
+   out of the window and the pattern back down to one. certificates.js can also
+   shrink the window below 360 on a short viewport (--pop-room, section 5b); at
+   that point slot 2's caption is clipped rather than gone, which still reads as
+   "there is more below", but it is why this number should not creep up.
+
+   cover rather than contain: styles.css sets width 100% and height auto, so a
+   clamped height without object-fit stretches the scan. contain would letterbox
+   the two portrait ones into the grey ground the caption above just stopped
+   sitting on, which is the look this whole section is getting rid of.
+
+   `top` because the top of all five is the Amity letterhead — the half that
+   identifies the document — and because the top edge is what arrives first as
+   a slot scrolls into the window. */
+.cert-shot-link img {
+  max-height: 220px;
+  object-fit: cover;
+  object-position: top;
 }
 
 /* Takes the caption into the hit target — the name of the thing should open

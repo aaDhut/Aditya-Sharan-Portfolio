@@ -40,6 +40,31 @@ caption sits inside the shot rather than in the seam between slots. Deleting
 that section leaves five uncaptioned scans — the component's own behaviour —
 not a broken panel.
 
+Four of that section's rules exist together and should move together, because
+each on its own is a half-fix for the same problem: with the strip showing only
+one slot, the caption sat where a *panel title bar* sits and read as chrome
+belonging to the panel rather than as the name of the document under it.
+
+| rule | what it does |
+| --- | --- |
+| `max-height: 220px` on `.cert-shot-link img` | the load-bearing one — puts a second caption in the window, so the caption/scan pattern is visible rather than inferred |
+| `background: var(--color-bg)` on `.cert-shot-cap` | the band takes the paper's tone instead of the shot's grey placeholder ground |
+| `border` + `--pg-shot-edge: transparent` on `.cert-shot` | one hairline bounding caption and scan as a single slot, in every state |
+| foot is title-only in `index.html` | the panel's own "Open any as PDF" duplicated each slot's badge and framed the strip as one document |
+
+Reverting the height cap alone is the one to avoid: it puts the strip back to
+one visible slot while leaving the other three tuned for a pattern the reader
+can no longer see.
+
+The border is worth a note if that rule is ever touched. Every other shot on the
+site takes its edge from `pop-glass.css`'s inset `box-shadow`, which exists only
+under `.link-pop[data-pg='lit']` — an unlit panel has none, and pop-glass's own
+reduced-transparency block nulls it. In both of those the panel is opaque
+`--color-bg`, which is exactly the caption's colour, so a shadow-based edge
+would vanish precisely where it is needed most. `--pg-shot-edge` is stood down
+to `transparent` so the lit panel does not draw a second line inside this one,
+while keeping the drop shadow that lifts the slot off the glass.
+
 The 2×2 collage on the tile face is four crops out of four of the same five
 scans: `assets/certificate-tile-1…4.jpg`, drawn by `styles.css`'s
 `.work-tile-grid img` with no rules of its own.
