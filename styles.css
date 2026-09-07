@@ -86,6 +86,14 @@
     0 2px 8px -4px rgba(var(--shadow-rgb), 0.12);
   --shadow-surface: 0 4px 20px -10px rgba(var(--shadow-rgb), 0.18);
   --shadow-lifted: 0 14px 34px -12px rgba(var(--shadow-rgb), 0.26);
+  /* The nav capsule is a 38px pill, not a card: --shadow-surface's 20px blur
+     at -10px spread dissolves at that size and reads as nothing. This is the
+     same ink pulled in tight — a close contact shade under the pill plus a
+     short cast — so the capsule sits above the bar instead of in it.
+     [dark-mode] Built from --shadow-rgb so the forced-light block re-warms it
+     for free; dark mode re-points the whole token for its deeper opacities. */
+  --nav-chip-shadow: 0 3px 10px -4px rgba(var(--shadow-rgb), 0.3),
+    0 1px 3px -1px rgba(var(--shadow-rgb), 0.16);
 
   /* Concentric radii, Apple-style: generous and consistent. */
   --radius-lg: 22px;
@@ -357,13 +365,14 @@ section[id] {
      by a soft neutral instead. */
   /* [dark-mode] */
   border-color: var(--glass-edge);
-  box-shadow: var(--glass-rim);
+  box-shadow: var(--glass-rim), var(--nav-chip-shadow);
 }
 
-/* Pointing at something reads a touch stronger than merely being in it. */
+/* Pointing at something reads a touch stronger than merely being in it: the
+   same drop shadow with --shadow-surface's wider cast layered under it. */
 .nav-links a:hover {
   border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
-  box-shadow: var(--glass-rim), var(--shadow-surface);
+  box-shadow: var(--glass-rim), var(--nav-chip-shadow), var(--shadow-surface);
 }
 
 /* Contact now shares the capsule above; only its slightly wider gutters remain

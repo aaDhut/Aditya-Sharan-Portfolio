@@ -1,0 +1,297 @@
+/* ==========================================================================
+   nav-morph.css — [nav-morph] Removable feature.
+
+   The nav had no travelling indicator. Every link painted its own capsule,
+   and when the scroll spy moved `.is-active` from one to the next, styles.css
+   crossfaded them: capsule A faded out over 0.18s while capsule B faded in.
+   Nothing moved. Two capsules dissolving into each other across a gap reads
+   as a light switch, not as an object — and an object is what the bar has
+   been pretending to hold since the pills got a real lens.
+
+   This replaces the seven capsules with one, and gives it physics. The pill
+   is a single absolutely-positioned element inside .nav-links that travels to
+   whatever the bar is pointing at: the hovered item, or — when nothing is
+   hovered — the section you are standing in.
+
+   Where the jelly comes from, in the order it contributes:
+
+     1. The two horizontal edges are sprung *separately*, and the leading edge
+        is stiffer than the trailing one. Move right and the right edge leaves
+        first while the left edge drags; the pill elongates mid-flight and
+        contracts as the trailing edge catches up. Nothing fakes this — it is
+        what two springs of different stiffness do, and it is the reason the
+        travel reads as a liquid rather than a tweened rectangle.
+     2. The vertical axis squashes with horizontal speed. Fast means shorter
+        and flatter, settling means round again, so the capsule conserves
+        roughly the volume a blob would.
+     3. A soft copy of the fill trails the body by a few frames (the ::before
+        below), fading in only while there is lag to show. This is the part
+        that reads as the surface detaching and re-merging.
+
+   What is deliberately *not* here is an SVG goo filter. The literal
+   blob-splitting effect needs feGaussianBlur plus a contrast crank, and an
+   element carrying an SVG `filter` cannot also carry `backdrop-filter` — the
+   goo and the real displacement lens are mutually exclusive on the same
+   element. The lens won, which is the same call nav-glass.css makes when it
+   keeps its fill thin: the material is the point, and a blurred blob with
+   nothing refracting behind it is a cartoon of the thing this is imitating.
+
+   All geometry tokens come from nav-glass.css, so the pill is made of exactly
+   the material the seven capsules were made of. Only the count changed.
+
+   See REMOVE-NAV-MORPH.md.
+   ========================================================================== */
+
+/* Everything in this file is desktop-only. Below 720px styles.css turns
+   .nav-links into a fixed dropdown panel and the items stack vertically — a
+   single travelling capsule in a stacked menu is machinery bending a flat
+   list, and worse, the suppression rules below would leave the dropdown with
+   no highlight at all. nav-morph.js bails at the same width, so above and
+   below the breakpoint each get exactly one owner. */
+@media (min-width: 721px) {
+  /* The pill is positioned against the list, so the list has to be the
+     containing block. Set here rather than in styles.css because it is only
+     true while this feature is attached — and nav-morph.js measures every
+     link's offsetLeft against it, which is only correct once this applies. */
+  .nav .nav-links[data-nav-morph] {
+    position: relative;
+  }
+
+  /* Labels ride above the capsule. Without this the pill paints over the
+     text: it is a later sibling in the list. */
+  .nav .nav-links[data-nav-morph] > li {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ---- Hand the capsule off ---------------------------------------------
+     (0,4,1): one step past nav-glass.css's own pill rules at (0,3,1), which
+     are themselves one past liquid-buttons.css. So this wins on weight and
+     the <link> order in index.html stays irrelevant, which is the discipline
+     both of those files already follow.
+
+     `color` is untouched in both directions — styles.css owns it, the label
+     still turns accent, and that is now the *only* thing the link itself does
+     to mark itself as current. The capsule behind it belongs to the pill. */
+  .nav .nav-links[data-nav-morph] a:hover,
+  .nav .nav-links[data-nav-morph] a.is-active {
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  /* styles.css retires the label halo the moment a capsule is behind the
+     text, and transitions colour but not text-shadow — which was right when
+     the capsule appeared in place. Now the capsule takes ~0.3s to arrive, so
+     an instant halo swap fires well before the thing that justifies it. Fade
+     it on the same clock as the colour instead. */
+  .nav .nav-links[data-nav-morph] a {
+    transition: color 0.18s ease, background-color 0.18s ease,
+      border-color 0.18s ease, box-shadow 0.18s ease, text-shadow 0.22s ease,
+      /* [ios-press] carried over verbatim. This rule is (0,4,1) and the one it
+         outranks in ios-press.css is (0,1,1), so dropping the transform entry
+         would take the press's release curve with it and the pill would snap
+         back off the squash with nothing on it. */
+      transform var(--press-out);
+  }
+
+  /* ---- The goo -----------------------------------------------------------
+     The metaball layer, behind the pill. It is a separate element for one
+     hard reason: an element carrying an SVG `filter` cannot also carry
+     `backdrop-filter`, so the goo and the displacement lens can never share a
+     box. Splitting them across two boxes is the whole trick — this one takes
+     the filter and no backdrop, the pill takes the backdrop and no filter,
+     and stacked they read as one liquid object with a glass core.
+
+     The filter is only mounted while something is in flight. A filtered layer
+     repaints every frame it changes, and there is no reason to hand the
+     compositor one to maintain over a capsule that is sitting still. */
+  :root {
+    /* How strongly the liquid reads, and the only value here meant to be
+       tuned. It is applied *after* the filter's threshold, which is why it
+       can be anything at all — unlike the blob fill below, which cannot move
+       without the mass vanishing or going solid. Past ~0.55 the mass stops
+       looking like liquid under glass and starts looking like a white smear
+       following the pill. */
+    --nm-goo-peak: 0.32;
+  }
+
+  .nav-morph-goo {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: calc(var(--nm-goo-a, 0) * var(--nm-goo-peak));
+    /* No filter, no will-change, nothing promoted, until there is motion. */
+    filter: none;
+  }
+
+  .nav-morph-goo.is-live {
+    filter: url(#nm-goo);
+    will-change: opacity;
+  }
+
+  /* The blobs. Fill alpha is *not* a brightness knob and must not be tuned as
+     one: the filter multiplies alpha by 20 and subtracts 7, so anything below
+     0.35 is wiped out entirely and anything above it saturates to solid. It
+     is opaque, as far from that cliff as it can be — a blob starts losing
+     alpha the moment the blur spreads it, and it has to still clear the line
+     after that. How strongly the liquid actually reads is the layer's opacity
+     above, which is free to be anything because it is applied afterwards. */
+  .nav-morph-blob {
+    position: absolute;
+    left: 0;
+    top: 0;
+    /* Mirrored by BLOB in nav-morph.js; every blob is a scale off this box. */
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    transform-origin: 0 0;
+    background-color: #fff;
+  }
+
+  /* ---- The pill ----------------------------------------------------------
+     Written by nav-morph.js and driven entirely through `transform` from
+     there: the box below is parked at the *destination* geometry on every
+     retarget, and the transform is the inverse that pulls it back onto where
+     it currently is. The spring then runs that inverse to identity, so the
+     pill lands pixel-exact on the target rather than wherever the animation
+     happened to stop.
+
+     transform-origin is the top-left corner and not the default centre,
+     because that is what makes the inverse arithmetic exact: with the origin
+     at 0 0, translate(dx,dy) scale(sx,sy) puts the box at (left+dx, top+dy)
+     sized (width*sx, height*sy), with no half-width correction to get wrong.
+
+     No `transition` on transform. The spring in nav-morph.js writes every
+     frame itself — a CSS transition on top would be a second, slower
+     interpolator fighting the first, and would also destroy the one property
+     that makes this feel alive: retargeting mid-flight without losing the
+     velocity already built up. */
+  .nav-morph-pill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: 999px;
+    transform-origin: 0 0;
+    background-color: var(--ng-tint, rgba(255, 255, 255, 0.16));
+    border: 1px solid var(--ng-edge, rgba(31, 38, 34, 0.12));
+    /* Fallbacks throughout, so pulling nav-glass.css out from under this
+       leaves a plainer capsule rather than an unset one: an unresolved var()
+       invalidates the whole declaration, and box-shadow is what separates a
+       translucent object from a pale bar. */
+    box-shadow: var(--ng-rim, var(--glass-rim)), var(--ng-cast, var(--shadow-surface));
+    opacity: 0;
+    /* Only the fade is CSS's to run. */
+    transition: opacity 0.16s ease, box-shadow 0.2s ease;
+    /* The pill transforms on every frame of every flight and is composited
+       against a live backdrop underneath. Promoting it once is cheaper than
+       letting the compositor rediscover that on each retarget. */
+    will-change: transform;
+  }
+
+  .nav-morph-pill.is-on {
+    opacity: 1;
+  }
+
+  /* Against a dark bar the same white mass reads far heavier than it does
+     over the pale one, so the peak comes down. Thinned, never recoloured: the
+     fill alpha has to stay where it is or the filter's threshold eats it. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --nm-goo-peak: 0.2;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --nm-goo-peak: 0.2;
+  }
+
+  /* Thin the fill out once the refraction behind it is real, exactly as
+     nav-glass.css does for the capsules this replaces — the tint is what
+     would hide the very thing the lens was attached to show. nav-glass.js
+     sets this only when glass.js reports a true displacement lens, so on an
+     engine that fell back to a plain frost the fuller tint stays. */
+  .nav-morph-pill[data-lens] {
+    background-color: var(--ng-tint-lens, rgba(255, 255, 255, 0.1));
+  }
+
+  /* Pointing at an item reads a touch stronger than merely standing in its
+     section — the distinction styles.css draws between :hover and .is-active,
+     which one shared capsule would otherwise flatten. It lifts rather than
+     thickens: a transparent object answers the pointer by rising. */
+  .nav-morph-pill.is-hover {
+    box-shadow: var(--ng-rim, var(--glass-rim)), var(--ng-cast-hover, var(--shadow-lifted));
+  }
+
+  /* ---- The trail ---------------------------------------------------------
+     A soft copy of the fill, dragged behind the body by its own much slacker
+     spring. Both custom properties are written per frame by nav-morph.js and
+     are the only two things about this element that ever change, so it stays
+     a compositor-side transform and an opacity — no layout, no repaint.
+
+     Opacity is driven by how much lag there currently *is*, not held at a
+     constant: at rest the trail sits exactly on top of the pill, and a second
+     tint layer there would quietly thicken the resting capsule and undo the
+     thinness nav-glass.css argues for. At rest --nm-trail-a is 0 and this
+     element contributes nothing at all. */
+  .nav-morph-pill::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-color: var(--ng-tint, rgba(255, 255, 255, 0.16));
+    transform: translateX(var(--nm-trail-x, 0px));
+    opacity: var(--nm-trail-a, 0);
+    pointer-events: none;
+  }
+
+  /* ---- Reduce Motion -----------------------------------------------------
+     nav-morph.js drops the springs under this setting and writes the pill
+     straight onto each target, so the capsule still marks the right item and
+     the bar keeps working — it simply arrives instead of travelling. The
+     trail has nothing to show without motion, and the fade is what is left to
+     soften the jump. */
+  @media (prefers-reduced-motion: reduce) {
+    .nav-morph-pill::before,
+    .nav-morph-goo {
+      display: none;
+    }
+  }
+
+  /* ---- Reduce Transparency -----------------------------------------------
+     nav-morph.js still runs here — the indicator is not decoration, it is how
+     the bar says where you are — but the material has to go opaque, matching
+     what nav-glass.css and liquid-buttons.css hand back under this setting.
+     No lens is attached in this mode either, so there is nothing for a thin
+     fill to reveal. */
+  @media (prefers-reduced-transparency: reduce) {
+    .nav-morph-pill {
+      background-color: var(--color-bg);
+      border-color: var(--color-border-strong);
+      box-shadow: none;
+    }
+
+    .nav-morph-pill.is-hover {
+      box-shadow: none;
+    }
+
+    .nav-morph-pill::before,
+    .nav-morph-goo {
+      display: none;
+    }
+  }
+
+  /* ---- Print -------------------------------------------------------------
+     Paper has no backdrop to refract and no scroll position to report. */
+  @media print {
+    .nav-morph-pill,
+    .nav-morph-goo {
+      display: none !important;
+    }
+  }
+}

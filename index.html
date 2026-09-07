@@ -107,6 +107,14 @@
        gone this file matches nothing. Loads after dark-mode.css so the glow
        takes the live theme's accent. See REMOVE-HERO-TYPE.md. -->
   <link rel="stylesheet" href="hero-type.css">
+  <!-- [nav-morph] Removable feature. Replaces the seven crossfading nav
+       capsules with one that travels on springs — separately sprung edges so
+       it stretches in flight, a speed-driven squash, and a soft trail that
+       fades in only while there is lag to show. Every rule is scoped to the
+       data-nav-morph attribute nav-morph.js sets and gated to >=721px, so with
+       the script gone this file matches nothing and the bar's own material is
+       untouched. See REMOVE-NAV-MORPH.md. -->
+  <link rel="stylesheet" href="nav-morph.css">
 </head>
 <body>
 
@@ -1261,5 +1269,12 @@
        it — deleting this line, the stylesheet link, and the three hero-type
        files removes the feature outright. See REMOVE-HERO-TYPE.md. -->
   <script defer src="hero-type.js"></script>
+  <!-- [nav-morph] Removable feature. Builds the travelling capsule and its goo
+       layer, watches script.js's scroll spy for .is-active with a
+       MutationObserver, and integrates the springs itself. It injects its own
+       elements and <svg><defs>, so index.html carries no markup for it —
+       deleting this line, the stylesheet link, and the three nav-morph files
+       removes the feature outright. See REMOVE-NAV-MORPH.md. -->
+  <script defer src="nav-morph.js"></script>
 </body>
 </html>

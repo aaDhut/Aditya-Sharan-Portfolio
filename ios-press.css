@@ -226,6 +226,23 @@ a.timeline-logo {
    Written shorter they would lose and the old presses would still be running.
    This is what the load-order note in the header is protecting.
 
+   Eight more are written longer still, with the button's own class doubled on
+   — `.btn.btn-primary`, `.btn.btn-secondary`, `.btn.mp-toggle`. Those are for
+   a rule the press has to beat while it is running rather than one it is
+   replacing: liquid-buttons.css swells the hero pair, the call pill and the
+   panel's confirm button to scale(1.025) on :hover, and writes that at one
+   class more than the plain `.hero-actions .btn` shape above. A mouse press
+   never leaves :hover — the pointer is still on the button — so both rules
+   applied at once and the more specific one won: those three buttons took the
+   hover swell and stayed there for the whole press while every other control
+   on the page squashed. It reads as three dead buttons, and only on a mouse,
+   because a finger has no hover state to lose to.
+
+   Matching the hover selector's weight is enough; source order does the rest,
+   which is the same bargain the six above strike. What it must NOT do is
+   re-declare box-shadow to match: the swell is the only part of the hover the
+   press is taking over, and the lift stays under the finger.
+
    `transition` is re-declared in the pressed state so the squash goes in on
    the fast curve while the release keeps the slow one from section 1. It
    replaces the whole list rather than extending it, which is what
@@ -237,10 +254,22 @@ a.timeline-logo {
 .btn[data-pressed],
 .hero-actions .btn:active,
 .hero-actions .btn[data-pressed],
+.hero-actions .btn.btn-primary:active,
+.hero-actions .btn.btn-primary[data-pressed],
+.hero-actions .btn.btn-secondary:active,
+.hero-actions .btn.btn-secondary[data-pressed],
 .mp[data-glass='on'] .mp-toggle:active,
 .mp[data-glass='on'] .mp-toggle[data-pressed],
+.mp[data-glass='on'] .btn.mp-toggle:active,
+.mp[data-glass='on'] .btn.mp-toggle[data-pressed],
 .mp[data-glass='on'][data-popup='on'] .mp-actions .btn:active:not([disabled]),
 .mp[data-glass='on'][data-popup='on'] .mp-actions .btn[data-pressed]:not([disabled]),
+.mp[data-glass='on'][data-popup='on']
+  .mp-actions
+  .btn.btn-primary:active:not([disabled]),
+.mp[data-glass='on'][data-popup='on']
+  .mp-actions
+  .btn.btn-primary[data-pressed]:not([disabled]),
 .nav-links a:active,
 .nav-links a[data-pressed],
 .timeline-company a:active,
@@ -374,10 +403,22 @@ a.timeline-logo[data-released] {
   .btn[data-pressed],
   .hero-actions .btn:active,
   .hero-actions .btn[data-pressed],
+  .hero-actions .btn.btn-primary:active,
+  .hero-actions .btn.btn-primary[data-pressed],
+  .hero-actions .btn.btn-secondary:active,
+  .hero-actions .btn.btn-secondary[data-pressed],
   .mp[data-glass='on'] .mp-toggle:active,
   .mp[data-glass='on'] .mp-toggle[data-pressed],
+  .mp[data-glass='on'] .btn.mp-toggle:active,
+  .mp[data-glass='on'] .btn.mp-toggle[data-pressed],
   .mp[data-glass='on'][data-popup='on'] .mp-actions .btn:active:not([disabled]),
   .mp[data-glass='on'][data-popup='on'] .mp-actions .btn[data-pressed]:not([disabled]),
+  .mp[data-glass='on'][data-popup='on']
+    .mp-actions
+    .btn.btn-primary:active:not([disabled]),
+  .mp[data-glass='on'][data-popup='on']
+    .mp-actions
+    .btn.btn-primary[data-pressed]:not([disabled]),
   .nav-links a:active,
   .nav-links a[data-pressed],
   .timeline-company a:active,

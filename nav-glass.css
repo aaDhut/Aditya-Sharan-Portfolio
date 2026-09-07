@@ -1,0 +1,230 @@
+/* ==========================================================================
+   nav-glass.css — [nav-glass] Removable feature.
+
+   The nav pills are the only chrome on the page made of fake glass. Every
+   other capsule — the hero pair, the contact trio, the call pill, the panels —
+   gets a real displacement lens from glass.js and actually bends what is
+   behind it. The pills got a flat white tint instead, and script.js says why:
+
+     "The nav pills deliberately get no lens of their own. A backdrop-filter
+      nested inside the bar's own backdrop-filter compounds — the pills render
+      as opaque grey slabs."
+
+   That is true, and it is not a browser limit. It is a consequence of where
+   the bar's lens is attached. `backdrop-filter` on .header-inner makes it a
+   *backdrop root*: every descendant samples a flattened, already-composited
+   layer instead of the page, so a pill's own filter has nothing left to work
+   with. Measured over the portrait, with colour variation inside the pill as
+   the proxy for "is real content coming through":
+
+     the bar itself (real glass)      12.0
+     pill nested as it was             2.6   flat paint
+     pill after the hoist              7.7   about two thirds of the bar's own
+
+   nav-glass.js moves the bar's filter off .header-inner and onto a plate div
+   inset inside it. The plate is the same size and carries the same filter, so
+   the bar renders identically — but the pills are no longer descendants of a
+   filtered element, and can hold a lens of their own.
+
+   What that buys, and the thing no amount of tint could fake: over a plain
+   white stretch of page the pill is a hairline and a cast shadow, and over
+   content it comes alive and bends what passes underneath. That is what the
+   material does on iOS 26, and it is why the fill is kept as thin as it is —
+   a heavier tint would hide the very refraction this exists to turn on.
+
+   See REMOVE-NAV-GLASS.md.
+   ========================================================================== */
+
+:root {
+  /* Thin on purpose. This is the only thing standing between the lens and the
+     backdrop it is bending; liquid-buttons.css reaches the same conclusion for
+     its lensed three and says so. */
+  --ng-tint: rgba(255, 255, 255, 0.16);
+  /* Thinner still once a real lens is attached — same trade liquid-buttons.css
+     makes with its `[data-lens]` rule. */
+  --ng-tint-lens: rgba(255, 255, 255, 0.1);
+  /* Neutral, not white. A white hairline on a white bar is the whole reason
+     this capsule was invisible; over a pale ground the edge has to be darker
+     than what it sits on or it is not an edge. */
+  --ng-edge: rgba(31, 38, 34, 0.12);
+  /* The specular: bright along the top face where light grazes it, and the
+     faint shade returning along the bottom that says the surface is curved.
+     This is what reads as glass when there is nothing underneath to refract. */
+  --ng-rim: inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+  /* The cast. On a white ground this is doing more work than the fill is — a
+     transparent object separates from a white page by the shadow it throws,
+     not by being brighter than it. */
+  --ng-cast: 0 2px 6px rgba(var(--shadow-rgb), 0.1);
+  --ng-cast-hover: 0 4px 10px rgba(var(--shadow-rgb), 0.14);
+}
+
+/* ---- Dark mode: hand every token straight back ---------------------------
+   Written exactly as dark-mode.css writes its triggers, because they have to
+   match its specificity as well as its condition. The dark bar's white glass
+   was never the problem — it has a dark backdrop to be bright against. The
+   lens still attaches; only the dressing reverts. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ng-tint: var(--lb-tint);
+    --ng-tint-lens: var(--lb-tint-lens);
+    --ng-edge: var(--lb-edge);
+    --ng-rim: var(--lb-rim);
+    --ng-cast: 0 1px 2px rgba(var(--shadow-rgb), 0.08);
+    --ng-cast-hover: var(--shadow-surface);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ng-tint: var(--lb-tint);
+  --ng-tint-lens: var(--lb-tint-lens);
+  --ng-edge: var(--lb-edge);
+  --ng-rim: var(--lb-rim);
+  --ng-cast: 0 1px 2px rgba(var(--shadow-rgb), 0.08);
+  --ng-cast-hover: var(--shadow-surface);
+}
+
+/* ---- 1. The plate --------------------------------------------------------
+   Only ever present when nav-glass.js has actually moved the filter onto it,
+   and the attribute goes on together with the element — so a page where the
+   script did not run has neither, and styles.css's bar is untouched. */
+.header-inner[data-nav-glass] > .nav-glass-plate,
+.header-inner[data-nav-glass] > .nav-glass-frost {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* The frost carries no paint of its own — only the blur nav-glass.js writes
+   onto it. It is a sibling *below* the plate, so the plate's backdrop is the
+   already-diffused page and the lens has something to bend that is no longer
+   a readable copy of the content underneath. See the long note in
+   nav-glass.js for why the blur cannot simply be raised in the plate's own
+   chain: Chromium drops a CSS blur that follows an SVG url() there. */
+
+.header-inner[data-nav-glass] > .nav-glass-plate {
+  /* The rim moves here with the filter. Left on .header-inner it would paint
+     *below* this plate and then be blurred by it, softening the one crisp line
+     the bar has. On the plate it draws after the plate's own backdrop, so the
+     edge stays as sharp as it was. */
+  box-shadow: var(--glass-rim);
+}
+
+/* The outer cast stays on .header-inner — it is thrown by the bar, not by the
+   plate — but the inset rim has moved, so it must not be drawn twice.
+
+   `backdrop-filter: none` is the load-bearing line in this file. styles.css
+   declares the bar's blur on .header-inner itself; script.js's lens only ever
+   overrode it inline. Clearing that inline value in JS therefore does not
+   remove the filter, it *reveals the stylesheet's* — .header-inner stays a
+   backdrop root, the plate nests inside it exactly as the pills used to, and
+   the whole bar renders as the flat grey slab script.js warned about. Measured
+   on the way in: mean per-pixel delta 82.6 against the untouched bar. With
+   this line, 0.5. */
+.header-inner[data-nav-glass] {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--shadow-chrome);
+}
+
+/* The tint moves onto the plate with the filter. Left on .header-inner it
+   paints *below* the plate, so the plate blurs the bar's own specular gradient
+   along with the page — and the top stop is the brightest thing in the bar, so
+   that is where it shows. Measured against the untouched bar, animations
+   frozen (the hero animates under the bar, and without freezing them the
+   run-to-run noise is larger than the effect):
+
+     tint left on .header-inner    mean delta 2.10   4.54% of pixels past 8/255
+     tint moved here               mean delta 0.51   0.59%
+
+   The remainder is a 75px-wide band at the rim, where the displacement map
+   lands a fraction differently. The bar is not bit-identical; it is half a
+   level of 255, in a band with no detail in it.
+
+   This is a copy of the `background` on `.header-inner` in styles.css and has
+   to stay in step with it. It is all tokens, so in practice: if the *shape* of
+   that gradient changes, change it here too. */
+.header-inner[data-nav-glass] > .nav-glass-plate {
+  background:
+    linear-gradient(
+      to bottom,
+      /* [dark-mode] */
+      var(--glass-specular-top),
+      rgba(255, 255, 255, 0) 42%,
+      rgba(255, 255, 255, 0) 78%,
+      var(--glass-specular-bottom)
+    ),
+    var(--glass-chrome);
+}
+
+.header-inner[data-nav-glass] {
+  background: none;
+}
+
+/* Everything real in the bar goes above both glass layers. */
+.header-inner[data-nav-glass] > *:not(.nav-glass-plate):not(.nav-glass-frost) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- 2. The pill ---------------------------------------------------------
+   (0,3,1): one step past liquid-buttons.css's `.nav-links a:hover` (0,2,1),
+   so these win on weight and the <link> position in index.html does not
+   matter — the same discipline liquid-buttons.css uses on ios-press.css.
+
+   `color` is absent from both rules. styles.css sets it to var(--color-accent)
+   and keeps ownership of it. */
+.nav .nav-links a:hover,
+.nav .nav-links a.is-active {
+  background-color: var(--ng-tint);
+  border-color: var(--ng-edge);
+  box-shadow: var(--ng-rim), var(--ng-cast);
+}
+
+/* Get the tint out of the way once the refraction is real — otherwise the
+   fill hides the thing it was just turned on to show. nav-glass.js sets
+   data-lens only when glass.js reports a true displacement lens, so this never
+   fires on an engine that fell back to a plain frost. */
+.nav .nav-links a[data-lens]:hover,
+.nav .nav-links a[data-lens].is-active {
+  background-color: var(--ng-tint-lens);
+}
+
+/* Pointing at something reads a touch stronger than merely being in it, which
+   is the distinction styles.css draws and this must not flatten. It lifts
+   rather than thickens: a transparent object answers the pointer by rising. */
+.nav .nav-links a:hover {
+  box-shadow: var(--ng-rim), var(--ng-cast-hover);
+}
+
+/* ---- Reduce Transparency -------------------------------------------------
+   nav-glass.js bails out entirely under this setting — no plate, no lenses —
+   so the bar and pills are exactly what styles.css and liquid-buttons.css
+   make them, and liquid-buttons' own reduced-transparency rule applies
+   unopposed. These two rules only undo this file's dressing, which is still
+   linked and would otherwise keep painting a translucent capsule at a weight
+   that outranks it. */
+@media (prefers-reduced-transparency: reduce) {
+  .nav .nav-links a:hover,
+  .nav .nav-links a.is-active {
+    background-color: var(--color-bg);
+    border-color: var(--color-border-strong);
+    box-shadow: none;
+  }
+}
+
+/* ---- Print ---------------------------------------------------------------
+   Paper has no backdrop to refract. The hairline alone carries the shape. */
+@media print {
+  .header-inner[data-nav-glass] > .nav-glass-plate,
+  .header-inner[data-nav-glass] > .nav-glass-frost {
+    display: none !important;
+  }
+
+  .nav .nav-links a:hover,
+  .nav .nav-links a.is-active {
+    box-shadow: none !important;
+  }
+}
