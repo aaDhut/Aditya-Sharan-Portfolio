@@ -102,6 +102,11 @@
   --dark-shadow-surface: 0 4px 20px -10px rgba(0, 0, 0, 0.55);
   --dark-shadow-lifted: 0 14px 34px -12px rgba(0, 0, 0, 0.72);
   --dark-shadow-portrait: 0 12px 32px -12px rgba(0, 0, 0, 0.8);
+  /* The nav capsule's contact shade. Doubled like the rest, and it has more to
+     do here: on a dark ground the pill's own fill is only a 0.1 white veil, so
+     the shadow is most of what separates it from the bar. */
+  --dark-nav-chip-shadow: 0 3px 10px -4px rgba(0, 0, 0, 0.6),
+    0 1px 3px -1px rgba(0, 0, 0, 0.4);
 
   /* The halo inverts. In light mode a white glow lifts dark glyphs off the
      dark parts of the backdrop; here the glyphs are light, and what they need
@@ -146,6 +151,7 @@
     --shadow-surface: var(--dark-shadow-surface);
     --shadow-lifted: var(--dark-shadow-lifted);
     --shadow-portrait: var(--dark-shadow-portrait);
+    --nav-chip-shadow: var(--dark-nav-chip-shadow);
 
     --nav-label-halo: var(--dark-nav-label-halo);
   }
@@ -183,6 +189,7 @@
   --shadow-surface: var(--dark-shadow-surface);
   --shadow-lifted: var(--dark-shadow-lifted);
   --shadow-portrait: var(--dark-shadow-portrait);
+  --nav-chip-shadow: var(--dark-nav-chip-shadow);
 
   --nav-label-halo: var(--dark-nav-label-halo);
 }
