@@ -1,0 +1,248 @@
+/* ============================================================================
+   [tile-shadow] Removable feature — cast shadows under the collage tiles, the
+   company/institution logo marks, the name pills and the Skills pills, in both
+   Experience and Education.
+
+   Why this is its own file: it is a look, not a structure. Every rule below is
+   an override of something another sheet already declares, so deleting the
+   <link> in index.html and this file puts the page back exactly where it was.
+   No other file is edited. See REMOVE-TILE-SHADOW.md.
+
+   What was flat before this file:
+
+     1. .work-tile — the 2x2 collage tiles (five on Experience, three College
+        projects, one certificate). These *did* carry a shadow, but it was
+        written for the 140px Experience size; at the 96x72 college size the
+        40px ambient blur is wider than the tile itself and reads as haze. And
+        it is built on --shadow-rgb, which dark mode sets to pure black — black
+        on a #1a1a1a card is nothing.
+     2. a.timeline-logo — the 52px company and institution marks, in both
+        sections. No cast shadow at all, just a hairline.
+     3. .timeline-company a — the name pill that appears on hover. It had a
+        specular rim and a 0.08 contact shade, which seats a chip on the card
+        but does not raise it.
+     4. .tag-list li — the Skills pills. Inset --glass-rim only; the drop
+        shadow existed but appeared on :hover and nowhere else.
+
+   Depth is tokens, defined once per theme, so the weight of the whole page is
+   a handful of numbers rather than a dozen box-shadow declarations. These are
+   tuned to the deeper of the three tiers rendered on 2026-09-08.
+   ========================================================================= */
+
+/* ---- 1. Tokens: light -----------------------------------------------------
+
+   Three layers each, in the order the eye reads them: a 1-3px contact shade
+   that pins the element to the card, a mid key shadow that gives it height,
+   and a wide ambient that says there is a light source. A single soft blur is
+   the 2012 drop shadow; the stack is what makes it look like an object.
+
+   Blur radius tracks the element, not the page: 46px under a 140px collage
+   tile is the same *proportion* as 26px under a 52px logo, and 12px under a
+   30px pill. Deepening the ink without scaling the blur to the box is what
+   makes small controls look like they are floating off the card rather than
+   resting a few millimetres above it. */
+:root {
+  --ts-tile: 0 1px 3px rgba(var(--shadow-rgb), 0.22),
+    0 10px 22px -6px rgba(var(--shadow-rgb), 0.40),
+    0 26px 46px -16px rgba(var(--shadow-rgb), 0.38);
+  --ts-tile-hover: 0 1px 3px rgba(var(--shadow-rgb), 0.24),
+    0 18px 34px -8px rgba(var(--shadow-rgb), 0.44),
+    0 40px 70px -24px rgba(var(--shadow-rgb), 0.44);
+
+  --ts-logo: 0 1px 3px rgba(var(--shadow-rgb), 0.20),
+    0 6px 14px -3px rgba(var(--shadow-rgb), 0.36),
+    0 14px 26px -8px rgba(var(--shadow-rgb), 0.30);
+  --ts-logo-hover: 0 1px 3px rgba(var(--shadow-rgb), 0.22),
+    0 10px 20px -4px rgba(var(--shadow-rgb), 0.40),
+    0 20px 38px -10px rgba(var(--shadow-rgb), 0.36);
+
+  /* A 30px pill is short. Contact shade and a modest key, no ambient at all —
+     a wide cast under something this small reads as blur, not as height. */
+  --ts-pill: 0 1px 3px rgba(var(--shadow-rgb), 0.14),
+    0 6px 14px -4px rgba(var(--shadow-rgb), 0.26);
+  --ts-pill-hover: 0 1px 3px rgba(var(--shadow-rgb), 0.16),
+    0 10px 22px -6px rgba(var(--shadow-rgb), 0.32);
+
+  /* The name pill is lighter still than a Skills pill. It sits inside a line
+     of type and only exists under the pointer, so it lifts enough to read as a
+     control and stops there — a deep cast under a word in a sentence pushes
+     the line it belongs to out of the paragraph. */
+  --ts-name-pill: 0 1px 2px rgba(var(--shadow-rgb), 0.12),
+    0 5px 12px -4px rgba(var(--shadow-rgb), 0.24);
+}
+
+/* ---- 2. Tokens: dark ------------------------------------------------------
+
+   dark-mode.css sets --shadow-rgb to pure black and roughly doubles every
+   opacity, for the reason it documents: a warm grey shadow is invisible on a
+   dark ground. That holds here, but only up to a point — the cards these sit
+   on are already near-black, so past about 0.7 the shadow stops getting darker
+   and only gets bigger.
+
+   So the depth is split. The cast carries the height, and a hairline of light
+   around the tile carries the *edge*. That is the same trick the rest of the
+   page's glass uses, and it is why a tile still reads as a raised object here
+   rather than as a smudge.
+
+   The ring is drawn as a spread layer rather than `inset`, because .work-tile
+   is filled edge-to-edge by its four thumbnails: an inset shadow paints under
+   content and would be hidden by the images.
+
+   The two pills get no ring. They are translucent, so a bright ring would
+   outline the *hole* rather than the object. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ts-tile: 0 0 0 1px rgba(255, 255, 255, 0.09),
+      0 2px 5px rgba(0, 0, 0, 0.6),
+      0 12px 24px -6px rgba(0, 0, 0, 0.7),
+      0 28px 50px -16px rgba(0, 0, 0, 0.65);
+    --ts-tile-hover: 0 0 0 1px rgba(255, 255, 255, 0.13),
+      0 2px 5px rgba(0, 0, 0, 0.6),
+      0 20px 38px -8px rgba(0, 0, 0, 0.75),
+      0 44px 78px -24px rgba(0, 0, 0, 0.7);
+
+    --ts-logo: 0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 1px 3px rgba(0, 0, 0, 0.55),
+      0 7px 16px -3px rgba(0, 0, 0, 0.65),
+      0 15px 28px -8px rgba(0, 0, 0, 0.55);
+    --ts-logo-hover: 0 0 0 1px rgba(255, 255, 255, 0.12),
+      0 1px 3px rgba(0, 0, 0, 0.6),
+      0 11px 24px -4px rgba(0, 0, 0, 0.72),
+      0 24px 44px -10px rgba(0, 0, 0, 0.62);
+
+    --ts-pill: 0 1px 3px rgba(0, 0, 0, 0.5),
+      0 6px 15px -4px rgba(0, 0, 0, 0.55);
+    --ts-pill-hover: 0 1px 3px rgba(0, 0, 0, 0.55),
+      0 11px 24px -6px rgba(0, 0, 0, 0.62);
+
+    --ts-name-pill: 0 1px 3px rgba(0, 0, 0, 0.45),
+      0 5px 13px -4px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* The explicit-choice twin of the block above, matching dark-mode.css's
+   two-trigger shape so a future toggle needs no change here. */
+:root[data-theme="dark"] {
+  --ts-tile: 0 0 0 1px rgba(255, 255, 255, 0.09),
+    0 2px 5px rgba(0, 0, 0, 0.6),
+    0 12px 24px -6px rgba(0, 0, 0, 0.7),
+    0 28px 50px -16px rgba(0, 0, 0, 0.65);
+  --ts-tile-hover: 0 0 0 1px rgba(255, 255, 255, 0.13),
+    0 2px 5px rgba(0, 0, 0, 0.6),
+    0 20px 38px -8px rgba(0, 0, 0, 0.75),
+    0 44px 78px -24px rgba(0, 0, 0, 0.7);
+
+  --ts-logo: 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.55),
+    0 7px 16px -3px rgba(0, 0, 0, 0.65),
+    0 15px 28px -8px rgba(0, 0, 0, 0.55);
+  --ts-logo-hover: 0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 1px 3px rgba(0, 0, 0, 0.6),
+    0 11px 24px -4px rgba(0, 0, 0, 0.72),
+    0 24px 44px -10px rgba(0, 0, 0, 0.62);
+
+  --ts-pill: 0 1px 3px rgba(0, 0, 0, 0.5),
+    0 6px 15px -4px rgba(0, 0, 0, 0.55);
+  --ts-pill-hover: 0 1px 3px rgba(0, 0, 0, 0.55),
+    0 11px 24px -6px rgba(0, 0, 0, 0.62);
+
+  --ts-name-pill: 0 1px 3px rgba(0, 0, 0, 0.45),
+    0 5px 13px -4px rgba(0, 0, 0, 0.5);
+}
+
+/* ---- 3. Collage tiles -----------------------------------------------------
+
+   Overrides the three-layer stack at .work-tile in styles.css. Covers all nine
+   instances: five Experience tiles, the certificate tile and the three College
+   projects tiles on the Education card. The transition in styles.css already
+   lists box-shadow, so the hover swap below inherits its 0.32s curve and needs
+   no timing of its own. */
+.work-tile {
+  box-shadow: var(--ts-tile);
+}
+
+/* Matches the specificity of styles.css's `.work-link:hover .work-tile`, and
+   loads after it. */
+.work-link:hover .work-tile,
+.work-link:focus-within .work-tile {
+  box-shadow: var(--ts-tile-hover);
+}
+
+/* ---- 4. Logo marks --------------------------------------------------------
+
+   Both sections: Battlebucks/Hitwicket/AltWorld/Warlands/Kotak in Experience,
+   IIT Roorkee and Amity in Education. All seven are the same 52px component.
+
+   `a.timeline-logo` rather than `.timeline-logo`: only the linked marks are
+   raised objects. styles.css transitions transform and border-color on this
+   element but not box-shadow, so the property is added here — without it the
+   shadow would snap while the 1.06 scale glides. */
+a.timeline-logo {
+  box-shadow: var(--ts-logo);
+  transition: transform 160ms ease, border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+a.timeline-logo:hover {
+  box-shadow: var(--ts-logo-hover);
+}
+
+/* ---- 5. Name pills --------------------------------------------------------
+
+   The company and institution links, which grow a glass pill under the
+   pointer. liquid-buttons.css owns this chip at (0,3,1) and gives it
+   --lb-rim plus a 0.08 contact shade; matched here at the same weight, loading
+   later, with the rim carried through untouched and the contact shade replaced
+   by a cast.
+
+   The rim is the specular highlight that makes the chip read as glass. It stays
+   — the fix for a control that does not read as raised is a shadow under it,
+   not a heavier fill on top of it. */
+.timeline-headline .timeline-company a:hover,
+.timeline-headline .timeline-company a:focus-visible {
+  box-shadow: var(--lb-rim), var(--ts-name-pill);
+}
+
+/* ---- 6. Skills pills ------------------------------------------------------
+
+   --glass-rim is carried through for the same reason as above: it is what
+   makes the pill read as glass, and dropping it to add a cast would trade the
+   material for the height. */
+.tag-list li {
+  box-shadow: var(--glass-rim), var(--ts-pill);
+}
+
+.tag-list li:hover {
+  box-shadow: var(--glass-rim), var(--ts-pill-hover);
+}
+
+/* ---- 7. Reduce Transparency ----------------------------------------------
+
+   liquid-buttons.css drops the name pill's shadow entirely under this setting,
+   because what it was carrying there was --lb-rim: a specular highlight on a
+   surface that is no longer translucent is just a white line.
+
+   That reasoning applies to the rim, not to the cast. Under this setting the
+   chip becomes an opaque object, and an opaque object still sits above the
+   card — so the rim goes and the shadow stays. Same for the Skills pills,
+   which keep --glass-rim in section 6 for the same reason it exists there.
+
+   The tiles and the logo marks are unaffected: neither was ever translucent. */
+@media (prefers-reduced-transparency: reduce) {
+  .timeline-headline .timeline-company a:hover,
+  .timeline-headline .timeline-company a:focus-visible {
+    box-shadow: var(--ts-name-pill);
+  }
+
+  .tag-list li {
+    box-shadow: var(--ts-pill);
+  }
+
+  .tag-list li:hover {
+    box-shadow: var(--ts-pill-hover);
+  }
+}
+
+/* Forced-colors mode throws shadows away entirely, and the tiles and pills
+   then have only their existing borders to sit on. That is correct — the
+   system is asking for flat high-contrast shapes, so there is no rule here. */
